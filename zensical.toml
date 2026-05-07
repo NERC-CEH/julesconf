@@ -10,9 +10,9 @@ site_url = "https://nerc-ceh.github.io/julesconf"
 repo_name = "NERC-CEH/julesconf"
 repo_url = "https://github.com/NERC-CEH/julesconf"
 
-nav = [
-  { "Home" = "index.md" },
-]
+#nav = [
+#  { "Home" = "index.md" },
+#]
 
 [project.theme]
 
