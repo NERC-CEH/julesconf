@@ -17,7 +17,7 @@ test:
 
 # Run tests with coverage report.
 test-cov:
-  pytest --cov=dirconf --cov-report=term-missing --cov-fail-under=90
+  pytest --cov=julesconf --cov-report=term-missing --cov-fail-under=90
 
 # Run static type checker.
 typecheck:
