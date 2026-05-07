@@ -36,6 +36,7 @@ Example usage::
     config.write("/path/to/output", config_dict)
 """
 
+import dataclasses
 import json
 from os import PathLike
 from pathlib import Path
@@ -45,6 +46,9 @@ import dirconf
 import f90nml
 import numpy
 import xarray
+from dirconf import Node
+from dirconf.config import DirConfig
+from dirconf.node import path_to_node, to_node
 
 __all__ = [
     "AsciiFileHandler",
@@ -97,46 +101,197 @@ class NamelistFileHandler:
         f90nml.write(data, path, force=overwrite_ok)
 
 
-_jules_namelists = [
-    "ancillaries",
-    "crop_params",
-    "drive",
-    "fire",
-    "imogen",
-    "initial_conditions",
-    "jules_deposition",
-    "jules_hydrology",
-    "jules_irrig",
-    "jules_prnt_control",
-    "jules_radiation",
-    "jules_rivers",
-    "jules_snow",
-    "jules_soil_biogeochem",
-    "jules_soil",
-    "jules_surface",
-    "jules_surface_types",
-    "jules_vegetation",
-    "jules_water_resources",
-    "model_environment",
-    "model_grid",
-    "nveg_params",
-    "output",
-    "pft_params",
-    "prescribed_data",
-    "science_fixes",
-    "timesteps",
-    "triffid_params",
-    "urban",
-]
+@dataclasses.dataclass
+class NamelistConfig(DirConfig):
+    """Configuration for a JULES namelists directory.
 
-NamelistConfig = dirconf.make_dirconfig(
-    cls_name="NamelistConfig",
-    spec={
-        name: {"path": f"{name}.nml", "handler": NamelistFileHandler}
-        for name in _jules_namelists
-    },
-    module=__name__,
-)
+    Contains all 29 required namelist files, each with a fixed ``.nml`` path
+    and handled by :class:`NamelistFileHandler`.
+
+    This class is instantiated without arguments, since all field defaults are
+    fully specified::
+
+        namelists = NamelistConfig()
+        data = namelists.read("/path/to/namelists")
+    """
+
+    ancillaries: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("ancillaries.nml", NamelistFileHandler),
+    )
+    """Ancillary data namelist."""
+
+    crop_params: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("crop_params.nml", NamelistFileHandler),
+    )
+    """Crop parameters namelist."""
+
+    drive: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("drive.nml", NamelistFileHandler),
+    )
+    """Driving data configuration namelist.
+
+    Controls meteorological forcing data: start/end dates, time step,
+    variable names, and path to the driving data file.
+    """
+
+    fire: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("fire.nml", NamelistFileHandler),
+    )
+    """Fire parameters namelist."""
+
+    imogen: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("imogen.nml", NamelistFileHandler),
+    )
+    """IMOGEN configuration namelist."""
+
+    initial_conditions: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("initial_conditions.nml", NamelistFileHandler),
+    )
+    """Initial conditions namelist."""
+
+    jules_deposition: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("jules_deposition.nml", NamelistFileHandler),
+    )
+    """Deposition parameters namelist."""
+
+    jules_hydrology: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("jules_hydrology.nml", NamelistFileHandler),
+    )
+    """Hydrology parameters namelist."""
+
+    jules_irrig: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("jules_irrig.nml", NamelistFileHandler),
+    )
+    """Irrigation parameters namelist."""
+
+    jules_prnt_control: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("jules_prnt_control.nml", NamelistFileHandler),
+    )
+    """Print control namelist."""
+
+    jules_radiation: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("jules_radiation.nml", NamelistFileHandler),
+    )
+    """Radiation parameters namelist."""
+
+    jules_rivers: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("jules_rivers.nml", NamelistFileHandler),
+    )
+    """River routing parameters namelist."""
+
+    jules_snow: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("jules_snow.nml", NamelistFileHandler),
+    )
+    """Snow parameters namelist."""
+
+    jules_soil_biogeochem: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("jules_soil_biogeochem.nml", NamelistFileHandler),
+    )
+    """Soil biogeochemistry parameters namelist."""
+
+    jules_soil: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("jules_soil.nml", NamelistFileHandler),
+    )
+    """Soil parameters namelist."""
+
+    jules_surface: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("jules_surface.nml", NamelistFileHandler),
+    )
+    """Surface parameters namelist."""
+
+    jules_surface_types: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("jules_surface_types.nml", NamelistFileHandler),
+    )
+    """Surface types namelist."""
+
+    jules_vegetation: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("jules_vegetation.nml", NamelistFileHandler),
+    )
+    """Vegetation parameters namelist."""
+
+    jules_water_resources: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("jules_water_resources.nml", NamelistFileHandler),
+    )
+    """Water resources namelist."""
+
+    model_environment: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("model_environment.nml", NamelistFileHandler),
+    )
+    """Model environment namelist."""
+
+    model_grid: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("model_grid.nml", NamelistFileHandler),
+    )
+    """Model grid configuration namelist."""
+
+    nveg_params: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("nveg_params.nml", NamelistFileHandler),
+    )
+    """Non-vegetated surface parameters namelist."""
+
+    output: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("output.nml", NamelistFileHandler),
+    )
+    """Output configuration namelist."""
+
+    pft_params: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("pft_params.nml", NamelistFileHandler),
+    )
+    """Plant functional type parameters namelist."""
+
+    prescribed_data: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("prescribed_data.nml", NamelistFileHandler),
+    )
+    """Prescribed data namelist."""
+
+    science_fixes: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("science_fixes.nml", NamelistFileHandler),
+    )
+    """Science fixes namelist."""
+
+    timesteps: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("timesteps.nml", NamelistFileHandler),
+    )
+    """Timestep configuration namelist."""
+
+    triffid_params: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("triffid_params.nml", NamelistFileHandler),
+    )
+    """TRIFFID dynamic vegetation parameters namelist."""
+
+    urban: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("urban.nml", NamelistFileHandler),
+    )
+    """Urban parameters namelist."""
 
 
 @dirconf.filter(write=lambda path, data, **_: not path.is_absolute())
@@ -300,25 +455,101 @@ NetcdfFileHandler.__module__ = __name__
 dirconf.register_handler("ascii", AsciiFileHandler, [".txt", ".dat", ".asc"])
 dirconf.register_handler("netcdf", NetcdfFileHandler, [".nc", ".cdf"])
 
-InputFilesConfig = dirconf.make_dirconfig(
-    cls_name="InputFilesConfig",
-    spec={
-        "initial_conditions": {
-            "handler": AsciiFileHandler,
-        },
-        "tile_fractions": {
-            "handler": AsciiFileHandler,
-        },
-        "driving_data": {},
-    },
-    module=__name__,
-)
 
-JulesConfig = dirconf.make_dirconfig(
-    cls_name="JulesConfig",
-    spec={
-        "inputs": {},
-        "namelists": {"handler": NamelistConfig},
-    },
-    module=__name__,
-)
+@dataclasses.dataclass
+class InputFilesConfig(DirConfig):
+    """Configuration for JULES input data files.
+
+    Contains nodes for initial conditions, tile fractions, and driving
+    (meteorological forcing) data. Paths are resolved at instantiation time.
+
+    Initial conditions and tile fractions are expected to be ASCII files,
+    while driving data can be either ASCII or NetCDF (handler inferred by
+    file extension).
+
+    Example::
+
+        inputs = InputFilesConfig(
+            initial_conditions="initial_conditions.dat",
+            tile_fractions="tile_fractions.dat",
+            driving_data="Loobos_1997.nc",
+        )
+    """
+
+    initial_conditions: Node = dataclasses.field(
+        metadata={"transform": path_to_node(AsciiFileHandler)},
+    )
+    """Initial conditions file.
+
+    Specifies the starting state of soil moisture, temperature, and other
+    prognostic variables at each grid point. Expected to be an ASCII file.
+    """
+
+    tile_fractions: Node = dataclasses.field(
+        metadata={"transform": path_to_node(AsciiFileHandler)},
+    )
+    """Tile fractions file.
+
+    Defines the fractional coverage of each surface type (e.g., broadleaf
+    trees, C3 grass, urban) within a grid cell. Expected to be an ASCII file.
+    """
+
+    driving_data: Node = dataclasses.field(
+        metadata={"transform": to_node},
+    )
+    """Driving (meteorological forcing) data file.
+
+    Contains time series of meteorological variables (temperature,
+    precipitation, radiation, etc.) that force the model. Handler is
+    inferred from the file extension (``.dat``/``.txt`` for ASCII,
+    ``.nc``/``.cdf`` for NetCDF).
+    """
+
+
+@dataclasses.dataclass
+class JulesConfig(DirConfig):
+    """Top-level configuration for the JULES land surface model.
+
+    Combines a namelists directory (with all required ``.nml`` files) and
+    an input data directory (with driving data, initial conditions, and
+    tile fractions).
+
+    The ``namelists`` field is fully fixed since all namelist file paths
+    are known in advance. The ``inputs`` field is resolved at instantiation
+    time, allowing different file paths to be bound for different runs.
+
+    Example::
+
+        config = JulesConfig(
+            namelists="namelists",
+            inputs={
+                "path": "inputs",
+                "handler": lambda: InputFilesConfig(
+                    initial_conditions="initial_conditions.dat",
+                    tile_fractions="tile_fractions.dat",
+                    driving_data="driving_data.nc",
+                ),
+            },
+        )
+        config_dict = config.read("/path/to/jules/config")
+    """
+
+    inputs: Node = dataclasses.field(
+        metadata={"transform": to_node},
+    )
+    """Input data directory.
+
+    Should be configured with an ``InputFilesConfig`` handler at
+    instantiation time to specify the exact file paths for initial
+    conditions, tile fractions, and driving data.
+    """
+
+    namelists: Node = dataclasses.field(
+        init=False,
+        default_factory=lambda: Node("namelists", NamelistConfig),
+    )
+    """Namelists directory.
+
+    Contains all 29 required JULES namelist files, each with a fixed
+    ``.nml`` path. Handled by :class:`NamelistConfig`.
+    """
