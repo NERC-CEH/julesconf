@@ -5,11 +5,13 @@ _:
 lint:
   ruff format
   ruff check --fix
+  marimo check examples/
 
 # Check formatting and lint (for CI, doesn't modify files).
 lint-check:
   ruff format --check
   ruff check
+  marimo check examples/
 
 # Run the test suite using pytest.
 test:
@@ -25,4 +27,6 @@ typecheck:
 
 # Build the documentation.
 docs:
+  cd examples/ && marimo-md-export 101.py ../docs/101.md
+  ruff format examples/  # override marimo's annoying reformatting
   zensical build

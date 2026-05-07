@@ -35,6 +35,9 @@ ENV/
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# Marimo
+__marimo__/
+
 # IDEs
 .idea/
 .vscode/
