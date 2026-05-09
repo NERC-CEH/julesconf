@@ -63,6 +63,9 @@ include = ["src/", "tests/"]
 line-length = 88
 indent-width = 4
 target-version = "py312"
+extend-exclude = [
+    "jules-lsm.github.io",
+]
 
 [tool.ruff.lint]
 select = [

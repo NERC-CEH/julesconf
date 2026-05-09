@@ -47,3 +47,9 @@ ENV/
 
 # Built docs
 site/
+
+.claude
+
+examples/
+
+jules-lsm.github.io
