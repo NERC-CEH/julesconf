@@ -13,7 +13,7 @@ import pytest
 from julesconf.config import NamelistConfig
 from julesconf.schemas import JulesNamelists
 
-LOOBOS_NAMELISTS = Path(__file__).parents[2] / "loobos" / "namelists"
+LOOBOS_NAMELISTS = Path(__file__).parents[1] / "data" / "loobos" / "namelists"
 
 
 @pytest.fixture(scope="module")
