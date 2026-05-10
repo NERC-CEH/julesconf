@@ -87,6 +87,52 @@ class JulesNamelists(BaseModel):
     urban: UrbanNamelist = UrbanNamelist()
 
     @model_validator(mode="after")
+    def _check_triffid_list_lengths(self) -> "JulesNamelists":
+        npft = self.jules_surface_types.jules_surface_types.npft
+        triffid = self.triffid_params.jules_triffid
+        for field_name, value in triffid.model_dump().items():
+            if isinstance(value, list) and len(value) != npft:
+                raise ValueError(
+                    f"triffid_params.jules_triffid.{field_name} has"
+                    f" {len(value)} element(s), expected npft={npft}"
+                )
+        return self
+
+    @model_validator(mode="after")
+    def _check_crop_list_lengths(self) -> "JulesNamelists":
+        npft = self.jules_surface_types.jules_surface_types.npft
+        ncpft = self.jules_surface_types.jules_surface_types.ncpft
+        cropparm = self.crop_params.jules_cropparm
+        if cropparm.cfrac_s_io is not None and len(cropparm.cfrac_s_io) != npft:
+            raise ValueError(
+                f"crop_params.jules_cropparm.cfrac_s_io has"
+                f" {len(cropparm.cfrac_s_io)} element(s), expected npft={npft}"
+            )
+        for field_name, value in cropparm.model_dump().items():
+            if field_name == "cfrac_s_io":
+                continue
+            if isinstance(value, list) and len(value) != ncpft:
+                raise ValueError(
+                    f"crop_params.jules_cropparm.{field_name} has"
+                    f" {len(value)} element(s), expected ncpft={ncpft}"
+                )
+        return self
+
+    @model_validator(mode="after")
+    def _check_deposition_ntype_lists(self) -> "JulesNamelists":
+        ntype = (
+            self.jules_surface_types.jules_surface_types.npft
+            + self.jules_surface_types.jules_surface_types.nnvg
+        )
+        rsurf = self.jules_deposition.jules_deposition_species.rsurf_std_io
+        if rsurf is not None and len(rsurf) != ntype:
+            raise ValueError(
+                f"jules_deposition.jules_deposition_species.rsurf_std_io has"
+                f" {len(rsurf)} element(s), expected ntype={ntype}"
+            )
+        return self
+
+    @model_validator(mode="after")
     def _check_pft_list_lengths(self) -> "JulesNamelists":
         npft = self.jules_surface_types.jules_surface_types.npft
         pftparm = self.pft_params.jules_pftparm

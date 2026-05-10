@@ -6,7 +6,7 @@ Reference: JULES user guide v7.9,
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 __all__ = ["JulesIrrigNamelist"]
 
@@ -32,6 +32,19 @@ class JulesIrrig(BaseModel):
     """Indices of surface tiles to irrigate; required if ``frac_irrig_all_tiles`` = FALSE."""
     nstep_irrig: int | None = Field(default=None, ge=1)
     """Number of model timesteps between irrigation updates; defaults to once per day."""
+
+    @model_validator(mode="after")
+    def _check_irrigtiles_length(self) -> "JulesIrrig":
+        if (
+            self.irrigtiles is not None
+            and self.nirrtile is not None
+            and len(self.irrigtiles) != self.nirrtile
+        ):
+            raise ValueError(
+                f"irrigtiles has {len(self.irrigtiles)} element(s),"
+                f" expected nirrtile={self.nirrtile}"
+            )
+        return self
 
 
 class JulesIrrigNamelist(BaseModel):

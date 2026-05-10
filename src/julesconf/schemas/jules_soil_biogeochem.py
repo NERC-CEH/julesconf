@@ -4,6 +4,8 @@ Reference: JULES user guide v7.9,
 ``jules-lsm.github.io/user_guide/doc/source/namelists/jules_soil_biogeochem.nml.rst``
 """
 
+from typing import Annotated
+
 from pydantic import BaseModel, ConfigDict, Field
 
 __all__ = ["JulesSoilBiogeochemNamelist"]
@@ -36,7 +38,7 @@ class JulesSoilBiogeochem(BaseModel):
     """Switch for using the layered soil carbon model."""
     l_label_frac_cs: bool = False
     """Switch for labelling and tracing a subset of the layered soil carbon."""
-    kaps_4pool: list[float] | None = None  # length 4
+    kaps_4pool: Annotated[list[float], Field(min_length=4, max_length=4)] | None = None
     """Specific soil respiration rate for the 4-pool submodel for each soil carbon pool."""
     bio_hum_cn: float = 10.0
     """Parameter controlling ratio of C to N for BIO and HUM pools."""

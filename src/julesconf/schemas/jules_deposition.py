@@ -4,7 +4,9 @@ Reference: JULES user guide v7.9,
 ``jules-lsm.github.io/user_guide/doc/source/namelists/jules_deposition.nml.rst``
 """
 
-from pydantic import BaseModel, ConfigDict
+from typing import Annotated
+
+from pydantic import BaseModel, ConfigDict, Field
 
 __all__ = ["JulesDepositionNamelist"]
 
@@ -35,7 +37,9 @@ class JulesDepositionSpecies(BaseModel):
     """Diffusion correction factor for stomatal resistance accounting for diffusivity differences (dimensionless)."""
     r_tundra_io: float | None = None
     """Surface resistance used in tundra regions (s m⁻¹)."""
-    dd_ice_coeff_io: list[float] | None = None
+    dd_ice_coeff_io: (
+        Annotated[list[float], Field(min_length=3, max_length=3)] | None
+    ) = None
     """Three coefficients of the quadratic function relating dry deposition over ice to temperature."""
 
 

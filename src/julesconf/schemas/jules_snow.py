@@ -4,6 +4,8 @@ Reference: JULES user guide v7.9,
 ``jules-lsm.github.io/user_guide/doc/source/namelists/jules_snow.nml.rst``
 """
 
+from typing import Annotated
+
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 __all__ = ["JulesSnowNamelist"]
@@ -36,11 +38,11 @@ class JulesSnow(BaseModel):
     """Grain size for fresh snow (μm)."""
     rmax: float = 2000.0
     """Maximum snow grain size (μm)."""
-    snow_ggr: list[float] | None = None  # length 3
+    snow_ggr: Annotated[list[float], Field(min_length=3, max_length=3)] | None = None
     """Snow grain area growth rates (μm² s⁻¹)."""
-    amax: list[float] | None = None  # length 2
+    amax: Annotated[list[float], Field(min_length=2, max_length=2)] | None = None
     """Maximum albedo for fresh snow."""
-    aicemax: list[float] | None = None  # length 2
+    aicemax: Annotated[list[float], Field(min_length=2, max_length=2)] | None = None
     """Maximum albedo for bare ice."""
     maskd: float = 50.0
     """Weighting factor for snow in overall surface albedo calculation based on e-folding depth."""
