@@ -15,6 +15,7 @@ class JulesRivers(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     l_rivers: bool = False
+    """Switch for enabling river routing."""
 
 
 class JulesOverbank(BaseModel):
@@ -23,6 +24,7 @@ class JulesOverbank(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     l_riv_overbank: bool = False
+    """Switch for enabling river overbank inundation."""
 
 
 class JulesRiversNamelist(BaseModel):

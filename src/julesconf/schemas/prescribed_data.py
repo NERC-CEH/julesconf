@@ -15,6 +15,7 @@ class JulesPrescribed(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     n_datasets: int = 0
+    """The number of datasets that will be specified using instances of JULES_PRESCRIBED_DATASET."""
 
 
 class JulesPrescribedDataset(BaseModel):

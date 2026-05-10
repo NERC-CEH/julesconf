@@ -15,7 +15,9 @@ class JulesIrrig(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     l_irrig_dmd: bool = False
+    """Switch controlling the implementation of irrigation demand code."""
     l_irrig_limit: bool = False
+    """Switch controlling whether the amount of water used to irrigate tiles is limited."""
 
 
 class JulesIrrigNamelist(BaseModel):

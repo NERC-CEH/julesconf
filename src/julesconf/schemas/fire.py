@@ -15,6 +15,7 @@ class FireSwitches(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     l_fire: bool = False
+    """Switch to enable the fire module."""
 
 
 class FireNamelist(BaseModel):

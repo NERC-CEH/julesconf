@@ -19,28 +19,49 @@ class JulesCropparm(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     t_bse_io: list[float] | None = None
+    """Base temperature (K)."""
     t_opt_io: list[float] | None = None
+    """Optimum temperature (K)."""
     t_max_io: list[float] | None = None
     tt_emr_io: list[float] | None = None
+    """Thermal time between sowing and emergence (deg Cd)."""
     crit_pp_io: list[float] | None = None
+    """Critical photoperiod (hours)."""
     pp_sens_io: list[float] | None = None
+    """Sensitivity of development rate to photoperiod (hours⁻¹)."""
     rt_dir_io: list[float] | None = None
+    """Coefficient determining relative growth of roots vertically and horizontally."""
     alpha1_io: list[float] | None = None
+    """Coefficient for determining partitioning."""
     alpha2_io: list[float] | None = None
+    """Coefficient for determining partitioning."""
     alpha3_io: list[float] | None = None
+    """Coefficient for determining partitioning."""
     beta1_io: list[float] | None = None
+    """Coefficient for determining partitioning."""
     beta2_io: list[float] | None = None
+    """Coefficient for determining partitioning."""
     beta3_io: list[float] | None = None
+    """Coefficient for determining partitioning."""
     gamma_io: list[float] | None = None
+    """Coefficient for determining specific leaf area (m² kg⁻¹)."""
     delta_io: list[float] | None = None
+    """Coefficient for determining specific leaf area (m² kg⁻¹)."""
     remob_io: list[float] | None = None
+    """Remobilisation factor: fraction of stem growth partitioned to RESERVEC."""
     cfrac_s_io: list[float] | None = None
+    """Carbon fraction of dry matter for stems."""
     cfrac_r_io: list[float] | None = None
+    """Carbon fraction of dry matter for roots."""
     cfrac_l_io: list[float] | None = None
+    """Carbon fraction of dry matter for leaves."""
     allo1_io: list[float] | None = None
+    """Allometric coefficient relating STEMC to CANHT."""
     allo2_io: list[float] | None = None
+    """Allometric coefficient relating STEMC to CANHT."""
     mu_max_io: list[float] | None = None
     nu_io: list[float] | None = None
+    """Allometric coefficient for calculation of senescence."""
 
 
 class CropParamsNamelist(BaseModel):

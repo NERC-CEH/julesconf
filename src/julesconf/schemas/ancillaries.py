@@ -27,7 +27,9 @@ class JulesFrac(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     file: str | None = None
+    """The name of the file to read surface type fractional coverage data from."""
     read_from_dump: bool = False
+    """Populate variables from dump file if TRUE, otherwise use other namelist members."""
 
 
 class _NvarsModel(BaseModel):
@@ -36,13 +38,21 @@ class _NvarsModel(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     nvars: int = Field(default=0, ge=0)
+    """The number of vegetation property variables that will be provided."""
     var: list[str] | None = None
+    """List of vegetation variable names as recognised by JULES."""
     use_file: list[bool] | None = None
+    """Indicates if variable should be read from file or set to constant value."""
     const_val: list[float] | None = None
+    """Constant value that variable will be set to at every point."""
     var_name: list[str] | None = None
+    """The name of the variable in the file containing the data."""
     file: str | None = None
+    """The name of the file to read surface type fractional coverage data from."""
     read_from_dump: bool = False
+    """Populate variables from dump file if TRUE, otherwise use other namelist members."""
     const_z: bool = False
+    """Switch indicating if soil properties are uniform with depth."""
 
     @model_validator(mode="after")
     def _check_lists(self) -> "_NvarsModel":
@@ -102,6 +112,7 @@ class JulesCo2(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     co2_mmr: float | None = None
+    """Concentration of atmospheric CO2 as mass mixing ratio."""
 
 
 class JulesOverbankProps(BaseModel):

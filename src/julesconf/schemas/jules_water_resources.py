@@ -15,6 +15,7 @@ class JulesWaterResources(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     l_water_resources: bool = False
+    """Switch to enable modelling of water resources."""
 
 
 class JulesWaterResourcesNamelist(BaseModel):

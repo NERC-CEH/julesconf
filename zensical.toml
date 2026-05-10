@@ -10,9 +10,44 @@ site_url = "https://nerc-ceh.github.io/julesconf"
 repo_name = "NERC-CEH/julesconf"
 repo_url = "https://github.com/NERC-CEH/julesconf"
 
-#nav = [
-#  { "Home" = "index.md" },
-#]
+nav = [
+  { "Home" = "index.md" },
+  { "API Reference" = [
+    { "Config" = "api/config.md" },
+    { "Schemas" = [
+      { "Overview" = "api/schemas/index.md" },
+      { "ancillaries.nml" = "api/schemas/ancillaries.md" },
+      { "crop_params.nml" = "api/schemas/crop_params.md" },
+      { "drive.nml" = "api/schemas/drive.md" },
+      { "fire.nml" = "api/schemas/fire.md" },
+      { "imogen.nml" = "api/schemas/imogen.md" },
+      { "initial_conditions.nml" = "api/schemas/initial_conditions.md" },
+      { "jules_deposition.nml" = "api/schemas/jules_deposition.md" },
+      { "jules_hydrology.nml" = "api/schemas/jules_hydrology.md" },
+      { "jules_irrig.nml" = "api/schemas/jules_irrig.md" },
+      { "jules_prnt_control.nml" = "api/schemas/jules_prnt_control.md" },
+      { "jules_radiation.nml" = "api/schemas/jules_radiation.md" },
+      { "jules_rivers.nml" = "api/schemas/jules_rivers.md" },
+      { "jules_snow.nml" = "api/schemas/jules_snow.md" },
+      { "jules_soil.nml" = "api/schemas/jules_soil.md" },
+      { "jules_soil_biogeochem.nml" = "api/schemas/jules_soil_biogeochem.md" },
+      { "jules_surface.nml" = "api/schemas/jules_surface.md" },
+      { "jules_surface_types.nml" = "api/schemas/jules_surface_types.md" },
+      { "jules_vegetation.nml" = "api/schemas/jules_vegetation.md" },
+      { "jules_water_resources.nml" = "api/schemas/jules_water_resources.md" },
+      { "model_environment.nml" = "api/schemas/model_environment.md" },
+      { "model_grid.nml" = "api/schemas/model_grid.md" },
+      { "nveg_params.nml" = "api/schemas/nveg_params.md" },
+      { "output.nml" = "api/schemas/output.md" },
+      { "pft_params.nml" = "api/schemas/pft_params.md" },
+      { "prescribed_data.nml" = "api/schemas/prescribed_data.md" },
+      { "science_fixes.nml" = "api/schemas/science_fixes.md" },
+      { "timesteps.nml" = "api/schemas/timesteps.md" },
+      { "triffid_params.nml" = "api/schemas/triffid_params.md" },
+      { "urban.nml" = "api/schemas/urban.md" },
+    ]},
+  ]},
+]
 
 [project.theme]
 
@@ -109,3 +144,5 @@ show_root_members_full_path = false
 show_source = false
 show_symbol_type_heading = true
 show_symbol_type_toc = true
+extensions = ["griffe_pydantic"]
+filters = ["!^_"]

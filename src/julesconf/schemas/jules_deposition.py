@@ -15,6 +15,7 @@ class JulesDeposition(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     l_deposition: bool = False
+    """Switch to activate deposition code in JULES."""
 
 
 class JulesDepositionSpecies(BaseModel):

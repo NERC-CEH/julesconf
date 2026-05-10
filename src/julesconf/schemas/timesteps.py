@@ -33,12 +33,19 @@ class JulesTime(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     l_360: bool = False
+    """Switch indicating use of 360 day years."""
     l_leap: bool = True
+    """Switch indicating whether the calendar has leap years."""
     l_local_solar_time: bool = False
+    """Switch indicating whether the time-stamping of the driving data is to be interpreted as local solar time."""
     timestep_len: int = Field(ge=1)
+    """Model timestep length in seconds."""
     main_run_start: str
+    """The start time for the integration."""
     main_run_end: str
+    """The end time for the integration."""
     print_step: int = Field(default=1, ge=1)
+    """Number of timesteps between printing timestep information to screen."""
 
     @field_validator("main_run_start", "main_run_end")
     @classmethod
@@ -52,13 +59,21 @@ class JulesSpinup(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     max_spinup_cycles: int = Field(default=0, ge=0)
+    """The maximum number of times the spin-up period is to be repeated."""
     spinup_start: str | None = None
+    """The start time for each cycle of spin-up."""
     spinup_end: str | None = None
+    """The end time for each cycle of spin-up."""
     terminate_on_spinup_fail: bool = False
+    """Switch controlling behaviour if the model does not pass the spin-up test."""
     nvars: int = Field(default=0, ge=0)
+    """The number of variables to use to assess if the model has spun up."""
     var: list[_SpinupVar] | None = None
+    """List of variables to be used to determine if the model has spun up."""
     use_percent: list[bool] | None = None
+    """Indicates whether the tolerance for each variable is expressed as a percentage."""
     tolerance: list[float] | None = None
+    """Tolerance for spin-up test for each variable."""
 
     @field_validator("spinup_start", "spinup_end")
     @classmethod

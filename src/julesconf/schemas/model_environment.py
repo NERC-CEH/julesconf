@@ -17,7 +17,9 @@ class JulesModelEnvironment(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     l_jules_parent: Literal[0, 1, 2] = 0
+    """Switch to identify the environment in which JULES is being run."""
     lsm_id: Literal[1, 2] = 1
+    """Switch for land surface model flavour."""
 
 
 class ModelEnvironmentNamelist(BaseModel):

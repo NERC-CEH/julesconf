@@ -15,6 +15,7 @@ class JulesPrntControl(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     print_step: int = 1
+    """Number of timesteps between printing timestep information to screen."""
 
 
 class JulesPrntControlNamelist(BaseModel):

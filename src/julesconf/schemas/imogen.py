@@ -15,6 +15,7 @@ class ImogenOnoffSwitch(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     l_imogen: bool = False
+    """Switch for IMOGEN."""
 
 
 class ImogenRunList(BaseModel):
