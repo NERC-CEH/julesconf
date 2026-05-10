@@ -4,11 +4,29 @@ Reference: JULES user guide v7.9,
 ``jules-lsm.github.io/user_guide/doc/source/namelists/model_environment.nml.rst``
 """
 
-from typing import Literal
+from enum import IntEnum
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict
 
-__all__ = ["ModelEnvironmentNamelist"]
+from julesconf.schemas._utils import name_or_value
+
+__all__ = ["JulesParent", "LsmId", "ModelEnvironmentNamelist"]
+
+
+class JulesParent(IntEnum):
+    """Environment in which JULES is being run (``l_jules_parent``)."""
+
+    standalone = 0
+    um = 1
+    cable = 2
+
+
+class LsmId(IntEnum):
+    """Land surface model flavour (``lsm_id``)."""
+
+    jules = 1
+    cable = 2
 
 
 class JulesModelEnvironment(BaseModel):
@@ -16,10 +34,12 @@ class JulesModelEnvironment(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    l_jules_parent: Literal[0, 1, 2] = 0
-    """Switch to identify the environment in which JULES is being run."""
-    lsm_id: Literal[1, 2] = 1
-    """Switch for land surface model flavour."""
+    l_jules_parent: Annotated[JulesParent, name_or_value(JulesParent)] = (
+        JulesParent.standalone
+    )
+    """Environment in which JULES is run: ``standalone`` (0), ``um`` (1), ``cable`` (2)."""
+    lsm_id: Annotated[LsmId, name_or_value(LsmId)] = LsmId.jules
+    """Land surface model flavour: ``jules`` (1), ``cable`` (2)."""
 
 
 class ModelEnvironmentNamelist(BaseModel):

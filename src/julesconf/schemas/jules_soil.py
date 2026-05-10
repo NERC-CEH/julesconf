@@ -4,9 +4,22 @@ Reference: JULES user guide v7.9,
 ``jules-lsm.github.io/user_guide/doc/source/namelists/jules_soil.nml.rst``
 """
 
+from enum import IntEnum
+from typing import Annotated
+
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-__all__ = ["JulesSoilNamelist"]
+from julesconf.schemas._utils import name_or_value
+
+__all__ = ["JulesSoilNamelist", "SoilhcMethod"]
+
+
+class SoilhcMethod(IntEnum):
+    """Soil thermal conductivity model (``soilhc_method``)."""
+
+    johansen = 1
+    peters_lidard = 2
+    chadburn = 3
 
 
 class JulesSoil(BaseModel):
@@ -30,8 +43,10 @@ class JulesSoil(BaseModel):
     """Switch to set number of soil tiles equal to number of surface tiles."""
     l_broadcast_ancils: bool = False
     """Switch to allow non-soil tiled ancillary files broadcast to all soil tiles."""
-    soilhc_method: int = Field(default=1, ge=1, le=3)
-    """Switch for soil thermal conductivity model."""
+    soilhc_method: Annotated[SoilhcMethod, name_or_value(SoilhcMethod)] = (
+        SoilhcMethod.johansen
+    )
+    """Soil thermal conductivity model: ``johansen`` (1), ``peters_lidard`` (2), ``chadburn`` (3)."""
     cs_min: float = 1.0e-6
     """Minimum allowed soil carbon (kg m⁻²)."""
     zsmc: float = Field(default=1.0, gt=0)

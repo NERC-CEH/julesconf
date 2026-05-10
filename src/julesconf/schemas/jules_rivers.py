@@ -4,11 +4,22 @@ Reference: JULES user guide v7.9,
 ``jules-lsm.github.io/user_guide/doc/source/namelists/jules_rivers.nml.rst``
 """
 
-from typing import Literal
+from enum import IntEnum
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-__all__ = ["JulesRiversNamelist"]
+from julesconf.schemas._utils import name_or_value
+
+__all__ = ["JulesRiversNamelist", "RiverRoutingAlgorithm"]
+
+
+class RiverRoutingAlgorithm(IntEnum):
+    """River routing algorithm (``i_river_vn``)."""
+
+    um_trip = 1
+    rfm = 2
+    standalone_trip = 3
 
 
 class JulesRivers(BaseModel):
@@ -18,8 +29,10 @@ class JulesRivers(BaseModel):
 
     l_rivers: bool = False
     """Switch for enabling river routing."""
-    i_river_vn: Literal[1, 2, 3] | None = None
-    """Selects river routing algorithm: 1 = UM-TRIP, 2 = RFM, 3 = standalone TRIP."""
+    i_river_vn: (
+        Annotated[RiverRoutingAlgorithm, name_or_value(RiverRoutingAlgorithm)] | None
+    ) = None
+    """River routing algorithm: ``um_trip`` (1), ``rfm`` (2), ``standalone_trip`` (3)."""
     nstep_rivers: int | None = Field(default=None, ge=1)
     """Number of model timesteps per routing timestep."""
     a_thresh: int | None = None

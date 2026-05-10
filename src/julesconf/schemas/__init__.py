@@ -11,6 +11,32 @@ validates a complete namelists directory (output of
 consistency checks.
 """
 
+from julesconf.schemas.jules_irrig import IrrCrop
+from julesconf.schemas.jules_rivers import RiverRoutingAlgorithm
+from julesconf.schemas.jules_soil import SoilhcMethod
+from julesconf.schemas.jules_soil_biogeochem import Ch4Substrate, SoilBgcModel
+from julesconf.schemas.jules_vegetation import (
+    CanModel,
+    CanRadMod,
+    IgnitionMethod,
+    PhotoModel,
+    StomataModel,
+)
+from julesconf.schemas.model_environment import JulesParent, LsmId
 from julesconf.schemas.namelists import JulesNamelists
 
-__all__ = ["JulesNamelists"]
+__all__ = [
+    "CanModel",
+    "CanRadMod",
+    "Ch4Substrate",
+    "IgnitionMethod",
+    "IrrCrop",
+    "JulesNamelists",
+    "JulesParent",
+    "LsmId",
+    "PhotoModel",
+    "RiverRoutingAlgorithm",
+    "SoilBgcModel",
+    "SoilhcMethod",
+    "StomataModel",
+]

@@ -4,11 +4,22 @@ Reference: JULES user guide v7.9,
 ``jules-lsm.github.io/user_guide/doc/source/namelists/jules_irrig.nml.rst``
 """
 
-from typing import Literal
+from enum import IntEnum
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-__all__ = ["JulesIrrigNamelist"]
+from julesconf.schemas._utils import name_or_value
+
+__all__ = ["IrrCrop", "JulesIrrigNamelist"]
+
+
+class IrrCrop(IntEnum):
+    """Irrigation season determination (``irr_crop``)."""
+
+    year_round = 0
+    driving_data = 1
+    max_dvi = 2
 
 
 class JulesIrrig(BaseModel):
@@ -20,8 +31,8 @@ class JulesIrrig(BaseModel):
     """Switch controlling the implementation of irrigation demand code."""
     l_irrig_limit: bool = False
     """Switch controlling whether water used for irrigation is limited by available supply."""
-    irr_crop: Literal[0, 1, 2] = 0
-    """Irrigation season determination: 0 = year-round, 1 = from driving data (Döll & Siebert), 2 = by maximum DVI (requires ``ncpft`` > 0)."""
+    irr_crop: Annotated[IrrCrop, name_or_value(IrrCrop)] = IrrCrop.year_round
+    """Irrigation season determination: ``year_round`` (0), ``driving_data`` (1, Döll & Siebert), ``max_dvi`` (2, requires ``ncpft`` > 0)."""
     frac_irrig_all_tiles: bool = True
     """If TRUE, irrigation fraction is applied to all tiles; if FALSE, only to tiles listed in ``irrigtiles``."""
     set_irrfrac_on_irrtiles: bool = False
