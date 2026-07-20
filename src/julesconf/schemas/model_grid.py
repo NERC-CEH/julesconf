@@ -4,15 +4,15 @@ Reference: JULES user guide v7.9,
 ``jules-lsm.github.io/user_guide/doc/source/namelists/model_grid.nml.rst``
 """
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import Field, model_validator
+
+from julesconf.schemas._base import NamelistModel
 
 __all__ = ["ModelGridNamelist"]
 
 
-class JulesInputGrid(BaseModel):
+class JulesInputGrid(NamelistModel):
     """``JULES_INPUT_GRID`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     grid_is_1d: bool = False
     """Indicates if the input grid is 1D or 2D."""
@@ -33,10 +33,8 @@ class JulesInputGrid(BaseModel):
     lon_name: str = "longitude"
 
 
-class JulesLatlon(BaseModel):
+class JulesLatlon(NamelistModel):
     """``JULES_LATLON`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     l_coord_latlon: bool = True
     """The coordinate system used for the model grid is latitude and longitude."""
@@ -67,48 +65,36 @@ class JulesLatlon(BaseModel):
         return self
 
 
-class JulesLandFrac(BaseModel):
+class JulesLandFrac(NamelistModel):
     """``JULES_LAND_FRAC`` namelist members."""
 
-    model_config = ConfigDict(extra="ignore")
 
-
-class JulesModelGrid(BaseModel):
+class JulesModelGrid(NamelistModel):
     """``JULES_MODEL_GRID`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     force_1d_grid: bool = False
     """Force the model grid to be 1D, even if it would otherwise have been 2D."""
     l_land_area_only: bool = False
 
 
-class JulesNlsizes(BaseModel):
+class JulesNlsizes(NamelistModel):
     """``JULES_NLSIZES`` namelist members."""
 
-    model_config = ConfigDict(extra="ignore")
 
-
-class JulesSurfHgt(BaseModel):
+class JulesSurfHgt(NamelistModel):
     """``JULES_SURF_HGT`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     l_tile_hgt: bool = False
 
 
-class JulesZLand(BaseModel):
+class JulesZLand(NamelistModel):
     """``JULES_Z_LAND`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     l_z_land: bool = False
 
 
-class ModelGridNamelist(BaseModel):
+class ModelGridNamelist(NamelistModel):
     """Top-level schema for ``model_grid.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_input_grid: JulesInputGrid = JulesInputGrid()
     jules_latlon: JulesLatlon = JulesLatlon()

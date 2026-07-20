@@ -4,23 +4,19 @@ Reference: JULES user guide v7.9,
 ``jules-lsm.github.io/user_guide/doc/source/namelists/fire.nml.rst``
 """
 
-from pydantic import BaseModel, ConfigDict
+from julesconf.schemas._base import NamelistModel
 
 __all__ = ["FireNamelist"]
 
 
-class FireSwitches(BaseModel):
+class FireSwitches(NamelistModel):
     """``FIRE_SWITCHES`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     l_fire: bool = False
     """Switch to enable the fire module."""
 
 
-class FireNamelist(BaseModel):
+class FireNamelist(NamelistModel):
     """Top-level schema for ``fire.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     fire_switches: FireSwitches = FireSwitches()

@@ -9,8 +9,16 @@ The top-level :class:`~julesconf.schemas.namelists.JulesNamelists` model
 validates a complete namelists directory (output of
 :meth:`~julesconf.config.NamelistConfig.read`), including cross-namelist
 consistency checks.
+
+.. note::
+
+    All models emit a :class:`UnknownNamelistKeyWarning` when they encounter
+    a key they do not recognise. This surfaces typos (which JULES itself
+    silently ignores) without rejecting configs that contain members the
+    schema does not yet cover.
 """
 
+from julesconf.schemas._base import UnknownNamelistKeyWarning
 from julesconf.schemas.jules_irrig import IrrCrop
 from julesconf.schemas.jules_rivers import RiverRoutingAlgorithm
 from julesconf.schemas.jules_soil import SoilhcMethod
@@ -25,7 +33,11 @@ from julesconf.schemas.jules_vegetation import (
 from julesconf.schemas.model_environment import JulesParent, LsmId
 from julesconf.schemas.namelists import JulesNamelists
 
+JULES_VERSION = "7.9"
+"""JULES user-guide version the schemas are pinned to."""
+
 __all__ = [
+    "JULES_VERSION",
     "CanModel",
     "CanRadMod",
     "Ch4Substrate",
@@ -39,4 +51,5 @@ __all__ = [
     "SoilBgcModel",
     "SoilhcMethod",
     "StomataModel",
+    "UnknownNamelistKeyWarning",
 ]

@@ -4,15 +4,15 @@ Reference: JULES user guide v7.9,
 ``jules-lsm.github.io/user_guide/doc/source/namelists/science_fixes.nml.rst``
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from julesconf.schemas._base import NamelistModel
 
 __all__ = ["ScienceFixesNamelist"]
 
 
-class JulesTempFixes(BaseModel):
+class JulesTempFixes(NamelistModel):
     """``JULES_TEMP_FIXES`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     ctile_orog_fix: int = Field(default=2, ge=0, le=2)
     """Corrects surface exchange calculations in coastally tiled grid-boxes."""
@@ -46,9 +46,7 @@ class JulesTempFixes(BaseModel):
     """Ensures that wind speed is calculated for use in snow unloading."""
 
 
-class ScienceFixesNamelist(BaseModel):
+class ScienceFixesNamelist(NamelistModel):
     """Top-level schema for ``science_fixes.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_temp_fixes: JulesTempFixes = JulesTempFixes()

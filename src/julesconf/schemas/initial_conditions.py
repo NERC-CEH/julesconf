@@ -4,15 +4,15 @@ Reference: JULES user guide v7.9,
 ``jules-lsm.github.io/user_guide/doc/source/namelists/initial_conditions.nml.rst``
 """
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import Field, model_validator
+
+from julesconf.schemas._base import NamelistModel
 
 __all__ = ["InitialConditionsNamelist"]
 
 
-class JulesInitial(BaseModel):
+class JulesInitial(NamelistModel):
     """``JULES_INITIAL`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     dump_file: bool = False
     """Indicates whether the given file is a dump from a previous run of JULES."""
@@ -56,9 +56,7 @@ class JulesInitial(BaseModel):
         return self
 
 
-class InitialConditionsNamelist(BaseModel):
+class InitialConditionsNamelist(NamelistModel):
     """Top-level schema for ``initial_conditions.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_initial: JulesInitial

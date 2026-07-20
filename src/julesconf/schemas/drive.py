@@ -6,7 +6,9 @@ Reference: JULES user guide v7.9,
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
+
+from julesconf.schemas._base import NamelistModel
 
 __all__ = ["DriveNamelist"]
 
@@ -23,10 +25,8 @@ def _validate_datetime(v: str) -> str:
     return v
 
 
-class JulesDrive(BaseModel):
+class JulesDrive(NamelistModel):
     """``JULES_DRIVE`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     file: str | None = None
     """File containing data or template for data file names."""
@@ -130,9 +130,7 @@ class JulesDrive(BaseModel):
         return self
 
 
-class DriveNamelist(BaseModel):
+class DriveNamelist(NamelistModel):
     """Top-level schema for ``drive.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_drive: JulesDrive

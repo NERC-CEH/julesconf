@@ -7,8 +7,9 @@ Reference: JULES user guide v7.9,
 from enum import IntEnum
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
 
+from julesconf.schemas._base import NamelistModel
 from julesconf.schemas._utils import name_or_value
 
 __all__ = ["Ch4Substrate", "JulesSoilBiogeochemNamelist", "SoilBgcModel"]
@@ -30,10 +31,8 @@ class Ch4Substrate(IntEnum):
     soil_respiration = 3
 
 
-class JulesSoilBiogeochem(BaseModel):
+class JulesSoilBiogeochem(NamelistModel):
     """``JULES_SOIL_BIOGEOCHEM`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     soil_bgc_model: Annotated[SoilBgcModel, name_or_value(SoilBgcModel)] = (
         SoilBgcModel.single_pool
@@ -131,9 +130,7 @@ class JulesSoilBiogeochem(BaseModel):
     """Q10 for temperature response of methanogenic traits under adaptation."""
 
 
-class JulesSoilBiogeochemNamelist(BaseModel):
+class JulesSoilBiogeochemNamelist(NamelistModel):
     """Top-level schema for ``jules_soil_biogeochem.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_soil_biogeochem: JulesSoilBiogeochem = JulesSoilBiogeochem()

@@ -7,8 +7,9 @@ Reference: JULES user guide v7.9,
 from enum import IntEnum
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import Field, model_validator
 
+from julesconf.schemas._base import NamelistModel
 from julesconf.schemas._utils import name_or_value
 
 __all__ = ["IrrCrop", "JulesIrrigNamelist"]
@@ -22,10 +23,8 @@ class IrrCrop(IntEnum):
     max_dvi = 2
 
 
-class JulesIrrig(BaseModel):
+class JulesIrrig(NamelistModel):
     """``JULES_IRRIG`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     l_irrig_dmd: bool = False
     """Switch controlling the implementation of irrigation demand code."""
@@ -58,9 +57,7 @@ class JulesIrrig(BaseModel):
         return self
 
 
-class JulesIrrigNamelist(BaseModel):
+class JulesIrrigNamelist(NamelistModel):
     """Top-level schema for ``jules_irrig.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_irrig: JulesIrrig = JulesIrrig()

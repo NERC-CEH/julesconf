@@ -4,15 +4,15 @@ Reference: JULES user guide v7.9,
 ``jules-lsm.github.io/user_guide/doc/source/namelists/jules_surface_types.nml.rst``
 """
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import Field, model_validator
+
+from julesconf.schemas._base import NamelistModel
 
 __all__ = ["JulesSurfaceTypesNamelist"]
 
 
-class JulesSurfaceTypes(BaseModel):
+class JulesSurfaceTypes(NamelistModel):
     """``JULES_SURFACE_TYPES`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     npft: int = Field(ge=1)
     """The number of plant functional types (PFTs) to be modelled."""
@@ -82,9 +82,7 @@ class JulesSurfaceTypes(BaseModel):
         return self
 
 
-class JulesSurfaceTypesNamelist(BaseModel):
+class JulesSurfaceTypesNamelist(NamelistModel):
     """Top-level schema for ``jules_surface_types.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_surface_types: JulesSurfaceTypes

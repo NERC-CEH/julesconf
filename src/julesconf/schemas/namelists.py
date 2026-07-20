@@ -9,8 +9,10 @@ Usage::
     JulesNamelists.model_validate(data)
 """
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import Field, model_validator
 
+from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._utils import ListLen
 from julesconf.schemas.ancillaries import AncillariesNamelist
 from julesconf.schemas.crop_params import CropParamsNamelist
 from julesconf.schemas.drive import DriveNamelist
@@ -44,15 +46,13 @@ from julesconf.schemas.urban import UrbanNamelist
 __all__ = ["JulesNamelists"]
 
 
-class JulesNamelists(BaseModel):
+class JulesNamelists(NamelistModel):
     """Schema for a complete JULES namelists directory.
 
     Validates a dict of the form returned by
     :meth:`~julesconf.config.NamelistConfig.read`, applying both
     per-namelist constraints and cross-namelist consistency checks.
     """
-
-    model_config = ConfigDict(extra="ignore")
 
     ancillaries: AncillariesNamelist = AncillariesNamelist()
     crop_params: CropParamsNamelist = CropParamsNamelist()
@@ -87,91 +87,35 @@ class JulesNamelists(BaseModel):
     urban: UrbanNamelist = UrbanNamelist()
 
     @model_validator(mode="after")
-    def _check_triffid_list_lengths(self) -> "JulesNamelists":
-        npft = self.jules_surface_types.jules_surface_types.npft
-        triffid = self.triffid_params.jules_triffid
-        for field_name, value in triffid.model_dump().items():
-            if isinstance(value, list) and len(value) != npft:
-                raise ValueError(
-                    f"triffid_params.jules_triffid.{field_name} has"
-                    f" {len(value)} element(s), expected npft={npft}"
-                )
-        return self
-
-    @model_validator(mode="after")
-    def _check_crop_list_lengths(self) -> "JulesNamelists":
-        npft = self.jules_surface_types.jules_surface_types.npft
-        ncpft = self.jules_surface_types.jules_surface_types.ncpft
-        cropparm = self.crop_params.jules_cropparm
-        if cropparm.cfrac_s_io is not None and len(cropparm.cfrac_s_io) != npft:
-            raise ValueError(
-                f"crop_params.jules_cropparm.cfrac_s_io has"
-                f" {len(cropparm.cfrac_s_io)} element(s), expected npft={npft}"
-            )
-        for field_name, value in cropparm.model_dump().items():
-            if field_name == "cfrac_s_io":
-                continue
-            if isinstance(value, list) and len(value) != ncpft:
-                raise ValueError(
-                    f"crop_params.jules_cropparm.{field_name} has"
-                    f" {len(value)} element(s), expected ncpft={ncpft}"
-                )
-        return self
-
-    @model_validator(mode="after")
-    def _check_deposition_ntype_lists(self) -> "JulesNamelists":
-        ntype = (
-            self.jules_surface_types.jules_surface_types.npft
-            + self.jules_surface_types.jules_surface_types.nnvg
-        )
-        rsurf = self.jules_deposition.jules_deposition_species.rsurf_std_io
-        if rsurf is not None and len(rsurf) != ntype:
-            raise ValueError(
-                f"jules_deposition.jules_deposition_species.rsurf_std_io has"
-                f" {len(rsurf)} element(s), expected ntype={ntype}"
-            )
-        return self
-
-    @model_validator(mode="after")
-    def _check_pft_list_lengths(self) -> "JulesNamelists":
-        npft = self.jules_surface_types.jules_surface_types.npft
-        pftparm = self.pft_params.jules_pftparm
-        for field_name, value in pftparm.model_dump().items():
-            if isinstance(value, list) and len(value) != npft:
-                raise ValueError(
-                    f"pft_params.jules_pftparm.{field_name} has"
-                    f" {len(value)} element(s), expected npft={npft}"
-                )
-        return self
-
-    @model_validator(mode="after")
-    def _check_nveg_list_lengths(self) -> "JulesNamelists":
-        nnvg = self.jules_surface_types.jules_surface_types.nnvg
-        nvegparm = self.nveg_params.jules_nvegparm
-        for field_name, value in nvegparm.model_dump().items():
-            if isinstance(value, list) and len(value) != nnvg:
-                raise ValueError(
-                    f"nveg_params.jules_nvegparm.{field_name} has"
-                    f" {len(value)} element(s), expected nnvg={nnvg}"
-                )
-        return self
-
-    @model_validator(mode="after")
-    def _check_snow_npft_lists(self) -> "JulesNamelists":
-        npft = self.jules_surface_types.jules_surface_types.npft
-        snow = self.jules_snow.jules_snow
-        for field_name in (
-            "cansnowpft",
-            "can_clump",
-            "n_lai_exposed",
-            "lai_alb_lim_sn",
-            "unload_rate_cnst",
-            "unload_rate_u",
-        ):
-            value = getattr(snow, field_name)
-            if value is not None and len(value) != npft:
-                raise ValueError(
-                    f"jules_snow.jules_snow.{field_name} has"
-                    f" {len(value)} element(s), expected npft={npft}"
-                )
+    def _check_list_lengths(self) -> "JulesNamelists":
+        _targets = [
+            "triffid_params.jules_triffid",
+            "crop_params.jules_cropparm",
+            "pft_params.jules_pftparm",
+            "nveg_params.jules_nvegparm",
+            "jules_snow.jules_snow",
+            "jules_deposition.jules_deposition_species",
+        ]
+        dims = {
+            "npft": self.jules_surface_types.jules_surface_types.npft,
+            "nnvg": self.jules_surface_types.jules_surface_types.nnvg,
+            "ncpft": self.jules_surface_types.jules_surface_types.ncpft,
+            "ntype": (
+                self.jules_surface_types.jules_surface_types.npft
+                + self.jules_surface_types.jules_surface_types.nnvg
+            ),
+        }
+        for path in _targets:
+            submodel = self
+            for attr in path.split("."):
+                submodel = getattr(submodel, attr)
+            for field_name, field_info in type(submodel).model_fields.items():
+                for meta in field_info.metadata:
+                    if isinstance(meta, ListLen):
+                        value = getattr(submodel, field_name)
+                        if isinstance(value, list) and len(value) != dims[meta.dim]:
+                            raise ValueError(
+                                f"{path}.{field_name} has {len(value)} element(s),"
+                                f" expected {meta.dim}={dims[meta.dim]}"
+                            )
         return self

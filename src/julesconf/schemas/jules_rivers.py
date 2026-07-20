@@ -7,8 +7,9 @@ Reference: JULES user guide v7.9,
 from enum import IntEnum
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
 
+from julesconf.schemas._base import NamelistModel
 from julesconf.schemas._utils import name_or_value
 
 __all__ = ["JulesRiversNamelist", "RiverRoutingAlgorithm"]
@@ -22,10 +23,8 @@ class RiverRoutingAlgorithm(IntEnum):
     standalone_trip = 3
 
 
-class JulesRivers(BaseModel):
+class JulesRivers(NamelistModel):
     """``JULES_RIVERS`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     l_rivers: bool = False
     """Switch for enabling river routing."""
@@ -61,10 +60,8 @@ class JulesRivers(BaseModel):
     """Earth shape used in the UM-TRIP scheme: 1 = spherical, 2 = ellipsoidal."""
 
 
-class JulesOverbank(BaseModel):
+class JulesOverbank(NamelistModel):
     """``JULES_OVERBANK`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     l_riv_overbank: bool = False
     """Switch for enabling river overbank inundation."""
@@ -86,10 +83,8 @@ class JulesOverbank(BaseModel):
     """Rosgen entrenchment ratio used to calculate floodplain width from bankfull width."""
 
 
-class JulesRiversNamelist(BaseModel):
+class JulesRiversNamelist(NamelistModel):
     """Top-level schema for ``jules_rivers.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_rivers: JulesRivers = JulesRivers()
     jules_overbank: JulesOverbank = JulesOverbank()

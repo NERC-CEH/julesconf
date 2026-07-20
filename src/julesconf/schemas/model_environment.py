@@ -7,8 +7,7 @@ Reference: JULES user guide v7.9,
 from enum import IntEnum
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict
-
+from julesconf.schemas._base import NamelistModel
 from julesconf.schemas._utils import name_or_value
 
 __all__ = ["JulesParent", "LsmId", "ModelEnvironmentNamelist"]
@@ -29,10 +28,8 @@ class LsmId(IntEnum):
     cable = 2
 
 
-class JulesModelEnvironment(BaseModel):
+class JulesModelEnvironment(NamelistModel):
     """``JULES_MODEL_ENVIRONMENT`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     l_jules_parent: Annotated[JulesParent, name_or_value(JulesParent)] = (
         JulesParent.standalone
@@ -42,9 +39,7 @@ class JulesModelEnvironment(BaseModel):
     """Land surface model flavour: ``jules`` (1), ``cable`` (2)."""
 
 
-class ModelEnvironmentNamelist(BaseModel):
+class ModelEnvironmentNamelist(NamelistModel):
     """Top-level schema for ``model_environment.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_model_environment: JulesModelEnvironment

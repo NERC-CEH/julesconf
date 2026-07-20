@@ -7,47 +7,48 @@ All list fields have length ``nnvg`` (cross-namelist; validated in
 :class:`~julesconf.schemas.namelists.JulesNamelists`).
 """
 
-from pydantic import BaseModel, ConfigDict
+from typing import Annotated
+
+from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._utils import ListLen, SentinelOrFraction, SentinelOrNonNegFloat
 
 __all__ = ["NvegParamsNamelist"]
 
 
-class JulesNvegparm(BaseModel):
+class JulesNvegparm(NamelistModel):
     """``JULES_NVEGPARM`` namelist members."""
 
-    model_config = ConfigDict(extra="ignore")
-
-    albsnc_nvg_io: list[float] | None = None
+    albsnc_nvg_io: Annotated[list[SentinelOrFraction] | None, ListLen("nnvg")] = None
     """Snow-covered albedo."""
-    albsnf_nvg_io: list[float] | None = None
+    albsnf_nvg_io: Annotated[list[SentinelOrFraction] | None, ListLen("nnvg")] = None
     """Snow-free albedo."""
-    albsnf_nvgu_io: list[float] | None = None
+    albsnf_nvgu_io: Annotated[list[SentinelOrFraction] | None, ListLen("nnvg")] = None
     """Upper limit on snow-free albedo when l_albedo_obs = TRUE."""
-    albsnf_nvgl_io: list[float] | None = None
+    albsnf_nvgl_io: Annotated[list[SentinelOrFraction] | None, ListLen("nnvg")] = None
     """Lower limit on snow-free albedo when l_albedo_obs = TRUE."""
-    catch_nvg_io: list[float] | None = None
+    catch_nvg_io: Annotated[list[SentinelOrNonNegFloat] | None, ListLen("nnvg")] = None
     """Capacity for water (kg m⁻²)."""
-    gs_nvg_io: list[float] | None = None
+    gs_nvg_io: Annotated[list[SentinelOrNonNegFloat] | None, ListLen("nnvg")] = None
     """Surface conductance (m s⁻¹)."""
-    infil_nvg_io: list[float] | None = None
+    infil_nvg_io: Annotated[list[SentinelOrNonNegFloat] | None, ListLen("nnvg")] = None
     """Infiltration enhancement factor."""
-    z0_nvg_io: list[float] | None = None
+    z0_nvg_io: Annotated[list[SentinelOrNonNegFloat] | None, ListLen("nnvg")] = None
     """Roughness length for momentum (m)."""
-    ch_nvg_io: list[float] | None = None
+    ch_nvg_io: Annotated[list[SentinelOrNonNegFloat] | None, ListLen("nnvg")] = None
     """Heat capacity of this surface type (J K⁻¹ m⁻²)."""
-    vf_nvg_io: list[float] | None = None
+    vf_nvg_io: Annotated[list[SentinelOrFraction] | None, ListLen("nnvg")] = None
     """Fractional coverage of non-vegetation canopy."""
-    emis_nvg_io: list[float] | None = None
+    emis_nvg_io: Annotated[list[SentinelOrFraction] | None, ListLen("nnvg")] = None
     """Surface emissivity of non-vegetated surfaces."""
-    z0hm_nvg_io: list[float] | None = None
+    z0hm_nvg_io: Annotated[list[SentinelOrNonNegFloat] | None, ListLen("nnvg")] = None
     """Ratio of roughness length for heat to roughness length for momentum."""
-    z0hm_classic_nvg_io: list[float] | None = None
+    z0hm_classic_nvg_io: (
+        Annotated[list[SentinelOrNonNegFloat], ListLen("nnvg")] | None
+    ) = None
     """Ratio of roughness length for heat to momentum for the CLASSIC aerosol scheme only."""
 
 
-class NvegParamsNamelist(BaseModel):
+class NvegParamsNamelist(NamelistModel):
     """Top-level schema for ``nveg_params.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_nvegparm: JulesNvegparm

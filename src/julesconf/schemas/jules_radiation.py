@@ -4,17 +4,17 @@ Reference: JULES user guide v7.9,
 ``jules-lsm.github.io/user_guide/doc/source/namelists/jules_radiation.nml.rst``
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from julesconf.schemas._base import NamelistModel
 
 __all__ = ["JulesRadiationNamelist"]
 
 _SEA_ALB_METHODS = (1, 2, 3, 4, 5)
 
 
-class JulesRadiation(BaseModel):
+class JulesRadiation(NamelistModel):
     """``JULES_RADIATION`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     l_cosz: bool = True
     """Switch for calculation of solar zenith angle."""
@@ -50,9 +50,7 @@ class JulesRadiation(BaseModel):
     """The fraction of total downward SW radiation assumed to be in the NIR part of the spectrum."""
 
 
-class JulesRadiationNamelist(BaseModel):
+class JulesRadiationNamelist(NamelistModel):
     """Top-level schema for ``jules_radiation.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_radiation: JulesRadiation

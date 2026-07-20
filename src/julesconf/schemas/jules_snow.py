@@ -6,15 +6,16 @@ Reference: JULES user guide v7.9,
 
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import Field, model_validator
+
+from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._utils import ListLen
 
 __all__ = ["JulesSnowNamelist"]
 
 
-class JulesSnow(BaseModel):
+class JulesSnow(NamelistModel):
     """``JULES_SNOW`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     nsmax: int = Field(default=0, ge=0)
     """Maximum possible number of snow layers."""
@@ -30,7 +31,7 @@ class JulesSnow(BaseModel):
     """Prescribed thickness of each snow layer (m)."""
 
     # Length npft (cross-namelist — validated in JulesNamelists)
-    cansnowpft: list[bool] | None = None
+    cansnowpft: Annotated[list[bool] | None, ListLen("npft")] = None
     """Flag indicating whether snow can be held under the canopy of each PFT."""
 
     # Radiation parameters
@@ -50,11 +51,11 @@ class JulesSnow(BaseModel):
     """Degrees Celsius below zero at which snow albedo equals cold deep snow albedo."""
     kland_numerator: float = 0.3
     """Used in snow-ageing effect on albedo."""
-    can_clump: list[float] | None = None  # length npft
+    can_clump: Annotated[list[float] | None, ListLen("npft")] = None
     """Clumping parameter for snow on the canopy in calculation of albedo."""
-    n_lai_exposed: list[float] | None = None  # length npft
+    n_lai_exposed: Annotated[list[float] | None, ListLen("npft")] = None
     """LAI distribution parameter for calculation of snow albedo."""
-    lai_alb_lim_sn: list[float] | None = None  # length npft
+    lai_alb_lim_sn: Annotated[list[float] | None, ListLen("npft")] = None
     """Minimum LAI in calculation of albedo in the presence of snow."""
 
     # Other snow parameters
@@ -76,9 +77,9 @@ class JulesSnow(BaseModel):
     """Ratio of maximum canopy snow load to leaf area index (kg m⁻²)."""
     snowunloadfact: float = 0.4
     """Constant in relationship between canopy snow unloading and canopy snow melt rate."""
-    unload_rate_cnst: list[float] | None = None  # length npft
+    unload_rate_cnst: Annotated[list[float] | None, ListLen("npft")] = None
     """Constant term in the background unloading rate for snow on the canopy."""
-    unload_rate_u: list[float] | None = None  # length npft
+    unload_rate_u: Annotated[list[float] | None, ListLen("npft")] = None
     """Term proportional to wind speed in the background unloading rate for snow on canopy."""
     i_snow_cond_parm: int | None = Field(default=None, ge=0, le=1)
     """Scheme used to calculate the conductivity of snow."""
@@ -114,9 +115,7 @@ class JulesSnow(BaseModel):
         return self
 
 
-class JulesSnowNamelist(BaseModel):
+class JulesSnowNamelist(NamelistModel):
     """Top-level schema for ``jules_snow.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_snow: JulesSnow = JulesSnow()

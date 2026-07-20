@@ -4,15 +4,15 @@ Reference: JULES user guide v7.9,
 ``jules-lsm.github.io/user_guide/doc/source/namelists/urban.nml.rst``
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from julesconf.schemas._base import NamelistModel
 
 __all__ = ["UrbanNamelist"]
 
 
-class JulesUrban(BaseModel):
+class JulesUrban(NamelistModel):
     """``JULES_URBAN`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     anthrop_heat_scale: float = Field(default=1.0, ge=0.0, le=1.0)
     """Distribution scaling factor for anthropogenic heat flux spread between urban_canyon and urban_roof surface tiles."""
@@ -32,9 +32,7 @@ class JulesUrban(BaseModel):
     """Switch to use empirical relationships for urban geometry (W/R, H/W, H) based on total urban fraction."""
 
 
-class UrbanNamelist(BaseModel):
+class UrbanNamelist(NamelistModel):
     """Top-level schema for ``urban.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_urban: JulesUrban = JulesUrban()

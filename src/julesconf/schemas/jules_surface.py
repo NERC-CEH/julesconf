@@ -4,15 +4,15 @@ Reference: JULES user guide v7.9,
 ``jules-lsm.github.io/user_guide/doc/source/namelists/jules_surface.nml.rst``
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from julesconf.schemas._base import NamelistModel
 
 __all__ = ["JulesSurfaceNamelist"]
 
 
-class JulesSurface(BaseModel):
+class JulesSurface(NamelistModel):
     """``JULES_SURFACE`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     all_tiles: int = Field(default=0, ge=0, le=1)
     """Perform calculations on all tiles for all gridpoints even when the tile fraction is zero."""
@@ -60,9 +60,7 @@ class JulesSurface(BaseModel):
     """Dimensionless coefficient scaling boundary layer convective gustiness contribution."""
 
 
-class JulesSurfaceNamelist(BaseModel):
+class JulesSurfaceNamelist(NamelistModel):
     """Top-level schema for ``jules_surface.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_surface: JulesSurface

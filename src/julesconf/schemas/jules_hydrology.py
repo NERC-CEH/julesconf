@@ -4,15 +4,15 @@ Reference: JULES user guide v7.9,
 ``jules-lsm.github.io/user_guide/doc/source/namelists/jules_hydrology.nml.rst``
 """
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import Field, model_validator
+
+from julesconf.schemas._base import NamelistModel
 
 __all__ = ["JulesHydrologyNamelist"]
 
 
-class JulesHydrology(BaseModel):
+class JulesHydrology(NamelistModel):
     """``JULES_HYDROLOGY`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     l_hydrology: bool = False
     """Switch to enable soil hydrology."""
@@ -58,9 +58,7 @@ class JulesHydrology(BaseModel):
         return self
 
 
-class JulesHydrologyNamelist(BaseModel):
+class JulesHydrologyNamelist(NamelistModel):
     """Top-level schema for ``jules_hydrology.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_hydrology: JulesHydrology

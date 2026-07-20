@@ -6,15 +6,15 @@ Reference: JULES user guide v7.9,
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from julesconf.schemas._base import NamelistModel
 
 __all__ = ["OutputNamelist"]
 
 
-class JulesOutput(BaseModel):
+class JulesOutput(NamelistModel):
     """``JULES_OUTPUT`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     output_dir: str | None = None
     """The directory used for output files."""
@@ -28,10 +28,8 @@ class JulesOutput(BaseModel):
     """The unit/mode for the model dump period setting."""
 
 
-class JulesOutputProfile(BaseModel):
+class JulesOutputProfile(NamelistModel):
     """``JULES_OUTPUT_PROFILE`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     profile_name: str | None = None
     """The name of the output profile."""
@@ -60,10 +58,8 @@ class JulesOutputProfile(BaseModel):
     """For each variable specified in var, this indicates the type of processing required."""
 
 
-class OutputNamelist(BaseModel):
+class OutputNamelist(NamelistModel):
     """Top-level schema for ``output.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_output: JulesOutput = JulesOutput()
     jules_output_profile: JulesOutputProfile = JulesOutputProfile()

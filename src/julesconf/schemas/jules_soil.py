@@ -7,8 +7,9 @@ Reference: JULES user guide v7.9,
 from enum import IntEnum
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import Field, model_validator
 
+from julesconf.schemas._base import NamelistModel
 from julesconf.schemas._utils import name_or_value
 
 __all__ = ["JulesSoilNamelist", "SoilhcMethod"]
@@ -22,10 +23,8 @@ class SoilhcMethod(IntEnum):
     chadburn = 3
 
 
-class JulesSoil(BaseModel):
+class JulesSoil(NamelistModel):
     """``JULES_SOIL`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     sm_levels: int = Field(default=4, ge=1)
     """Number of soil layers."""
@@ -80,9 +79,7 @@ class JulesSoil(BaseModel):
         return self
 
 
-class JulesSoilNamelist(BaseModel):
+class JulesSoilNamelist(NamelistModel):
     """Top-level schema for ``jules_soil.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_soil: JulesSoil

@@ -7,8 +7,9 @@ Reference: JULES user guide v7.9,
 from enum import IntEnum
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
 
+from julesconf.schemas._base import NamelistModel
 from julesconf.schemas._utils import name_or_value
 
 __all__ = [
@@ -67,10 +68,8 @@ class IgnitionMethod(IntEnum):
     prescribed_population = 3
 
 
-class JulesVegetation(BaseModel):
+class JulesVegetation(NamelistModel):
     """``JULES_VEGETATION`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     l_trait_phys: bool = False
     """Switch for using trait-based physiology."""
@@ -118,9 +117,7 @@ class JulesVegetation(BaseModel):
     """INFERNO ignition type: ``constant`` (1), ``prescribed_lightning`` (2), ``prescribed_population`` (3)."""
 
 
-class JulesVegetationNamelist(BaseModel):
+class JulesVegetationNamelist(NamelistModel):
     """Top-level schema for ``jules_vegetation.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_vegetation: JulesVegetation

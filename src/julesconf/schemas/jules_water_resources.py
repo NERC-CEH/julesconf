@@ -6,15 +6,15 @@ Reference: JULES user guide v7.9,
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from julesconf.schemas._base import NamelistModel
 
 __all__ = ["JulesWaterResourcesNamelist"]
 
 
-class JulesWaterResources(BaseModel):
+class JulesWaterResources(NamelistModel):
     """``JULES_WATER_RESOURCES`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     l_water_resources: bool = False
     """Switch to enable modelling of water resources."""
@@ -46,9 +46,7 @@ class JulesWaterResources(BaseModel):
     """Fraction of water returned to the system after livestock abstraction."""
 
 
-class JulesWaterResourcesNamelist(BaseModel):
+class JulesWaterResourcesNamelist(NamelistModel):
     """Top-level schema for ``jules_water_resources.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_water_resources: JulesWaterResources = JulesWaterResources()

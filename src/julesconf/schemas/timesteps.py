@@ -9,7 +9,9 @@ Reference: JULES user guide v7.9,
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
+
+from julesconf.schemas._base import NamelistModel
 
 __all__ = ["TimestepsNamelist"]
 
@@ -27,10 +29,8 @@ def _validate_jules_datetime(v: str) -> str:
     return v
 
 
-class JulesTime(BaseModel):
+class JulesTime(NamelistModel):
     """``JULES_TIME`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     l_360: bool = False
     """Switch indicating use of 360 day years."""
@@ -53,10 +53,8 @@ class JulesTime(BaseModel):
         return _validate_jules_datetime(v)
 
 
-class JulesSpinup(BaseModel):
+class JulesSpinup(NamelistModel):
     """``JULES_SPINUP`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     max_spinup_cycles: int = Field(default=0, ge=0)
     """The maximum number of times the spin-up period is to be repeated."""
@@ -111,7 +109,7 @@ class JulesSpinup(BaseModel):
         return self
 
 
-class TimestepsNamelist(BaseModel):
+class TimestepsNamelist(NamelistModel):
     """Top-level schema for ``timesteps.nml``.
 
     Usage::
@@ -119,8 +117,6 @@ class TimestepsNamelist(BaseModel):
         data = NamelistFileHandler().read("timesteps.nml")
         TimestepsNamelist.model_validate(data)
     """
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_time: JulesTime
     jules_spinup: JulesSpinup = Field(default_factory=JulesSpinup)

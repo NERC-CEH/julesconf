@@ -4,12 +4,14 @@ Reference: JULES user guide v7.9,
 ``jules-lsm.github.io/user_guide/doc/source/namelists/ancillaries.nml.rst``
 """
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import Field, model_validator
+
+from julesconf.schemas._base import NamelistModel
 
 __all__ = ["AncillariesNamelist"]
 
 
-def _check_nvars_lists(obj: BaseModel, nvars_val: int) -> None:
+def _check_nvars_lists(obj: NamelistModel, nvars_val: int) -> None:
     """Raise ValueError if any provided list has wrong length vs nvars."""
     for name in ("var", "use_file", "const_val", "var_name"):
         val = getattr(obj, name, None)
@@ -21,10 +23,8 @@ def _check_nvars_lists(obj: BaseModel, nvars_val: int) -> None:
         raise ValueError("var is required when nvars > 0")
 
 
-class JulesFrac(BaseModel):
+class JulesFrac(NamelistModel):
     """``JULES_FRAC`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     file: str | None = None
     """The name of the file to read surface type fractional coverage data from."""
@@ -32,10 +32,8 @@ class JulesFrac(BaseModel):
     """Populate variables from dump file if TRUE, otherwise use other namelist members."""
 
 
-class _NvarsModel(BaseModel):
+class _NvarsModel(NamelistModel):
     """Mixin for namelists with nvars/var/use_file/const_val pattern."""
-
-    model_config = ConfigDict(extra="ignore")
 
     nvars: int = Field(default=0, ge=0)
     """The number of vegetation property variables that will be provided."""
@@ -68,10 +66,8 @@ class JulesTop(_NvarsModel):
     """``JULES_TOP`` namelist members."""
 
 
-class JulesAgric(BaseModel):
+class JulesAgric(NamelistModel):
     """``JULES_AGRIC`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     l_triffid_agric: bool = False
 
@@ -92,10 +88,8 @@ class JulesIrrigProps(_NvarsModel):
     """``JULES_IRRIG_PROPS`` namelist members."""
 
 
-class JulesRiversProps(BaseModel):
+class JulesRiversProps(NamelistModel):
     """``JULES_RIVERS_PROPS`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
 
 class JulesWaterResourcesProps(_NvarsModel):
@@ -106,29 +100,23 @@ class UrbanProperties(_NvarsModel):
     """``URBAN_PROPERTIES`` namelist members."""
 
 
-class JulesCo2(BaseModel):
+class JulesCo2(NamelistModel):
     """``JULES_CO2`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
     co2_mmr: float | None = None
     """Concentration of atmospheric CO2 as mass mixing ratio."""
 
 
-class JulesOverbankProps(BaseModel):
+class JulesOverbankProps(NamelistModel):
     """``JULES_OVERBANK_PROPS`` namelist members."""
-
-    model_config = ConfigDict(extra="ignore")
 
 
 class JulesFlake(_NvarsModel):
     """``JULES_FLAKE`` namelist members."""
 
 
-class AncillariesNamelist(BaseModel):
+class AncillariesNamelist(NamelistModel):
     """Top-level schema for ``ancillaries.nml``."""
-
-    model_config = ConfigDict(extra="ignore")
 
     jules_frac: JulesFrac = JulesFrac()
     jules_vegetation_props: JulesVegetationProps = JulesVegetationProps()
