@@ -50,6 +50,11 @@ site/
 
 .claude
 
-examples/
+# Marimo cache (notebooks themselves should be tracked)
+examples/__marimo__/
+
+# Local checkouts of external docs (e.g. jules-lsm.github.io)
 reference/
-#jules-lsm.github.io
+
+# Example JULES input data kept locally for future testing (provenance TBD)
+tests/data/loobos/inputs/
