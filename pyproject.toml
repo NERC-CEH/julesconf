@@ -41,6 +41,7 @@ dev = [
     {include-group = "test"},
 ]
 docs = [
+    "griffe-pydantic>=1.1",
     "marimo>=0.23.5",
     "marimo-md-export>=0.5.2",
     "mkdocstrings[python]>=1.0.4",
@@ -63,6 +64,9 @@ include = ["src/", "tests/"]
 line-length = 88
 indent-width = 4
 target-version = "py312"
+extend-exclude = [
+    "jules-lsm.github.io",
+]
 
 [tool.ruff.lint]
 select = [
@@ -81,6 +85,8 @@ select = [
 [tool.ruff.lint.per-file-ignores]
 # Exempt test directory from pydocstyle rules
 "tests/**" = ["D"]
+# Attribute docstring prose for schema fields should not be hard-wrapped at 88 chars
+"src/julesconf/schemas/**" = ["E501"]
 # Marimo notebooks use bare expressions for display output (B018),
 # contain prose that naturally exceeds 88 chars (E501),
 # include academic citations with en dashes (RUF001),
