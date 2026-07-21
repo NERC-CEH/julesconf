@@ -1,7 +1,7 @@
-"""Validation schema for ``science_fixes.nml``.
+"""Validation schema for `science_fixes.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/science_fixes.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/science_fixes.nml.rst`
 """
 
 from pydantic import Field
@@ -12,7 +12,7 @@ __all__ = ["ScienceFixesNamelist"]
 
 
 class JulesTempFixes(NamelistModel):
-    """``JULES_TEMP_FIXES`` namelist members."""
+    """`JULES_TEMP_FIXES` namelist members."""
 
     ctile_orog_fix: int = Field(default=2, ge=0, le=2)
     """Corrects surface exchange calculations in coastally tiled grid-boxes."""
@@ -47,6 +47,6 @@ class JulesTempFixes(NamelistModel):
 
 
 class ScienceFixesNamelist(NamelistModel):
-    """Top-level schema for ``science_fixes.nml``."""
+    """Top-level schema for `science_fixes.nml`."""
 
     jules_temp_fixes: JulesTempFixes = JulesTempFixes()

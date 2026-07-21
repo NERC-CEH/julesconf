@@ -1,7 +1,7 @@
-"""Validation schema for ``triffid_params.nml``.
+"""Validation schema for `triffid_params.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/triffid_params.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/triffid_params.nml.rst`
 """
 
 from typing import Annotated
@@ -15,10 +15,10 @@ __all__ = ["TriffidParamsNamelist"]
 
 
 class JulesTriffid(NamelistModel):
-    """``JULES_TRIFFID`` namelist members.
+    """`JULES_TRIFFID` namelist members.
 
     Contains npft-length lists of TRIFFID dynamic vegetation parameters.
-    Only used when :nml:mem:`JULES_VEGETATION::l_triffid` = TRUE.
+    Only used when `JULES_VEGETATION::l_triffid` = TRUE.
     """
 
     crop_io: Annotated[
@@ -46,6 +46,6 @@ class JulesTriffid(NamelistModel):
 
 
 class TriffidParamsNamelist(NamelistModel):
-    """Top-level schema for ``triffid_params.nml``."""
+    """Top-level schema for `triffid_params.nml`."""
 
     jules_triffid: JulesTriffid = JulesTriffid()

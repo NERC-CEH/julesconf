@@ -1,7 +1,7 @@
-"""Validation schema for ``output.nml``.
+"""Validation schema for `output.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/output.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/output.nml.rst`
 """
 
 from typing import Literal
@@ -14,7 +14,7 @@ __all__ = ["OutputNamelist"]
 
 
 class JulesOutput(NamelistModel):
-    """``JULES_OUTPUT`` namelist members."""
+    """`JULES_OUTPUT` namelist members."""
 
     output_dir: str | None = None
     """The directory used for output files."""
@@ -29,7 +29,7 @@ class JulesOutput(NamelistModel):
 
 
 class JulesOutputProfile(NamelistModel):
-    """``JULES_OUTPUT_PROFILE`` namelist members."""
+    """`JULES_OUTPUT_PROFILE` namelist members."""
 
     profile_name: str | None = None
     """The name of the output profile."""
@@ -59,7 +59,7 @@ class JulesOutputProfile(NamelistModel):
 
 
 class OutputNamelist(NamelistModel):
-    """Top-level schema for ``output.nml``."""
+    """Top-level schema for `output.nml`."""
 
     jules_output: JulesOutput = JulesOutput()
     jules_output_profile: JulesOutputProfile = JulesOutputProfile()

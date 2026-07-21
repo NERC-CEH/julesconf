@@ -1,7 +1,7 @@
-"""Validation schema for ``initial_conditions.nml``.
+"""Validation schema for `initial_conditions.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/initial_conditions.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/initial_conditions.nml.rst`
 """
 
 from pydantic import Field, model_validator
@@ -12,7 +12,7 @@ __all__ = ["InitialConditionsNamelist"]
 
 
 class JulesInitial(NamelistModel):
-    """``JULES_INITIAL`` namelist members."""
+    """`JULES_INITIAL` namelist members."""
 
     dump_file: bool = False
     """Indicates whether the given file is a dump from a previous run of JULES."""
@@ -57,6 +57,6 @@ class JulesInitial(NamelistModel):
 
 
 class InitialConditionsNamelist(NamelistModel):
-    """Top-level schema for ``initial_conditions.nml``."""
+    """Top-level schema for `initial_conditions.nml`."""
 
     jules_initial: JulesInitial

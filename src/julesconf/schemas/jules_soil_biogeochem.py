@@ -1,7 +1,7 @@
-"""Validation schema for ``jules_soil_biogeochem.nml``.
+"""Validation schema for `jules_soil_biogeochem.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/jules_soil_biogeochem.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/jules_soil_biogeochem.nml.rst`
 """
 
 from enum import IntEnum
@@ -16,7 +16,7 @@ __all__ = ["Ch4Substrate", "JulesSoilBiogeochemNamelist", "SoilBgcModel"]
 
 
 class SoilBgcModel(IntEnum):
-    """Soil biogeochemistry model choice (``soil_bgc_model``)."""
+    """Soil biogeochemistry model choice (`soil_bgc_model`)."""
 
     single_pool = 1
     four_pool = 2
@@ -24,7 +24,7 @@ class SoilBgcModel(IntEnum):
 
 
 class Ch4Substrate(IntEnum):
-    """Substrate used for wetland methane emissions (``ch4_substrate``)."""
+    """Substrate used for wetland methane emissions (`ch4_substrate`)."""
 
     soil_carbon = 1
     npp = 2
@@ -32,12 +32,12 @@ class Ch4Substrate(IntEnum):
 
 
 class JulesSoilBiogeochem(NamelistModel):
-    """``JULES_SOIL_BIOGEOCHEM`` namelist members."""
+    """`JULES_SOIL_BIOGEOCHEM` namelist members."""
 
     soil_bgc_model: Annotated[SoilBgcModel, name_or_value(SoilBgcModel)] = (
         SoilBgcModel.single_pool
     )
-    """Choice for model of soil biogeochemistry: ``single_pool`` (1), ``four_pool`` (2), ``ecosse`` (3)."""
+    """Choice for model of soil biogeochemistry: `single_pool` (1), `four_pool` (2), `ecosse` (3)."""
 
     # Parameters for all models
     q10_soil: float = 2.0
@@ -87,7 +87,7 @@ class JulesSoilBiogeochem(NamelistModel):
     ch4_substrate: Annotated[Ch4Substrate, name_or_value(Ch4Substrate)] = (
         Ch4Substrate.soil_carbon
     )
-    """Choice of substrate for wetland methane: ``soil_carbon`` (1), ``npp`` (2), ``soil_respiration`` (3)."""
+    """Choice of substrate for wetland methane: `soil_carbon` (1), `npp` (2), `soil_respiration` (3)."""
     t0_ch4: float = 273.15
     """Reference temperature for the Q10 function CH4 emission calculation."""
     const_ch4_cs: float = 7.41e-12
@@ -131,6 +131,6 @@ class JulesSoilBiogeochem(NamelistModel):
 
 
 class JulesSoilBiogeochemNamelist(NamelistModel):
-    """Top-level schema for ``jules_soil_biogeochem.nml``."""
+    """Top-level schema for `jules_soil_biogeochem.nml`."""
 
     jules_soil_biogeochem: JulesSoilBiogeochem = JulesSoilBiogeochem()

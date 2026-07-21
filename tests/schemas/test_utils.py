@@ -1,4 +1,4 @@
-"""Tests for the shared schema field utilities in ``julesconf.schemas._utils``."""
+"""Tests for the shared schema field utilities in `julesconf.schemas._utils`."""
 
 import pytest
 from pydantic import ValidationError

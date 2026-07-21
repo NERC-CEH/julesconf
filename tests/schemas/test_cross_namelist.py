@@ -122,7 +122,7 @@ def test_deposition_ntype_wrong():
 
 # ---------------------------------------------------------------------------
 # Regression: fields that spelled the annotation as
-# ``Annotated[list[X], ListLen(...)] | None``, hiding the marker from the
+# `Annotated[list[X], ListLen(...)] | None`, hiding the marker from the
 # length check inside a union member so it silently never ran.
 # ---------------------------------------------------------------------------
 
@@ -160,7 +160,7 @@ def test_nveg_z0hm_classic_wrong_nnvg():
 
 
 def _walk_fields(model: type[NamelistModel], path: str = ""):
-    """Yield ``(dotted_path, field_info)`` for every field in the model tree."""
+    """Yield `(dotted_path, field_info)` for every field in the model tree."""
     for name, field_info in model.model_fields.items():
         field_path = f"{path}.{name}" if path else name
         annotation = field_info.annotation
@@ -171,12 +171,12 @@ def _walk_fields(model: type[NamelistModel], path: str = ""):
 
 
 def test_every_list_len_uses_canonical_spelling():
-    """Every ListLen must sit on the outermost ``Annotated``.
+    """Every ListLen must sit on the outermost `Annotated`.
 
-    ``find_list_len`` tolerates ``Annotated[list[X], ListLen(...)] | None``, but
-    that spelling hides the marker from ``FieldInfo.metadata`` and previously
+    `find_list_len` tolerates `Annotated[list[X], ListLen(...)] | None`, but
+    that spelling hides the marker from `FieldInfo.metadata` and previously
     disabled the length check silently. Keep one spelling across the schemas:
-    ``Annotated[list[X] | None, ListLen(...)]``.
+    `Annotated[list[X] | None, ListLen(...)]`.
     """
     non_canonical = [
         path

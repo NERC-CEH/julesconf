@@ -1,7 +1,7 @@
-"""Validation schema for ``model_environment.nml``.
+"""Validation schema for `model_environment.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/model_environment.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/model_environment.nml.rst`
 """
 
 from enum import IntEnum
@@ -14,7 +14,7 @@ __all__ = ["JulesParent", "LsmId", "ModelEnvironmentNamelist"]
 
 
 class JulesParent(IntEnum):
-    """Environment in which JULES is being run (``l_jules_parent``)."""
+    """Environment in which JULES is being run (`l_jules_parent`)."""
 
     standalone = 0
     um = 1
@@ -22,24 +22,24 @@ class JulesParent(IntEnum):
 
 
 class LsmId(IntEnum):
-    """Land surface model flavour (``lsm_id``)."""
+    """Land surface model flavour (`lsm_id`)."""
 
     jules = 1
     cable = 2
 
 
 class JulesModelEnvironment(NamelistModel):
-    """``JULES_MODEL_ENVIRONMENT`` namelist members."""
+    """`JULES_MODEL_ENVIRONMENT` namelist members."""
 
     l_jules_parent: Annotated[JulesParent, name_or_value(JulesParent)] = (
         JulesParent.standalone
     )
-    """Environment in which JULES is run: ``standalone`` (0), ``um`` (1), ``cable`` (2)."""
+    """Environment in which JULES is run: `standalone` (0), `um` (1), `cable` (2)."""
     lsm_id: Annotated[LsmId, name_or_value(LsmId)] = LsmId.jules
-    """Land surface model flavour: ``jules`` (1), ``cable`` (2)."""
+    """Land surface model flavour: `jules` (1), `cable` (2)."""
 
 
 class ModelEnvironmentNamelist(NamelistModel):
-    """Top-level schema for ``model_environment.nml``."""
+    """Top-level schema for `model_environment.nml`."""
 
     jules_model_environment: JulesModelEnvironment

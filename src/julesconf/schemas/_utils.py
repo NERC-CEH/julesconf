@@ -19,10 +19,10 @@ __all__ = [
 ]
 
 LIST_LEN_DIMS = frozenset({"npft", "nnvg", "ncpft", "ntype"})
-"""Dimension names :class:`ListLen` may refer to.
+"""Dimension names `ListLen` may refer to.
 
-:class:`~julesconf.schemas.namelists.JulesNamelists` resolves each of these
-against ``jules_surface_types`` when checking list lengths.
+`julesconf.schemas.namelists.JulesNamelists` resolves each of these
+against `jules_surface_types` when checking list lengths.
 """
 
 
@@ -31,9 +31,9 @@ class ListLen:
     """Metadata marking a list field as requiring a specific cross-namelist length.
 
     Attributes:
-        dim: The dimension name, which must be a member of :data:`LIST_LEN_DIMS`.
-            Resolved against ``jules_surface_types`` at validation time in
-            :class:`~julesconf.schemas.namelists.JulesNamelists`.
+        dim: The dimension name, which must be a member of `LIST_LEN_DIMS`.
+            Resolved against `jules_surface_types` at validation time in
+            `julesconf.schemas.namelists.JulesNamelists`.
     """
 
     dim: str
@@ -48,19 +48,19 @@ class ListLen:
 
 
 def find_list_len(field_info: FieldInfo) -> ListLen | None:
-    """Return the :class:`ListLen` metadata for a field, if it has any.
+    """Return the `ListLen` metadata for a field, if it has any.
 
-    Pydantic only surfaces metadata from the outermost ``Annotated`` in
-    ``FieldInfo.metadata``, so ``Annotated[list[X], ListLen(...)] | None``
+    Pydantic only surfaces metadata from the outermost `Annotated` in
+    `FieldInfo.metadata`, so `Annotated[list[X], ListLen(...)] | None`
     hides the marker inside a union member. This searches the full annotation
     so both that spelling and the canonical
-    ``Annotated[list[X] | None, ListLen(...)]`` resolve.
+    `Annotated[list[X] | None, ListLen(...)]` resolve.
 
     Args:
         field_info: The Pydantic field to inspect.
 
     Returns:
-        The first :class:`ListLen` found, or ``None`` if the field has none.
+        The first `ListLen` found, or `None` if the field has none.
     """
     for meta in field_info.metadata:
         if isinstance(meta, ListLen):
@@ -69,7 +69,7 @@ def find_list_len(field_info: FieldInfo) -> ListLen | None:
 
 
 def _find_in_annotation(annotation: Any) -> ListLen | None:
-    """Recursively search an annotation's type arguments for a ``ListLen``."""
+    """Recursively search an annotation's type arguments for a `ListLen`."""
     for arg in get_args(annotation):
         if isinstance(arg, ListLen):
             return arg
@@ -80,17 +80,17 @@ def _find_in_annotation(annotation: Any) -> ListLen | None:
 
 
 ZeroOne = Annotated[int, Field(ge=0, le=1)]
-"""Integer restricted to ``0`` or ``1`` (e.g. binary flags)."""
+"""Integer restricted to `0` or `1` (e.g. binary flags)."""
 
 Fraction = Annotated[float, Field(ge=0.0, le=1.0)]
-"""Float restricted to the ``[0.0, 1.0]`` interval (e.g. albedo, emissivity)."""
+"""Float restricted to the `[0.0, 1.0]` interval (e.g. albedo, emissivity)."""
 
 NonNegFloat = Annotated[float, Field(ge=0.0)]
 """Float restricted to non-negative values."""
 
 
 def _sentinel_or_fraction(v: float) -> float:
-    """Accept ``-1.0`` (JULES sentinel for "use default") or a value in ``[0.0, 1.0]``."""
+    """Accept `-1.0` (JULES sentinel for "use default") or a value in `[0.0, 1.0]`."""
     if v == -1.0:
         return v
     if not (0.0 <= v <= 1.0):
@@ -99,10 +99,10 @@ def _sentinel_or_fraction(v: float) -> float:
 
 
 SentinelOrFraction = Annotated[float, AfterValidator(_sentinel_or_fraction)]
-"""Float restricted to ``[0.0, 1.0]`` or the JULES sentinel ``-1.0``.
+"""Float restricted to `[0.0, 1.0]` or the JULES sentinel `-1.0`.
 
 Runs *after* Pydantic's float coercion, so non-numeric input yields a normal
-``ValidationError`` rather than a ``TypeError`` from the range comparison.
+`ValidationError` rather than a `TypeError` from the range comparison.
 """
 
 

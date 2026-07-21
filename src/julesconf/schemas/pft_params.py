@@ -1,10 +1,10 @@
-"""Validation schema for ``pft_params.nml``.
+"""Validation schema for `pft_params.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/pft_params.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/pft_params.nml.rst`
 
-All list fields have length ``npft`` (cross-namelist; validated in
-:class:`~julesconf.schemas.namelists.JulesNamelists`).
+All list fields have length `npft` (cross-namelist; validated in
+`julesconf.schemas.namelists.JulesNamelists`).
 """
 
 from typing import Annotated
@@ -16,7 +16,7 @@ __all__ = ["PftParamsNamelist"]
 
 
 class JulesPftparm(NamelistModel):
-    """``JULES_PFTPARM`` namelist members."""
+    """`JULES_PFTPARM` namelist members."""
 
     canht_ft_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
     """The height of each PFT (m), also known as the canopy height."""
@@ -141,6 +141,6 @@ class JulesPftparm(NamelistModel):
 
 
 class PftParamsNamelist(NamelistModel):
-    """Top-level schema for ``pft_params.nml``."""
+    """Top-level schema for `pft_params.nml`."""
 
     jules_pftparm: JulesPftparm

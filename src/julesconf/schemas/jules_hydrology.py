@@ -1,7 +1,7 @@
-"""Validation schema for ``jules_hydrology.nml``.
+"""Validation schema for `jules_hydrology.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/jules_hydrology.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/jules_hydrology.nml.rst`
 """
 
 from pydantic import Field, model_validator
@@ -12,7 +12,7 @@ __all__ = ["JulesHydrologyNamelist"]
 
 
 class JulesHydrology(NamelistModel):
-    """``JULES_HYDROLOGY`` namelist members."""
+    """`JULES_HYDROLOGY` namelist members."""
 
     l_hydrology: bool = False
     """Switch to enable soil hydrology."""
@@ -59,6 +59,6 @@ class JulesHydrology(NamelistModel):
 
 
 class JulesHydrologyNamelist(NamelistModel):
-    """Top-level schema for ``jules_hydrology.nml``."""
+    """Top-level schema for `jules_hydrology.nml`."""
 
     jules_hydrology: JulesHydrology

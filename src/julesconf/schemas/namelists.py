@@ -1,6 +1,6 @@
-"""Top-level ``JulesNamelists`` schema combining all 29 namelist files.
+"""Top-level `JulesNamelists` schema combining all 29 namelist files.
 
-Usage::
+Usage:
 
     from julesconf.config import NamelistConfig
     from julesconf.schemas.namelists import JulesNamelists
@@ -50,7 +50,7 @@ class JulesNamelists(NamelistModel):
     """Schema for a complete JULES namelists directory.
 
     Validates a dict of the form returned by
-    :meth:`~julesconf.config.NamelistConfig.read`, applying both
+    `julesconf.config.NamelistConfig.read`, applying both
     per-namelist constraints and cross-namelist consistency checks.
     """
 
@@ -86,10 +86,10 @@ class JulesNamelists(NamelistModel):
 
     @model_validator(mode="after")
     def _check_list_lengths(self) -> "JulesNamelists":
-        """Check every ``ListLen``-marked list against its dimension.
+        """Check every `ListLen`-marked list against its dimension.
 
         Walks the whole model tree rather than a fixed set of namelists, so a
-        ``ListLen`` field added anywhere is checked automatically.
+        `ListLen` field added anywhere is checked automatically.
         """
         surface_types = self.jules_surface_types.jules_surface_types
         dims = {
@@ -105,7 +105,7 @@ class JulesNamelists(NamelistModel):
     def _check_model_list_lengths(
         model: NamelistModel, path: str, dims: dict[str, int]
     ) -> None:
-        """Recursively validate ``ListLen`` fields on ``model`` and its submodels."""
+        """Recursively validate `ListLen` fields on `model` and its submodels."""
         for field_name, field_info in type(model).model_fields.items():
             value = getattr(model, field_name)
             field_path = f"{path}.{field_name}" if path else field_name

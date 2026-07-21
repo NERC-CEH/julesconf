@@ -15,14 +15,14 @@ class UnknownNamelistKeyWarning(UserWarning):
 class NamelistModel(BaseModel):
     """Base model for JULES namelist schemas that warns on unknown keys.
 
-    Unknown keys are ignored (``extra="ignore"``) so that configs containing
+    Unknown keys are ignored (`extra="ignore"`) so that configs containing
     members not covered by the schema (e.g. from a different JULES version,
     or gaps in the documentation the schemas were derived from) still
     validate. However, unknown keys are frequently misspellings of real
     members, which JULES itself silently drops, so a
-    :class:`UnknownNamelistKeyWarning` is emitted for each one.
+    `UnknownNamelistKeyWarning` is emitted for each one.
 
-    To treat unknown keys as validation errors, escalate the warning::
+    To treat unknown keys as validation errors, escalate the warning:
 
         import warnings
 

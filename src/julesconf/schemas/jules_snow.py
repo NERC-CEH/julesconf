@@ -1,7 +1,7 @@
-"""Validation schema for ``jules_snow.nml``.
+"""Validation schema for `jules_snow.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/jules_snow.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/jules_snow.nml.rst`
 """
 
 from typing import Annotated
@@ -15,7 +15,7 @@ __all__ = ["JulesSnowNamelist"]
 
 
 class JulesSnow(NamelistModel):
-    """``JULES_SNOW`` namelist members."""
+    """`JULES_SNOW` namelist members."""
 
     nsmax: int = Field(default=0, ge=0)
     """Maximum possible number of snow layers."""
@@ -116,6 +116,6 @@ class JulesSnow(NamelistModel):
 
 
 class JulesSnowNamelist(NamelistModel):
-    """Top-level schema for ``jules_snow.nml``."""
+    """Top-level schema for `jules_snow.nml`."""
 
     jules_snow: JulesSnow = JulesSnow()

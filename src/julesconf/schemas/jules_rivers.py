@@ -1,7 +1,7 @@
-"""Validation schema for ``jules_rivers.nml``.
+"""Validation schema for `jules_rivers.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/jules_rivers.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/jules_rivers.nml.rst`
 """
 
 from enum import IntEnum
@@ -16,7 +16,7 @@ __all__ = ["JulesRiversNamelist", "RiverRoutingAlgorithm"]
 
 
 class RiverRoutingAlgorithm(IntEnum):
-    """River routing algorithm (``i_river_vn``)."""
+    """River routing algorithm (`i_river_vn`)."""
 
     um_trip = 1
     rfm = 2
@@ -24,14 +24,14 @@ class RiverRoutingAlgorithm(IntEnum):
 
 
 class JulesRivers(NamelistModel):
-    """``JULES_RIVERS`` namelist members."""
+    """`JULES_RIVERS` namelist members."""
 
     l_rivers: bool = False
     """Switch for enabling river routing."""
     i_river_vn: (
         Annotated[RiverRoutingAlgorithm, name_or_value(RiverRoutingAlgorithm)] | None
     ) = None
-    """River routing algorithm: ``um_trip`` (1), ``rfm`` (2), ``standalone_trip`` (3)."""
+    """River routing algorithm: `um_trip` (1), `rfm` (2), `standalone_trip` (3)."""
     nstep_rivers: int | None = Field(default=None, ge=1)
     """Number of model timesteps per routing timestep."""
     a_thresh: int | None = None
@@ -61,7 +61,7 @@ class JulesRivers(NamelistModel):
 
 
 class JulesOverbank(NamelistModel):
-    """``JULES_OVERBANK`` namelist members."""
+    """`JULES_OVERBANK` namelist members."""
 
     l_riv_overbank: bool = False
     """Switch for enabling river overbank inundation."""
@@ -84,7 +84,7 @@ class JulesOverbank(NamelistModel):
 
 
 class JulesRiversNamelist(NamelistModel):
-    """Top-level schema for ``jules_rivers.nml``."""
+    """Top-level schema for `jules_rivers.nml`."""
 
     jules_rivers: JulesRivers = JulesRivers()
     jules_overbank: JulesOverbank = JulesOverbank()

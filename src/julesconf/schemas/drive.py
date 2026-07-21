@@ -1,7 +1,7 @@
-"""Validation schema for ``drive.nml``.
+"""Validation schema for `drive.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/drive.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/drive.nml.rst`
 """
 
 from datetime import datetime
@@ -26,7 +26,7 @@ def _validate_datetime(v: str) -> str:
 
 
 class JulesDrive(NamelistModel):
-    """``JULES_DRIVE`` namelist members."""
+    """`JULES_DRIVE` namelist members."""
 
     file: str | None = None
     """File containing data or template for data file names."""
@@ -131,6 +131,6 @@ class JulesDrive(NamelistModel):
 
 
 class DriveNamelist(NamelistModel):
-    """Top-level schema for ``drive.nml``."""
+    """Top-level schema for `drive.nml`."""
 
     jules_drive: JulesDrive

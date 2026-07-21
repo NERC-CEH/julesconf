@@ -1,9 +1,9 @@
-"""Validation schema for ``timesteps.nml``.
+"""Validation schema for `timesteps.nml`.
 
-Covers the ``JULES_TIME`` and ``JULES_SPINUP`` namelists.
+Covers the `JULES_TIME` and `JULES_SPINUP` namelists.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/timesteps.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/timesteps.nml.rst`
 """
 
 from datetime import datetime
@@ -30,7 +30,7 @@ def _validate_jules_datetime(v: str) -> str:
 
 
 class JulesTime(NamelistModel):
-    """``JULES_TIME`` namelist members."""
+    """`JULES_TIME` namelist members."""
 
     l_360: bool = False
     """Switch indicating use of 360 day years."""
@@ -54,7 +54,7 @@ class JulesTime(NamelistModel):
 
 
 class JulesSpinup(NamelistModel):
-    """``JULES_SPINUP`` namelist members."""
+    """`JULES_SPINUP` namelist members."""
 
     max_spinup_cycles: int = Field(default=0, ge=0)
     """The maximum number of times the spin-up period is to be repeated."""
@@ -110,9 +110,9 @@ class JulesSpinup(NamelistModel):
 
 
 class TimestepsNamelist(NamelistModel):
-    """Top-level schema for ``timesteps.nml``.
+    """Top-level schema for `timesteps.nml`.
 
-    Usage::
+    Usage:
 
         data = NamelistFileHandler().read("timesteps.nml")
         TimestepsNamelist.model_validate(data)

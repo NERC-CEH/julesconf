@@ -1,7 +1,7 @@
-"""Validation schema for ``jules_surface_types.nml``.
+"""Validation schema for `jules_surface_types.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/jules_surface_types.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/jules_surface_types.nml.rst`
 """
 
 from pydantic import Field, model_validator
@@ -12,7 +12,7 @@ __all__ = ["JulesSurfaceTypesNamelist"]
 
 
 class JulesSurfaceTypes(NamelistModel):
-    """``JULES_SURFACE_TYPES`` namelist members."""
+    """`JULES_SURFACE_TYPES` namelist members."""
 
     npft: int = Field(ge=1)
     """The number of plant functional types (PFTs) to be modelled."""
@@ -83,6 +83,6 @@ class JulesSurfaceTypes(NamelistModel):
 
 
 class JulesSurfaceTypesNamelist(NamelistModel):
-    """Top-level schema for ``jules_surface_types.nml``."""
+    """Top-level schema for `jules_surface_types.nml`."""
 
     jules_surface_types: JulesSurfaceTypes

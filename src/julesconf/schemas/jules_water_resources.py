@@ -1,7 +1,7 @@
-"""Validation schema for ``jules_water_resources.nml``.
+"""Validation schema for `jules_water_resources.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/jules_water_resources.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/jules_water_resources.nml.rst`
 """
 
 from typing import Literal
@@ -14,7 +14,7 @@ __all__ = ["JulesWaterResourcesNamelist"]
 
 
 class JulesWaterResources(NamelistModel):
-    """``JULES_WATER_RESOURCES`` namelist members."""
+    """`JULES_WATER_RESOURCES` namelist members."""
 
     l_water_resources: bool = False
     """Switch to enable modelling of water resources."""
@@ -47,6 +47,6 @@ class JulesWaterResources(NamelistModel):
 
 
 class JulesWaterResourcesNamelist(NamelistModel):
-    """Top-level schema for ``jules_water_resources.nml``."""
+    """Top-level schema for `jules_water_resources.nml`."""
 
     jules_water_resources: JulesWaterResources = JulesWaterResources()

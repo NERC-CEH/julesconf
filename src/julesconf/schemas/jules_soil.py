@@ -1,7 +1,7 @@
-"""Validation schema for ``jules_soil.nml``.
+"""Validation schema for `jules_soil.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/jules_soil.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/jules_soil.nml.rst`
 """
 
 from enum import IntEnum
@@ -16,7 +16,7 @@ __all__ = ["JulesSoilNamelist", "SoilhcMethod"]
 
 
 class SoilhcMethod(IntEnum):
-    """Soil thermal conductivity model (``soilhc_method``)."""
+    """Soil thermal conductivity model (`soilhc_method`)."""
 
     johansen = 1
     peters_lidard = 2
@@ -24,7 +24,7 @@ class SoilhcMethod(IntEnum):
 
 
 class JulesSoil(NamelistModel):
-    """``JULES_SOIL`` namelist members."""
+    """`JULES_SOIL` namelist members."""
 
     sm_levels: int = Field(default=4, ge=1)
     """Number of soil layers."""
@@ -45,7 +45,7 @@ class JulesSoil(NamelistModel):
     soilhc_method: Annotated[SoilhcMethod, name_or_value(SoilhcMethod)] = (
         SoilhcMethod.johansen
     )
-    """Soil thermal conductivity model: ``johansen`` (1), ``peters_lidard`` (2), ``chadburn`` (3)."""
+    """Soil thermal conductivity model: `johansen` (1), `peters_lidard` (2), `chadburn` (3)."""
     cs_min: float = 1.0e-6
     """Minimum allowed soil carbon (kg m⁻²)."""
     zsmc: float = Field(default=1.0, gt=0)
@@ -80,6 +80,6 @@ class JulesSoil(NamelistModel):
 
 
 class JulesSoilNamelist(NamelistModel):
-    """Top-level schema for ``jules_soil.nml``."""
+    """Top-level schema for `jules_soil.nml`."""
 
     jules_soil: JulesSoil

@@ -1,7 +1,7 @@
-"""Validation schema for ``jules_vegetation.nml``.
+"""Validation schema for `jules_vegetation.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/jules_vegetation.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/jules_vegetation.nml.rst`
 """
 
 from enum import IntEnum
@@ -23,7 +23,7 @@ __all__ = [
 
 
 class CanModel(IntEnum):
-    """Canopy model choice for vegetation (``can_model``)."""
+    """Canopy model choice for vegetation (`can_model`)."""
 
     no_canopy = 1
     radiative = 2
@@ -32,7 +32,7 @@ class CanModel(IntEnum):
 
 
 class CanRadMod(IntEnum):
-    """Canopy radiation treatment (``can_rad_mod``).
+    """Canopy radiation treatment (`can_rad_mod`).
 
     Options 2 and 3 are not documented in the v7.9 user guide (likely deprecated).
     """
@@ -46,14 +46,14 @@ class CanRadMod(IntEnum):
 
 
 class PhotoModel(IntEnum):
-    """Leaf photosynthesis model (``photo_model``)."""
+    """Leaf photosynthesis model (`photo_model`)."""
 
     collatz = 1
     farquhar_collatz = 2
 
 
 class StomataModel(IntEnum):
-    """Stomatal conductance model (``stomata_model``)."""
+    """Stomatal conductance model (`stomata_model`)."""
 
     jacobs = 1
     medlyn = 2
@@ -61,7 +61,7 @@ class StomataModel(IntEnum):
 
 
 class IgnitionMethod(IntEnum):
-    """Ignition type for INFERNO fire model (``ignition_method``)."""
+    """Ignition type for INFERNO fire model (`ignition_method`)."""
 
     constant = 1
     prescribed_lightning = 2
@@ -69,7 +69,7 @@ class IgnitionMethod(IntEnum):
 
 
 class JulesVegetation(NamelistModel):
-    """``JULES_VEGETATION`` namelist members."""
+    """`JULES_VEGETATION` namelist members."""
 
     l_trait_phys: bool = False
     """Switch for using trait-based physiology."""
@@ -95,17 +95,17 @@ class JulesVegetation(NamelistModel):
     """Switch for reconfiguring vegetation fractions."""
 
     can_model: Annotated[CanModel, name_or_value(CanModel)] = CanModel.no_canopy
-    """Choice of canopy model: ``no_canopy`` (1), ``radiative`` (2), ``radiative_heat_capacity`` (3, deprecated), ``radiative_snow`` (4, preferred)."""
+    """Choice of canopy model: `no_canopy` (1), `radiative` (2), `radiative_heat_capacity` (3, deprecated), `radiative_snow` (4, preferred)."""
     can_rad_mod: Annotated[CanRadMod, name_or_value(CanRadMod)] = CanRadMod.beers_law
-    """Canopy radiation treatment: ``beers_law`` (1), ``two_stream`` (4), ``two_stream_sunfleck`` (5), ``two_stream_nitrogen`` (6)."""
+    """Canopy radiation treatment: `beers_law` (1), `two_stream` (4), `two_stream_sunfleck` (5), `two_stream_nitrogen` (6)."""
     ilayers: int = Field(default=10, ge=1)
     """Number of layers for canopy radiation model."""
     photo_model: Annotated[PhotoModel, name_or_value(PhotoModel)] = PhotoModel.collatz
-    """Leaf photosynthesis model: ``collatz`` (1, C3+C4 Collatz), ``farquhar_collatz`` (2, Farquhar C3 + Collatz C4)."""
+    """Leaf photosynthesis model: `collatz` (1, C3+C4 Collatz), `farquhar_collatz` (2, Farquhar C3 + Collatz C4)."""
     stomata_model: Annotated[StomataModel, name_or_value(StomataModel)] = (
         StomataModel.jacobs
     )
-    """Stomatal conductance model: ``jacobs`` (1), ``medlyn`` (2), ``sox`` (3)."""
+    """Stomatal conductance model: `jacobs` (1), `medlyn` (2), `sox` (3)."""
 
     triffid_period: int | None = None
     """Period for calls to TRIFFID model in days."""
@@ -114,10 +114,10 @@ class JulesVegetation(NamelistModel):
     ignition_method: Annotated[IgnitionMethod, name_or_value(IgnitionMethod)] = (
         IgnitionMethod.constant
     )
-    """INFERNO ignition type: ``constant`` (1), ``prescribed_lightning`` (2), ``prescribed_population`` (3)."""
+    """INFERNO ignition type: `constant` (1), `prescribed_lightning` (2), `prescribed_population` (3)."""
 
 
 class JulesVegetationNamelist(NamelistModel):
-    """Top-level schema for ``jules_vegetation.nml``."""
+    """Top-level schema for `jules_vegetation.nml`."""
 
     jules_vegetation: JulesVegetation

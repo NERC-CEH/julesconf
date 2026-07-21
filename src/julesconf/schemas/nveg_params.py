@@ -1,10 +1,10 @@
-"""Validation schema for ``nveg_params.nml``.
+"""Validation schema for `nveg_params.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/nveg_params.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/nveg_params.nml.rst`
 
-All list fields have length ``nnvg`` (cross-namelist; validated in
-:class:`~julesconf.schemas.namelists.JulesNamelists`).
+All list fields have length `nnvg` (cross-namelist; validated in
+`julesconf.schemas.namelists.JulesNamelists`).
 """
 
 from typing import Annotated
@@ -21,7 +21,7 @@ __all__ = ["NvegParamsNamelist"]
 
 
 class JulesNvegparm(NamelistModel):
-    """``JULES_NVEGPARM`` namelist members."""
+    """`JULES_NVEGPARM` namelist members."""
 
     albsnc_nvg_io: Annotated[list[Fraction] | None, ListLen("nnvg")] = None
     """Snow-covered albedo."""
@@ -52,6 +52,6 @@ class JulesNvegparm(NamelistModel):
 
 
 class NvegParamsNamelist(NamelistModel):
-    """Top-level schema for ``nveg_params.nml``."""
+    """Top-level schema for `nveg_params.nml`."""
 
     jules_nvegparm: JulesNvegparm

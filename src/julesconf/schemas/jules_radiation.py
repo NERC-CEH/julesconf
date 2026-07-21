@@ -1,7 +1,7 @@
-"""Validation schema for ``jules_radiation.nml``.
+"""Validation schema for `jules_radiation.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/jules_radiation.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/jules_radiation.nml.rst`
 """
 
 from pydantic import Field
@@ -14,7 +14,7 @@ _SEA_ALB_METHODS = (1, 2, 3, 4, 5)
 
 
 class JulesRadiation(NamelistModel):
-    """``JULES_RADIATION`` namelist members."""
+    """`JULES_RADIATION` namelist members."""
 
     l_cosz: bool = True
     """Switch for calculation of solar zenith angle."""
@@ -51,6 +51,6 @@ class JulesRadiation(NamelistModel):
 
 
 class JulesRadiationNamelist(NamelistModel):
-    """Top-level schema for ``jules_radiation.nml``."""
+    """Top-level schema for `jules_radiation.nml`."""
 
     jules_radiation: JulesRadiation

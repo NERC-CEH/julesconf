@@ -1,7 +1,7 @@
-"""Validation schema for ``jules_deposition.nml``.
+"""Validation schema for `jules_deposition.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/jules_deposition.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/jules_deposition.nml.rst`
 """
 
 from typing import Annotated
@@ -15,14 +15,14 @@ __all__ = ["JulesDepositionNamelist"]
 
 
 class JulesDeposition(NamelistModel):
-    """``JULES_DEPOSITION`` namelist members."""
+    """`JULES_DEPOSITION` namelist members."""
 
     l_deposition: bool = False
     """Switch to activate deposition code in JULES."""
 
 
 class JulesDepositionSpecies(NamelistModel):
-    """``JULES_DEPOSITION_SPECIES`` namelist members."""
+    """`JULES_DEPOSITION_SPECIES` namelist members."""
 
     dep_species_name_io: str | None = None
     """Name of an atmospheric tracer species to be included in deposition modelling."""
@@ -43,7 +43,7 @@ class JulesDepositionSpecies(NamelistModel):
 
 
 class JulesDepositionNamelist(NamelistModel):
-    """Top-level schema for ``jules_deposition.nml``."""
+    """Top-level schema for `jules_deposition.nml`."""
 
     jules_deposition: JulesDeposition = JulesDeposition()
     jules_deposition_species: JulesDepositionSpecies = JulesDepositionSpecies()

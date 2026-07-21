@@ -1,7 +1,7 @@
-"""Validation schema for ``ancillaries.nml``.
+"""Validation schema for `ancillaries.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/ancillaries.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/ancillaries.nml.rst`
 """
 
 from pydantic import Field, model_validator
@@ -24,7 +24,7 @@ def _check_nvars_lists(obj: NamelistModel, nvars_val: int) -> None:
 
 
 class JulesFrac(NamelistModel):
-    """``JULES_FRAC`` namelist members."""
+    """`JULES_FRAC` namelist members."""
 
     file: str | None = None
     """The name of the file to read surface type fractional coverage data from."""
@@ -59,64 +59,64 @@ class _NvarsModel(NamelistModel):
 
 
 class JulesSoilProps(_NvarsModel):
-    """``JULES_SOIL_PROPS`` namelist members."""
+    """`JULES_SOIL_PROPS` namelist members."""
 
 
 class JulesTop(_NvarsModel):
-    """``JULES_TOP`` namelist members."""
+    """`JULES_TOP` namelist members."""
 
 
 class JulesAgric(NamelistModel):
-    """``JULES_AGRIC`` namelist members."""
+    """`JULES_AGRIC` namelist members."""
 
     l_triffid_agric: bool = False
 
 
 class JulesVegetationProps(_NvarsModel):
-    """``JULES_VEGETATION_PROPS`` namelist members."""
+    """`JULES_VEGETATION_PROPS` namelist members."""
 
 
 class JulesPdm(_NvarsModel):
-    """``JULES_PDM`` namelist members."""
+    """`JULES_PDM` namelist members."""
 
 
 class JulesCropProps(_NvarsModel):
-    """``JULES_CROP_PROPS`` namelist members."""
+    """`JULES_CROP_PROPS` namelist members."""
 
 
 class JulesIrrigProps(_NvarsModel):
-    """``JULES_IRRIG_PROPS`` namelist members."""
+    """`JULES_IRRIG_PROPS` namelist members."""
 
 
 class JulesRiversProps(NamelistModel):
-    """``JULES_RIVERS_PROPS`` namelist members."""
+    """`JULES_RIVERS_PROPS` namelist members."""
 
 
 class JulesWaterResourcesProps(_NvarsModel):
-    """``JULES_WATER_RESOURCES_PROPS`` namelist members."""
+    """`JULES_WATER_RESOURCES_PROPS` namelist members."""
 
 
 class UrbanProperties(_NvarsModel):
-    """``URBAN_PROPERTIES`` namelist members."""
+    """`URBAN_PROPERTIES` namelist members."""
 
 
 class JulesCo2(NamelistModel):
-    """``JULES_CO2`` namelist members."""
+    """`JULES_CO2` namelist members."""
 
     co2_mmr: float | None = None
     """Concentration of atmospheric CO2 as mass mixing ratio."""
 
 
 class JulesOverbankProps(NamelistModel):
-    """``JULES_OVERBANK_PROPS`` namelist members."""
+    """`JULES_OVERBANK_PROPS` namelist members."""
 
 
 class JulesFlake(_NvarsModel):
-    """``JULES_FLAKE`` namelist members."""
+    """`JULES_FLAKE` namelist members."""
 
 
 class AncillariesNamelist(NamelistModel):
-    """Top-level schema for ``ancillaries.nml``."""
+    """Top-level schema for `ancillaries.nml`."""
 
     jules_frac: JulesFrac = JulesFrac()
     jules_vegetation_props: JulesVegetationProps = JulesVegetationProps()

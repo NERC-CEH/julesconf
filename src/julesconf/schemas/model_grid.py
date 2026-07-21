@@ -1,7 +1,7 @@
-"""Validation schema for ``model_grid.nml``.
+"""Validation schema for `model_grid.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/model_grid.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/model_grid.nml.rst`
 """
 
 from pydantic import Field, model_validator
@@ -12,7 +12,7 @@ __all__ = ["ModelGridNamelist"]
 
 
 class JulesInputGrid(NamelistModel):
-    """``JULES_INPUT_GRID`` namelist members."""
+    """`JULES_INPUT_GRID` namelist members."""
 
     grid_is_1d: bool = False
     """Indicates if the input grid is 1D or 2D."""
@@ -34,7 +34,7 @@ class JulesInputGrid(NamelistModel):
 
 
 class JulesLatlon(NamelistModel):
-    """``JULES_LATLON`` namelist members."""
+    """`JULES_LATLON` namelist members."""
 
     l_coord_latlon: bool = True
     """The coordinate system used for the model grid is latitude and longitude."""
@@ -66,11 +66,11 @@ class JulesLatlon(NamelistModel):
 
 
 class JulesLandFrac(NamelistModel):
-    """``JULES_LAND_FRAC`` namelist members."""
+    """`JULES_LAND_FRAC` namelist members."""
 
 
 class JulesModelGrid(NamelistModel):
-    """``JULES_MODEL_GRID`` namelist members."""
+    """`JULES_MODEL_GRID` namelist members."""
 
     force_1d_grid: bool = False
     """Force the model grid to be 1D, even if it would otherwise have been 2D."""
@@ -78,23 +78,23 @@ class JulesModelGrid(NamelistModel):
 
 
 class JulesNlsizes(NamelistModel):
-    """``JULES_NLSIZES`` namelist members."""
+    """`JULES_NLSIZES` namelist members."""
 
 
 class JulesSurfHgt(NamelistModel):
-    """``JULES_SURF_HGT`` namelist members."""
+    """`JULES_SURF_HGT` namelist members."""
 
     l_tile_hgt: bool = False
 
 
 class JulesZLand(NamelistModel):
-    """``JULES_Z_LAND`` namelist members."""
+    """`JULES_Z_LAND` namelist members."""
 
     l_z_land: bool = False
 
 
 class ModelGridNamelist(NamelistModel):
-    """Top-level schema for ``model_grid.nml``."""
+    """Top-level schema for `model_grid.nml`."""
 
     jules_input_grid: JulesInputGrid = JulesInputGrid()
     jules_latlon: JulesLatlon = JulesLatlon()

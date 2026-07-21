@@ -1,7 +1,7 @@
-"""Validation schema for ``crop_params.nml``.
+"""Validation schema for `crop_params.nml`.
 
 Reference: JULES user guide v7.9,
-``jules-lsm.github.io/user_guide/doc/source/namelists/crop_params.nml.rst``
+`jules-lsm.github.io/user_guide/doc/source/namelists/crop_params.nml.rst`
 """
 
 from typing import Annotated
@@ -13,10 +13,10 @@ __all__ = ["CropParamsNamelist"]
 
 
 class JulesCropparm(NamelistModel):
-    """``JULES_CROPPARM`` namelist members.
+    """`JULES_CROPPARM` namelist members.
 
     Contains ncpft-length lists of crop PFT parameters.
-    Only required when :nml:mem:`JULES_SURFACE_TYPES::ncpft` > 0.
+    Only required when `JULES_SURFACE_TYPES::ncpft` > 0.
     """
 
     t_bse_io: Annotated[list[float] | None, ListLen("ncpft")] = None
@@ -66,6 +66,6 @@ class JulesCropparm(NamelistModel):
 
 
 class CropParamsNamelist(NamelistModel):
-    """Top-level schema for ``crop_params.nml``."""
+    """Top-level schema for `crop_params.nml`."""
 
     jules_cropparm: JulesCropparm = JulesCropparm()

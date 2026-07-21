@@ -1,21 +1,19 @@
 """Pydantic validation schemas for JULES namelist files.
 
 Each module corresponds to one JULES namelist file and exposes a top-level
-model named after the file (e.g. ``TimestepsNamelist`` for ``timesteps.nml``).
-Call ``Model.model_validate(data)`` where ``data`` is the dict returned by
-reading the file with :class:`~julesconf.config.NamelistFileHandler`.
+model named after the file (e.g. `TimestepsNamelist` for `timesteps.nml`).
+Call `Model.model_validate(data)` where `data` is the dict returned by
+reading the file with `julesconf.config.NamelistFileHandler`.
 
-The top-level :class:`~julesconf.schemas.namelists.JulesNamelists` model
+The top-level `julesconf.schemas.namelists.JulesNamelists` model
 validates a complete namelists directory (output of
-:meth:`~julesconf.config.NamelistConfig.read`), including cross-namelist
+`julesconf.config.NamelistConfig.read`), including cross-namelist
 consistency checks.
 
-.. note::
-
-    All models emit a :class:`UnknownNamelistKeyWarning` when they encounter
-    a key they do not recognise. This surfaces typos (which JULES itself
-    silently ignores) without rejecting configs that contain members the
-    schema does not yet cover.
+> **Note:** All models emit a `UnknownNamelistKeyWarning` when they encounter
+a key they do not recognise. This surfaces typos (which JULES itself
+silently ignores) without rejecting configs that contain members the
+schema does not yet cover.
 """
 
 from julesconf.schemas._base import UnknownNamelistKeyWarning
