@@ -3,17 +3,20 @@
 Usage:
 
     from julesconf.config import NamelistConfig
-    from julesconf.schemas.namelists import JulesNamelists
+    from julesconf.schemas import JulesNamelists
 
     data = NamelistConfig().read("/path/to/jules/namelists")
     JulesNamelists.model_validate(data)
 """
 
+from typing import Any, get_args
+
 from pydantic import model_validator
+from pydantic.fields import FieldInfo
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas._utils import find_list_len
 from julesconf.schemas.ancillaries import AncillariesNamelist
+from julesconf.schemas.constraints import ListLen
 from julesconf.schemas.crop_params import CropParamsNamelist
 from julesconf.schemas.drive import DriveNamelist
 from julesconf.schemas.fire import FireNamelist
@@ -44,6 +47,38 @@ from julesconf.schemas.triffid_params import TriffidParamsNamelist
 from julesconf.schemas.urban import UrbanNamelist
 
 __all__ = ["JulesNamelists"]
+
+
+def find_list_len(field_info: FieldInfo) -> ListLen | None:
+    """Return the `ListLen` metadata for a field, if it has any.
+
+    Pydantic only surfaces metadata from the outermost `Annotated` in
+    `FieldInfo.metadata`, so `Annotated[list[X], ListLen(...)] | None`
+    hides the marker inside a union member. This searches the full annotation
+    so both that spelling and the canonical
+    `Annotated[list[X] | None, ListLen(...)]` resolve.
+
+    Args:
+        field_info: The Pydantic field to inspect.
+
+    Returns:
+        The first `ListLen` found, or `None` if the field has none.
+    """
+    for meta in field_info.metadata:
+        if isinstance(meta, ListLen):
+            return meta
+    return _find_in_annotation(field_info.annotation)
+
+
+def _find_in_annotation(annotation: Any) -> ListLen | None:
+    """Recursively search an annotation's type arguments for a `ListLen`."""
+    for arg in get_args(annotation):
+        if isinstance(arg, ListLen):
+            return arg
+        found = _find_in_annotation(arg)
+        if found is not None:
+            return found
+    return None
 
 
 class JulesNamelists(NamelistModel):

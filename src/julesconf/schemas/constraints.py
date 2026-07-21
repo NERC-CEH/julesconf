@@ -1,11 +1,17 @@
-"""Shared utilities for schema field definitions."""
+"""Reusable field constraints for JULES namelist schemas.
+
+These are the building blocks the per-namelist modules annotate their fields
+with: constrained scalar types (`Fraction`, `NonNegFloat`, …), the `ListLen`
+marker for cross-namelist list dimensions, and the `name_or_value` helper for
+enum fields. They are the vocabulary to reach for when adding a schema for a
+namelist that does not have one yet.
+"""
 
 import dataclasses
 from enum import IntEnum
-from typing import Annotated, Any, get_args
+from typing import Annotated
 
 from pydantic import AfterValidator, BeforeValidator, Field
-from pydantic.fields import FieldInfo
 
 __all__ = [
     "LIST_LEN_DIMS",
@@ -14,15 +20,14 @@ __all__ = [
     "NonNegFloat",
     "SentinelOrFraction",
     "ZeroOne",
-    "find_list_len",
     "name_or_value",
 ]
 
 LIST_LEN_DIMS = frozenset({"npft", "nnvg", "ncpft", "ntype"})
 """Dimension names `ListLen` may refer to.
 
-`julesconf.schemas.namelists.JulesNamelists` resolves each of these
-against `jules_surface_types` when checking list lengths.
+`julesconf.schemas.JulesNamelists` resolves each of these against
+`jules_surface_types` when checking list lengths.
 """
 
 
@@ -33,7 +38,7 @@ class ListLen:
     Attributes:
         dim: The dimension name, which must be a member of `LIST_LEN_DIMS`.
             Resolved against `jules_surface_types` at validation time in
-            `julesconf.schemas.namelists.JulesNamelists`.
+            `julesconf.schemas.JulesNamelists`.
     """
 
     dim: str
@@ -45,38 +50,6 @@ class ListLen:
                 f"Unknown ListLen dim {self.dim!r}; "
                 f"expected one of {sorted(LIST_LEN_DIMS)}"
             )
-
-
-def find_list_len(field_info: FieldInfo) -> ListLen | None:
-    """Return the `ListLen` metadata for a field, if it has any.
-
-    Pydantic only surfaces metadata from the outermost `Annotated` in
-    `FieldInfo.metadata`, so `Annotated[list[X], ListLen(...)] | None`
-    hides the marker inside a union member. This searches the full annotation
-    so both that spelling and the canonical
-    `Annotated[list[X] | None, ListLen(...)]` resolve.
-
-    Args:
-        field_info: The Pydantic field to inspect.
-
-    Returns:
-        The first `ListLen` found, or `None` if the field has none.
-    """
-    for meta in field_info.metadata:
-        if isinstance(meta, ListLen):
-            return meta
-    return _find_in_annotation(field_info.annotation)
-
-
-def _find_in_annotation(annotation: Any) -> ListLen | None:
-    """Recursively search an annotation's type arguments for a `ListLen`."""
-    for arg in get_args(annotation):
-        if isinstance(arg, ListLen):
-            return arg
-        found = _find_in_annotation(arg)
-        if found is not None:
-            return found
-    return None
 
 
 ZeroOne = Annotated[int, Field(ge=0, le=1)]

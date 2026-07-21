@@ -4,15 +4,15 @@ Reference: JULES user guide v7.9,
 `jules-lsm.github.io/user_guide/doc/source/namelists/pft_params.nml.rst`
 
 All list fields have length `npft` (cross-namelist; validated in
-`julesconf.schemas.namelists.JulesNamelists`).
+`julesconf.schemas.JulesNamelists`).
 """
 
 from typing import Annotated
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas._utils import Fraction, ListLen, NonNegFloat, ZeroOne
+from julesconf.schemas.constraints import Fraction, ListLen, NonNegFloat, ZeroOne
 
-__all__ = ["PftParamsNamelist"]
+__all__ = ["JulesPftparm", "PftParamsNamelist"]
 
 
 class JulesPftparm(NamelistModel):

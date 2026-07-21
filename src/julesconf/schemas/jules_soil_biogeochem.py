@@ -10,9 +10,14 @@ from typing import Annotated
 from pydantic import Field
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas._utils import name_or_value
+from julesconf.schemas.constraints import name_or_value
 
-__all__ = ["Ch4Substrate", "JulesSoilBiogeochemNamelist", "SoilBgcModel"]
+__all__ = [
+    "Ch4Substrate",
+    "JulesSoilBiogeochem",
+    "JulesSoilBiogeochemNamelist",
+    "SoilBgcModel",
+]
 
 
 class SoilBgcModel(IntEnum):

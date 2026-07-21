@@ -8,7 +8,7 @@ from pydantic import Field
 
 from julesconf.schemas._base import NamelistModel
 
-__all__ = ["JulesSurfaceNamelist"]
+__all__ = ["JulesSurface", "JulesSurfaceNamelist"]
 
 
 class JulesSurface(NamelistModel):

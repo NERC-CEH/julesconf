@@ -1,10 +1,10 @@
-"""Tests for the shared schema field utilities in `julesconf.schemas._utils`."""
+"""Tests for the shared schema field utilities in `julesconf.schemas.constraints`."""
 
 import pytest
 from pydantic import ValidationError
 
-from julesconf.schemas._utils import LIST_LEN_DIMS, ListLen
-from julesconf.schemas.namelists import JulesNamelists
+from julesconf.schemas import JulesNamelists
+from julesconf.schemas.constraints import LIST_LEN_DIMS, ListLen
 from julesconf.schemas.nveg_params import JulesNvegparm
 
 # ---------------------------------------------------------------------------

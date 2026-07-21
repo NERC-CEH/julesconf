@@ -13,7 +13,7 @@ from pydantic import Field, field_validator, model_validator
 
 from julesconf.schemas._base import NamelistModel
 
-__all__ = ["TimestepsNamelist"]
+__all__ = ["JulesSpinup", "JulesTime", "TimestepsNamelist"]
 
 _DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 _SpinupVar = Literal["c_soil", "c_veg", "smcl", "t_soil"]

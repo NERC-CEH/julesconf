@@ -4,20 +4,20 @@ Reference: JULES user guide v7.9,
 `jules-lsm.github.io/user_guide/doc/source/namelists/nveg_params.nml.rst`
 
 All list fields have length `nnvg` (cross-namelist; validated in
-`julesconf.schemas.namelists.JulesNamelists`).
+`julesconf.schemas.JulesNamelists`).
 """
 
 from typing import Annotated
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas._utils import (
+from julesconf.schemas.constraints import (
     Fraction,
     ListLen,
     NonNegFloat,
     SentinelOrFraction,
 )
 
-__all__ = ["NvegParamsNamelist"]
+__all__ = ["JulesNvegparm", "NvegParamsNamelist"]
 
 
 class JulesNvegparm(NamelistModel):

@@ -6,7 +6,11 @@ Reference: JULES user guide v7.9,
 
 from julesconf.schemas._base import NamelistModel
 
-__all__ = ["PrescribedDataNamelist"]
+__all__ = [
+    "JulesPrescribed",
+    "JulesPrescribedDataset",
+    "PrescribedDataNamelist",
+]
 
 
 class JulesPrescribed(NamelistModel):

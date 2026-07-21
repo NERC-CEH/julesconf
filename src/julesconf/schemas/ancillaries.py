@@ -8,7 +8,23 @@ from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
 
-__all__ = ["AncillariesNamelist"]
+__all__ = [
+    "AncillariesNamelist",
+    "JulesAgric",
+    "JulesCo2",
+    "JulesCropProps",
+    "JulesFlake",
+    "JulesFrac",
+    "JulesIrrigProps",
+    "JulesOverbankProps",
+    "JulesPdm",
+    "JulesRiversProps",
+    "JulesSoilProps",
+    "JulesTop",
+    "JulesVegetationProps",
+    "JulesWaterResourcesProps",
+    "UrbanProperties",
+]
 
 
 def _check_nvars_lists(obj: NamelistModel, nvars_val: int) -> None:

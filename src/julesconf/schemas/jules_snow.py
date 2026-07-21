@@ -9,9 +9,9 @@ from typing import Annotated
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas._utils import ListLen
+from julesconf.schemas.constraints import ListLen
 
-__all__ = ["JulesSnowNamelist"]
+__all__ = ["JulesSnow", "JulesSnowNamelist"]
 
 
 class JulesSnow(NamelistModel):

@@ -6,7 +6,12 @@ Reference: JULES user guide v7.9,
 
 from julesconf.schemas._base import NamelistModel
 
-__all__ = ["ImogenNamelist"]
+__all__ = [
+    "ImogenAnlgValsList",
+    "ImogenNamelist",
+    "ImogenOnoffSwitch",
+    "ImogenRunList",
+]
 
 
 class ImogenOnoffSwitch(NamelistModel):

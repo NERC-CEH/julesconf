@@ -10,9 +10,14 @@ from typing import Annotated, Literal
 from pydantic import Field
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas._utils import name_or_value
+from julesconf.schemas.constraints import name_or_value
 
-__all__ = ["JulesRiversNamelist", "RiverRoutingAlgorithm"]
+__all__ = [
+    "JulesOverbank",
+    "JulesRivers",
+    "JulesRiversNamelist",
+    "RiverRoutingAlgorithm",
+]
 
 
 class RiverRoutingAlgorithm(IntEnum):

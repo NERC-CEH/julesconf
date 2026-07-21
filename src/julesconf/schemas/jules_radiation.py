@@ -8,7 +8,7 @@ from pydantic import Field
 
 from julesconf.schemas._base import NamelistModel
 
-__all__ = ["JulesRadiationNamelist"]
+__all__ = ["JulesRadiation", "JulesRadiationNamelist"]
 
 _SEA_ALB_METHODS = (1, 2, 3, 4, 5)
 

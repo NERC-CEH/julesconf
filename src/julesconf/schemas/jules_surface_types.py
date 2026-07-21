@@ -8,7 +8,7 @@ from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
 
-__all__ = ["JulesSurfaceTypesNamelist"]
+__all__ = ["JulesSurfaceTypes", "JulesSurfaceTypesNamelist"]
 
 
 class JulesSurfaceTypes(NamelistModel):

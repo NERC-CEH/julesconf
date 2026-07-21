@@ -4,8 +4,8 @@ import warnings
 
 import pytest
 
+from julesconf.schemas import JulesNamelists
 from julesconf.schemas._base import UnknownNamelistKeyWarning
-from julesconf.schemas.namelists import JulesNamelists
 from julesconf.schemas.timesteps import JulesTime
 
 

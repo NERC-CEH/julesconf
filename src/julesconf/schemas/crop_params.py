@@ -7,9 +7,9 @@ Reference: JULES user guide v7.9,
 from typing import Annotated
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas._utils import Fraction, ListLen, NonNegFloat
+from julesconf.schemas.constraints import Fraction, ListLen, NonNegFloat
 
-__all__ = ["CropParamsNamelist"]
+__all__ = ["CropParamsNamelist", "JulesCropparm"]
 
 
 class JulesCropparm(NamelistModel):

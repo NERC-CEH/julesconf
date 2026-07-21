@@ -8,7 +8,16 @@ from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
 
-__all__ = ["ModelGridNamelist"]
+__all__ = [
+    "JulesInputGrid",
+    "JulesLandFrac",
+    "JulesLatlon",
+    "JulesModelGrid",
+    "JulesNlsizes",
+    "JulesSurfHgt",
+    "JulesZLand",
+    "ModelGridNamelist",
+]
 
 
 class JulesInputGrid(NamelistModel):

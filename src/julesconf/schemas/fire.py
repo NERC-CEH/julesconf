@@ -6,7 +6,7 @@ Reference: JULES user guide v7.9,
 
 from julesconf.schemas._base import NamelistModel
 
-__all__ = ["FireNamelist"]
+__all__ = ["FireNamelist", "FireSwitches"]
 
 
 class FireSwitches(NamelistModel):

@@ -10,7 +10,7 @@ from pydantic import Field, field_validator, model_validator
 
 from julesconf.schemas._base import NamelistModel
 
-__all__ = ["DriveNamelist"]
+__all__ = ["DriveNamelist", "JulesDrive"]
 
 _DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 

@@ -10,7 +10,7 @@ from pydantic import Field
 
 from julesconf.schemas._base import NamelistModel
 
-__all__ = ["OutputNamelist"]
+__all__ = ["JulesOutput", "JulesOutputProfile", "OutputNamelist"]
 
 
 class JulesOutput(NamelistModel):

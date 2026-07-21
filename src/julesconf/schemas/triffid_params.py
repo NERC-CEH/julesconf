@@ -9,9 +9,9 @@ from typing import Annotated
 from pydantic import Field
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas._utils import Fraction, ListLen, NonNegFloat
+from julesconf.schemas.constraints import Fraction, ListLen, NonNegFloat
 
-__all__ = ["TriffidParamsNamelist"]
+__all__ = ["JulesTriffid", "TriffidParamsNamelist"]
 
 
 class JulesTriffid(NamelistModel):

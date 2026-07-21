@@ -10,9 +10,9 @@ from typing import Annotated
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas._utils import name_or_value
+from julesconf.schemas.constraints import name_or_value
 
-__all__ = ["JulesSoilNamelist", "SoilhcMethod"]
+__all__ = ["JulesSoil", "JulesSoilNamelist", "SoilhcMethod"]
 
 
 class SoilhcMethod(IntEnum):

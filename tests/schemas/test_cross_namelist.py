@@ -3,9 +3,10 @@
 import pytest
 from pydantic import ValidationError
 
+from julesconf.schemas import JulesNamelists
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas._utils import ListLen, find_list_len
-from julesconf.schemas.namelists import JulesNamelists
+from julesconf.schemas._namelists import find_list_len
+from julesconf.schemas.constraints import ListLen
 
 
 def _minimal_valid(npft: int = 5, nnvg: int = 4, ncpft: int = 0) -> dict:
