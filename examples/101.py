@@ -228,25 +228,53 @@ def _(mo):
     mo.md(r"""
     ## Modifying parameters
 
-    Now let's make a change to the configuration. We'll adjust the `output_period`
-    in the `output` namelist from its current value to `3600` seconds (hourly output).
+    Let's try two modifications to `timestep_len`: first an invalid value that
+    breaks the schema, then a valid one.
     """)
     return
 
 
 @app.cell
 def _(config_dict, mo):
-    original_output_period = config_dict["namelists"]["output"]["jules_output_profile"][
-        "output_period"
+    original_timestep_len = config_dict["namelists"]["timesteps"]["jules_time"][
+        "timestep_len"
     ]
 
-    mo.md(f"Current `output_period`: **{original_output_period}** seconds")
+    mo.md(f"Current `timestep_len`: **{original_timestep_len}** seconds")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Trying an invalid modification
+
+    What happens if we set `timestep_len` to 0 seconds?
+    The schema requires it to be ≥ 1, so validation will raise.
+    """)
+    return
+
+
+@app.cell
+def _(JulesNamelists, config_dict):
+    config_dict["namelists"]["timesteps"]["jules_time"]["timestep_len"] = 0
+    JulesNamelists.model_validate(config_dict["namelists"])
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Making a valid modification
+
+    Now let's set `timestep_len` to `3600` seconds (hourly output).
+    """)
     return
 
 
 @app.cell
 def _(config_dict):
-    config_dict["namelists"]["output"]["jules_output_profile"]["output_period"] = 3600
+    config_dict["namelists"]["timesteps"]["jules_time"]["timestep_len"] = 3600
     return
 
 
@@ -254,7 +282,7 @@ def _(config_dict):
 def _(JulesNamelists, config_dict, mo):
     JulesNamelists.model_validate(config_dict["namelists"])
 
-    mo.md("Re-validation passed — modified config is still valid")
+    mo.md("Validation passed")
     return
 
 
