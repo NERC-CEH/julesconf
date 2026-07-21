@@ -25,11 +25,17 @@ __all__ = [
     "name_or_value",
 ]
 
-LIST_LEN_DIMS = frozenset({"npft", "nnvg", "ncpft", "ntype"})
+LIST_LEN_DIMS = frozenset({"npft", "nnpft", "nnvg", "ncpft", "ntype"})
 """Dimension names `ListLen` may refer to.
 
 `julesconf.schemas.JulesNamelists` resolves each of these against
-`jules_surface_types` when checking list lengths.
+`jules_surface_types` when checking list lengths:
+
+- `npft` — all plant functional types, natural and crop
+- `ncpft` — the crop PFTs, a *subset* of `npft`
+- `nnpft` — the natural PFTs, `npft - ncpft` (derived; not a namelist member)
+- `nnvg` — non-vegetated surface types
+- `ntype` — all surface types, `npft + nnvg`
 """
 
 SIBLING_DIMS = frozenset({"nvars"})
@@ -49,20 +55,40 @@ class ListLen:
     """Metadata marking a list field as requiring a specific cross-namelist length.
 
     Attributes:
-        dim: The dimension name, which must be a member of `LIST_LEN_DIMS`.
-            Resolved against `jules_surface_types` at validation time in
-            `julesconf.schemas.JulesNamelists`.
+        dim: The canonical dimension name, which must be a member of
+            `LIST_LEN_DIMS`. Resolved against `jules_surface_types` at validation
+            time in `julesconf.schemas.JulesNamelists`. This is the length
+            julesconf itself produces.
+        tolerates: Further dimension names accepted *on input*. Used where JULES
+            declares an array longer than it reads: the TRIFFID parameters are
+            declared `real(npft)` but only the leading `nnpft` values are used
+            (`triffid_params.nml.rst:17`), so they are
+            `ListLen("nnpft", tolerates=("npft",))`. A tolerated value is stored
+            and written back unchanged, so existing configs round-trip.
     """
 
     dim: str
+    tolerates: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         """Reject dimension names that no schema can resolve."""
-        if self.dim not in LIST_LEN_DIMS:
-            raise ValueError(
-                f"Unknown ListLen dim {self.dim!r}; "
-                f"expected one of {sorted(LIST_LEN_DIMS)}"
-            )
+        for dim in (self.dim, *self.tolerates):
+            if dim not in LIST_LEN_DIMS:
+                raise ValueError(
+                    f"Unknown ListLen dim {dim!r}; "
+                    f"expected one of {sorted(LIST_LEN_DIMS)}"
+                )
+
+    def accepted_lengths(self, dims: dict[str, int]) -> set[int]:
+        """Return the list lengths this field accepts.
+
+        Args:
+            dims: Resolved dimension sizes.
+
+        Returns:
+            The set of acceptable lengths.
+        """
+        return {dims[self.dim]} | {dims[d] for d in self.tolerates}
 
 
 @dataclasses.dataclass(frozen=True)

@@ -4,6 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from julesconf.schemas import JulesNamelists
+from julesconf.schemas._namelists import _resolve_dims
 from julesconf.schemas.constraints import LIST_LEN_DIMS, ListLen
 from julesconf.schemas.nveg_params import JulesNvegparm
 
@@ -82,11 +83,8 @@ def test_jules_namelists_resolves_every_dim():
         },
     }
     model = JulesNamelists.model_validate(data)
-    surface_types = model.jules_surface_types.jules_surface_types
-    dims = {
-        "npft": surface_types.npft,
-        "nnvg": surface_types.nnvg,
-        "ncpft": surface_types.ncpft,
-        "ntype": surface_types.npft + surface_types.nnvg,
-    }
+    dims = _resolve_dims(model.jules_surface_types.jules_surface_types)
+
     assert set(dims) == set(LIST_LEN_DIMS)
+    assert dims["nnpft"] == dims["npft"] - dims["ncpft"]
+    assert dims["ntype"] == dims["npft"] + dims["nnvg"]

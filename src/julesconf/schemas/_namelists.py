@@ -157,6 +157,25 @@ def _to_enum_names(value: Any) -> Any:
     return value
 
 
+def _resolve_dims(surface_types: Any) -> dict[str, int]:
+    """Resolve the cross-namelist dimension names against `jules_surface_types`.
+
+    Args:
+        surface_types: The validated `JULES_SURFACE_TYPES` block.
+
+    Returns:
+        A mapping of every name in `LIST_LEN_DIMS` to its size.
+    """
+    npft, nnvg, ncpft = surface_types.npft, surface_types.nnvg, surface_types.ncpft
+    return {
+        "npft": npft,
+        "nnpft": npft - ncpft,
+        "nnvg": nnvg,
+        "ncpft": ncpft,
+        "ntype": npft + nnvg,
+    }
+
+
 def _warn_postponed_files(directory: str | PathLike) -> None:
     """Emit a `PostponedNamelistWarning` for each postponed `.nml` in a directory."""
     for name in sorted(POSTPONED_NAMELISTS):
@@ -350,13 +369,7 @@ class JulesNamelists(NamelistModel):
         """
         data = self.model_dump(mode="json", exclude_none=True)
         surface_types = self.jules_surface_types.jules_surface_types
-        dims = {
-            "npft": surface_types.npft,
-            "nnvg": surface_types.nnvg,
-            "ncpft": surface_types.ncpft,
-            "ntype": surface_types.npft + surface_types.nnvg,
-        }
-        _expand_per_element_defaults(self, data, dims)
+        _expand_per_element_defaults(self, data, _resolve_dims(surface_types))
         return data
 
     def to_namelists(
@@ -403,13 +416,7 @@ class JulesNamelists(NamelistModel):
         `ListLen` field added anywhere is checked automatically.
         """
         surface_types = self.jules_surface_types.jules_surface_types
-        dims = {
-            "npft": surface_types.npft,
-            "nnvg": surface_types.nnvg,
-            "ncpft": surface_types.ncpft,
-            "ntype": surface_types.npft + surface_types.nnvg,
-        }
-        self._check_model_list_lengths(self, "", dims)
+        self._check_model_list_lengths(self, "", _resolve_dims(surface_types))
         return self
 
     @staticmethod
@@ -426,12 +433,14 @@ class JulesNamelists(NamelistModel):
                 continue
 
             meta = find_list_len(field_info)
-            if (
-                meta is not None
-                and isinstance(value, list)
-                and len(value) != dims[meta.dim]
-            ):
+            if meta is None or not isinstance(value, list):
+                continue
+
+            accepted = meta.accepted_lengths(dims)
+            if len(value) not in accepted:
+                expected = " or ".join(
+                    f"{d}={dims[d]}" for d in (meta.dim, *meta.tolerates)
+                )
                 raise ValueError(
-                    f"{field_path} has {len(value)} element(s),"
-                    f" expected {meta.dim}={dims[meta.dim]}"
+                    f"{field_path} has {len(value)} element(s), expected {expected}"
                 )

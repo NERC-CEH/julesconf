@@ -186,3 +186,57 @@ def test_every_list_len_uses_canonical_spelling():
         and not any(isinstance(m, ListLen) for m in field_info.metadata)
     ]
     assert non_canonical == []
+
+
+# ---------------------------------------------------------------------------
+# nnpft: TRIFFID arrays are declared real(npft) but only nnpft values are read
+# ---------------------------------------------------------------------------
+
+
+def test_triffid_accepts_nnpft_length():
+    """The canonical length: one value per natural PFT."""
+    data = _minimal_valid(npft=5, nnvg=4, ncpft=2)  # nnpft = 3
+    data["triffid_params"] = {"jules_triffid": {"g_area_io": [0.1, 0.2, 0.3]}}
+    JulesNamelists.model_validate(data)
+
+
+def test_triffid_tolerates_npft_length():
+    """The declared length: existing configs supply one value per PFT."""
+    data = _minimal_valid(npft=5, nnvg=4, ncpft=2)
+    data["triffid_params"] = {"jules_triffid": {"g_area_io": [0.1, 0.2, 0.3, 0.0, 0.0]}}
+    JulesNamelists.model_validate(data)
+
+
+def test_triffid_rejects_other_lengths():
+    """A length that is neither nnpft nor npft is still an error."""
+    data = _minimal_valid(npft=5, nnvg=4, ncpft=2)
+    data["triffid_params"] = {"jules_triffid": {"g_area_io": [0.1, 0.2, 0.3, 0.4]}}
+    with pytest.raises(ValidationError, match=r"expected nnpft=3 or npft=5"):
+        JulesNamelists.model_validate(data)
+
+
+def test_triffid_lengths_coincide_without_crops():
+    """With ncpft = 0 the two accepted lengths are the same."""
+    data = _minimal_valid(npft=5, nnvg=4, ncpft=0)
+    data["triffid_params"] = {"jules_triffid": {"g_area_io": [0.1] * 5}}
+    JulesNamelists.model_validate(data)
+
+    data["triffid_params"] = {"jules_triffid": {"g_area_io": [0.1] * 4}}
+    with pytest.raises(ValidationError, match=r"g_area_io"):
+        JulesNamelists.model_validate(data)
+
+
+def test_tolerated_length_is_written_back_unchanged():
+    """A tolerated npft-length array round-trips without being truncated."""
+    data = _minimal_valid(npft=5, nnvg=4, ncpft=2)
+    supplied = [0.1, 0.2, 0.3, 0.0, 0.0]
+    data["triffid_params"] = {"jules_triffid": {"g_area_io": supplied}}
+
+    written = JulesNamelists.model_validate(data).to_namelist_dict()
+    assert written["triffid_params"]["jules_triffid"]["g_area_io"] == supplied
+
+
+def test_list_len_rejects_unknown_tolerated_dim():
+    """A typo in `tolerates` fails loudly, like a typo in `dim`."""
+    with pytest.raises(ValueError, match="Unknown ListLen dim 'npfts'"):
+        ListLen("nnpft", tolerates=("npfts",))
