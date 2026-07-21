@@ -119,7 +119,7 @@ class UrbanProperties(_NvarsModel):
 class JulesCo2(NamelistModel):
     """`JULES_CO2` namelist members."""
 
-    co2_mmr: float | None = None
+    co2_mmr: float = 5.241e-4
     """Concentration of atmospheric CO2 as mass mixing ratio."""
 
 

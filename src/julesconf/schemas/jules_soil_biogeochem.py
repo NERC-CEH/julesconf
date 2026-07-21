@@ -63,7 +63,9 @@ class JulesSoilBiogeochem(NamelistModel):
     """Switch for using the layered soil carbon model."""
     l_label_frac_cs: bool = False
     """Switch for labelling and tracing a subset of the layered soil carbon."""
-    kaps_4pool: Annotated[list[float], Field(min_length=4, max_length=4)] | None = None
+    kaps_4pool: Annotated[list[float], Field(min_length=4, max_length=4)] | None = (
+        Field(default=[3.22e-7, 9.65e-9, 2.12e-8, 6.43e-10])
+    )
     """Specific soil respiration rate for the 4-pool submodel for each soil carbon pool."""
     bio_hum_cn: float = 10.0
     """Parameter controlling ratio of C to N for BIO and HUM pools."""
