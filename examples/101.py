@@ -44,6 +44,13 @@ def _():
     return InputFilesConfig, JulesConfig
 
 
+@app.cell
+def _():
+    from julesconf.schemas import JulesNamelists
+
+    return (JulesNamelists,)
+
+
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
@@ -98,6 +105,25 @@ def _(jules_config):
 
     list(config_dict.keys())
     return (config_dict,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Validating the configuration
+
+    Before exploring, validate the namelists against the JULES v7.9 Pydantic schemas.
+    This catches typos, out-of-range values, and cross-namelist inconsistencies.
+    """)
+    return
+
+
+@app.cell
+def _(JulesNamelists, config_dict, mo):
+    validated = JulesNamelists.model_validate(config_dict["namelists"])
+
+    mo.md(f"Validation passed — **{type(validated).__name__}** model created")
+    return (validated,)
 
 
 @app.cell(hide_code=True)
@@ -221,6 +247,14 @@ def _(config_dict, mo):
 @app.cell
 def _(config_dict):
     config_dict["namelists"]["output"]["jules_output_profile"]["output_period"] = 3600
+    return
+
+
+@app.cell
+def _(JulesNamelists, config_dict, mo):
+    JulesNamelists.model_validate(config_dict["namelists"])
+
+    mo.md("Re-validation passed — modified config is still valid")
     return
 
 
