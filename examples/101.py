@@ -99,7 +99,7 @@ def _(mo):
 def _(jules_config):
     from pathlib import Path
 
-    loobos_dir = Path(__file__).parent / "loobos"
+    loobos_dir = Path(__file__).resolve().parent / "loobos"
 
     config_dict = jules_config.read(loobos_dir)
 
