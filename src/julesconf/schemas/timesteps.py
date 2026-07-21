@@ -7,11 +7,12 @@ Reference: JULES user guide v7.9,
 """
 
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field, field_validator, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas.constraints import PerElementDefault
 
 __all__ = ["JulesSpinup", "JulesTime", "TimestepsNamelist"]
 
@@ -68,7 +69,7 @@ class JulesSpinup(NamelistModel):
     """The number of variables to use to assess if the model has spun up."""
     var: list[_SpinupVar] | None = None
     """List of variables to be used to determine if the model has spun up."""
-    use_percent: list[bool] | None = None
+    use_percent: Annotated[list[bool] | None, PerElementDefault(False, "nvars")] = None
     """Indicates whether the tolerance for each variable is expressed as a percentage."""
     tolerance: list[float] | None = None
     """Tolerance for spin-up test for each variable."""

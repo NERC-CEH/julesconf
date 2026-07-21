@@ -9,7 +9,7 @@ from typing import Annotated
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas.constraints import ListLen
+from julesconf.schemas.constraints import ListLen, PerElementDefault
 
 __all__ = ["JulesSnow", "JulesSnowNamelist"]
 
@@ -31,7 +31,9 @@ class JulesSnow(NamelistModel):
     """Prescribed thickness of each snow layer (m)."""
 
     # Length npft (cross-namelist — validated in JulesNamelists)
-    cansnowpft: Annotated[list[bool] | None, ListLen("npft")] = None
+    cansnowpft: Annotated[
+        list[bool] | None, ListLen("npft"), PerElementDefault(False, "npft")
+    ] = None
     """Flag indicating whether snow can be held under the canopy of each PFT."""
 
     # Radiation parameters

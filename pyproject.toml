@@ -19,6 +19,7 @@ dependencies = [
     "h5netcdf[h5py]>=1.8.1",
     "numpy>=2.4.4",
     "pydantic>=2.13.4",
+    "tomli-w>=1.0",
     "xarray>=2026.4.0",
 ]
 keywords = ["configuration", "config"]

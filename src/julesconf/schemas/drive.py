@@ -5,10 +5,12 @@ Reference: JULES user guide v7.9,
 """
 
 from datetime import datetime
+from typing import Annotated
 
 from pydantic import Field, field_validator, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas.constraints import PerElementDefault
 
 __all__ = ["DriveNamelist", "JulesDrive"]
 
@@ -45,7 +47,7 @@ class JulesDrive(NamelistModel):
     """Number of forcing variables that will be provided."""
     var: list[str] | None = None
     """List of forcing variable names as recognised by JULES."""
-    var_name: list[str] | None = None
+    var_name: Annotated[list[str] | None, PerElementDefault("", "nvars")] = None
     """Name of variable in file for each JULES variable specified."""
     tpl_name: list[str] | None = None
     """String to substitute into file names for variable name templating."""

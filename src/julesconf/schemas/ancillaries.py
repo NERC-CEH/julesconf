@@ -4,9 +4,12 @@ Reference: JULES user guide v7.9,
 `jules-lsm.github.io/user_guide/doc/source/namelists/ancillaries.nml.rst`
 """
 
+from typing import Annotated
+
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas.constraints import PerElementDefault
 
 __all__ = [
     "AncillariesNamelist",
@@ -55,11 +58,11 @@ class _NvarsModel(NamelistModel):
     """The number of vegetation property variables that will be provided."""
     var: list[str] | None = None
     """List of vegetation variable names as recognised by JULES."""
-    use_file: list[bool] | None = None
+    use_file: Annotated[list[bool] | None, PerElementDefault(True, "nvars")] = None
     """Indicates if variable should be read from file or set to constant value."""
     const_val: list[float] | None = None
     """Constant value that variable will be set to at every point."""
-    var_name: list[str] | None = None
+    var_name: Annotated[list[str] | None, PerElementDefault("", "nvars")] = None
     """The name of the variable in the file containing the data."""
     file: str | None = None
     """The name of the file to read surface type fractional coverage data from."""
@@ -129,6 +132,14 @@ class JulesOverbankProps(NamelistModel):
 
 class JulesFlake(_NvarsModel):
     """`JULES_FLAKE` namelist members."""
+
+    const_val: Annotated[list[float] | None, PerElementDefault(5.0, "nvars")] = None
+    """For each variable where use_file = FALSE, a constant value used everywhere.
+
+    Unlike the other `nvars` blocks, `JULES_FLAKE` documents a default for this
+    member (5.0 m lake depth), so it is overridden here rather than inherited
+    from `_NvarsModel`.
+    """
 
 
 class AncillariesNamelist(NamelistModel):

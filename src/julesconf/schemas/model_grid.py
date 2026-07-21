@@ -4,9 +4,12 @@ Reference: JULES user guide v7.9,
 `jules-lsm.github.io/user_guide/doc/source/namelists/model_grid.nml.rst`
 """
 
+from typing import Annotated
+
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas.constraints import PerElementDefault
 
 __all__ = [
     "JulesInputGrid",
@@ -51,11 +54,11 @@ class JulesLatlon(NamelistModel):
     """The number of location variables that will be provided."""
     var: list[str] | None = None
     """List of location variable names as recognised by JULES."""
-    use_file: list[bool] | None = None
+    use_file: Annotated[list[bool] | None, PerElementDefault(True, "nvars")] = None
     """For each JULES variable, indicates if it should be read from file or use a constant value."""
     const_val: list[float] | None = None
     """For each JULES variable where use_file = FALSE, a constant value set at every point."""
-    var_name: list[str] | None = None
+    var_name: Annotated[list[str] | None, PerElementDefault("", "nvars")] = None
     """For each JULES variable where use_file = TRUE, this is the name of the variable in the file."""
     file: str | None = None
     """The file to read ancillary properties from."""
