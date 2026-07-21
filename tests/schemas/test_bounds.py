@@ -1,4 +1,4 @@
-"""Spot-check tests for sentinel-aware bounds added in this PR."""
+"""Spot-check tests for field bounds (plain types; sentinel only on albsnf_nvg_io)."""
 
 import pytest
 from pydantic import ValidationError
@@ -11,18 +11,19 @@ from julesconf.schemas.triffid_params import JulesTriffid
 @pytest.mark.parametrize(
     ("model_cls", "field_name", "good", "bad"),
     [
-        # SentinelOrFraction
+        # SentinelOrFraction — only albsnf_nvg_io keeps sentinel
         (JulesNvegparm, "albsnf_nvg_io", [-1.0, 0.0, 1.0], [-2.0, 1.5]),
-        (JulesPftparm, "albsnf_max_io", [-1.0, 0.5], [-0.5, 1.1]),
-        (JulesPftparm, "emis_pft_io", [-1.0, 0.98], [-0.01, 1.01]),
-        # SentinelOrNonNegFloat
-        (JulesPftparm, "canht_ft_io", [-1.0, 0.0, 19.0], [-2.0, -0.1]),
-        (JulesPftparm, "catch0_io", [-1.0, 0.5], [-0.5]),
-        # SentinelOrZeroOne
-        (JulesPftparm, "c3_io", [-1, 0, 1], [-2, 2]),
-        (JulesPftparm, "orient_io", [-1, 1], [2]),
-        # crop_io special range with sentinel
-        (JulesTriffid, "crop_io", [-1, 0, 1, 2], [-2, 3]),
+        # Fraction
+        (JulesPftparm, "albsnf_max_io", [0.0, 0.5], [-1.0, -0.5, 1.1]),
+        (JulesPftparm, "emis_pft_io", [0.0, 0.98], [-1.0, -0.01, 1.01]),
+        # NonNegFloat
+        (JulesPftparm, "canht_ft_io", [0.0, 19.0], [-2.0, -1.0, -0.1]),
+        (JulesPftparm, "catch0_io", [0.0, 0.5], [-1.0, -0.5]),
+        # ZeroOne
+        (JulesPftparm, "c3_io", [0, 1], [-1, -2, 2]),
+        (JulesPftparm, "orient_io", [0, 1], [-1, 2]),
+        # crop_io — plain Field(ge=0, le=3), no sentinel
+        (JulesTriffid, "crop_io", [0, 1, 2, 3], [-1, -2, 4]),
     ],
 )
 def test_bounds(model_cls, field_name, good, bad):

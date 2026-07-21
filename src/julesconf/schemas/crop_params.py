@@ -7,7 +7,7 @@ Reference: JULES user guide v7.9,
 from typing import Annotated
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas._utils import ListLen, SentinelOrFraction, SentinelOrNonNegFloat
+from julesconf.schemas._utils import Fraction, ListLen, NonNegFloat
 
 __all__ = ["CropParamsNamelist"]
 
@@ -24,9 +24,9 @@ class JulesCropparm(NamelistModel):
     t_opt_io: Annotated[list[float] | None, ListLen("ncpft")] = None
     """Optimum temperature (K)."""
     t_max_io: Annotated[list[float] | None, ListLen("ncpft")] = None
-    tt_emr_io: Annotated[list[SentinelOrNonNegFloat] | None, ListLen("ncpft")] = None
+    tt_emr_io: Annotated[list[NonNegFloat] | None, ListLen("ncpft")] = None
     """Thermal time between sowing and emergence (deg Cd)."""
-    crit_pp_io: Annotated[list[SentinelOrNonNegFloat] | None, ListLen("ncpft")] = None
+    crit_pp_io: Annotated[list[NonNegFloat] | None, ListLen("ncpft")] = None
     """Critical photoperiod (hours)."""
     pp_sens_io: Annotated[list[float] | None, ListLen("ncpft")] = None
     """Sensitivity of development rate to photoperiod (hours⁻¹)."""
@@ -44,23 +44,23 @@ class JulesCropparm(NamelistModel):
     """Coefficient for determining partitioning."""
     beta3_io: Annotated[list[float] | None, ListLen("ncpft")] = None
     """Coefficient for determining partitioning."""
-    gamma_io: Annotated[list[SentinelOrNonNegFloat] | None, ListLen("ncpft")] = None
+    gamma_io: Annotated[list[NonNegFloat] | None, ListLen("ncpft")] = None
     """Coefficient for determining specific leaf area (m² kg⁻¹)."""
-    delta_io: Annotated[list[SentinelOrNonNegFloat] | None, ListLen("ncpft")] = None
+    delta_io: Annotated[list[NonNegFloat] | None, ListLen("ncpft")] = None
     """Coefficient for determining specific leaf area (m² kg⁻¹)."""
-    remob_io: Annotated[list[SentinelOrFraction] | None, ListLen("ncpft")] = None
+    remob_io: Annotated[list[Fraction] | None, ListLen("ncpft")] = None
     """Remobilisation factor: fraction of stem growth partitioned to RESERVEC."""
-    cfrac_s_io: Annotated[list[SentinelOrFraction] | None, ListLen("npft")] = None
+    cfrac_s_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
     """Carbon fraction of dry matter for stems."""
-    cfrac_r_io: Annotated[list[SentinelOrFraction] | None, ListLen("ncpft")] = None
+    cfrac_r_io: Annotated[list[Fraction] | None, ListLen("ncpft")] = None
     """Carbon fraction of dry matter for roots."""
-    cfrac_l_io: Annotated[list[SentinelOrFraction] | None, ListLen("ncpft")] = None
+    cfrac_l_io: Annotated[list[Fraction] | None, ListLen("ncpft")] = None
     """Carbon fraction of dry matter for leaves."""
     allo1_io: Annotated[list[float] | None, ListLen("ncpft")] = None
     """Allometric coefficient relating STEMC to CANHT."""
     allo2_io: Annotated[list[float] | None, ListLen("ncpft")] = None
     """Allometric coefficient relating STEMC to CANHT."""
-    mu_max_io: Annotated[list[SentinelOrNonNegFloat] | None, ListLen("ncpft")] = None
+    mu_max_io: Annotated[list[NonNegFloat] | None, ListLen("ncpft")] = None
     nu_io: Annotated[list[float] | None, ListLen("ncpft")] = None
     """Allometric coefficient for calculation of senescence."""
 

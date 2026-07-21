@@ -9,7 +9,7 @@ from typing import Annotated
 from pydantic import Field
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas._utils import ListLen, SentinelOrFraction, SentinelOrNonNegFloat
+from julesconf.schemas._utils import Fraction, ListLen, NonNegFloat
 
 __all__ = ["TriffidParamsNamelist"]
 
@@ -22,39 +22,27 @@ class JulesTriffid(NamelistModel):
     """
 
     crop_io: Annotated[
-        list[Annotated[int, Field(ge=-1, le=2)]] | None, ListLen("npft")
+        list[Annotated[int, Field(ge=0, le=3)]] | None, ListLen("npft")
     ] = None
     """Flag indicating whether the PFT is natural, crop, or pasture."""
-    g_area_io: Annotated[list[SentinelOrNonNegFloat] | None, ListLen("npft")] = None
+    g_area_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
     """Disturbance rate (/360days)."""
-    g_grow_io: Annotated[list[SentinelOrNonNegFloat] | None, ListLen("npft")] = None
+    g_grow_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
     """Rate of leaf growth (/360days)."""
-    g_root_io: Annotated[list[SentinelOrNonNegFloat] | None, ListLen("npft")] = None
+    g_root_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
     """Turnover rate for root biomass (/360days)."""
-    g_wood_io: Annotated[list[SentinelOrNonNegFloat] | None, ListLen("npft")] = None
+    g_wood_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
     """Turnover rate for woody biomass (/360days)."""
-    lai_max_io: Annotated[list[SentinelOrNonNegFloat] | None, ListLen("npft")] = None
+    lai_max_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
     """Maximum LAI."""
-    lai_min_io: Annotated[list[SentinelOrNonNegFloat] | None, ListLen("npft")] = None
+    lai_min_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
     """Minimum LAI."""
-    alloc_fast_io: Annotated[list[SentinelOrFraction] | None, ListLen("npft")] = None
+    alloc_fast_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
     """Fraction of carbon flux from vegetation to wood products added to fast pool."""
-    alloc_med_io: Annotated[list[SentinelOrFraction] | None, ListLen("npft")] = None
+    alloc_med_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
     """Fraction of carbon flux from vegetation to wood products added to moderate pool."""
-    alloc_slow_io: Annotated[list[SentinelOrFraction] | None, ListLen("npft")] = None
+    alloc_slow_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
     """Fraction of carbon flux from vegetation to wood products added to slow pool."""
-    dpm_rpm_ratio_io: Annotated[list[SentinelOrNonNegFloat], ListLen("npft")] | None = (
-        None
-    )
-    """Ratio of DPM to RPM in litter input."""
-    retrans_n_io: Annotated[list[SentinelOrFraction] | None, ListLen("npft")] = None
-    """Fraction of nitrogen retranslocated from leaves."""
-    retrans_p_io: Annotated[list[SentinelOrFraction] | None, ListLen("npft")] = None
-    """Fraction of phosphorus retranslocated from leaves."""
-    ag_sales_io: Annotated[list[SentinelOrFraction] | None, ListLen("npft")] = None
-    """Fraction of agricultural produce sold."""
-    ag_plant_io: Annotated[list[SentinelOrFraction] | None, ListLen("npft")] = None
-    """Fraction of agricultural produce used for planting."""
 
 
 class TriffidParamsNamelist(NamelistModel):
