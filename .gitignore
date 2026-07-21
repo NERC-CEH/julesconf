@@ -35,6 +35,9 @@ ENV/
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# Marimo
+__marimo__/
+
 # IDEs
 .idea/
 .vscode/
@@ -56,7 +59,7 @@ examples/__marimo__/
 # Local checkouts of external docs (e.g. jules-lsm.github.io)
 reference/
 
-# Example JULES input data kept locally for future testing (provenance TBD)
-tests/data/loobos/inputs/
-
 notes/
+
+# Auto-generated docs page
+docs/101.md

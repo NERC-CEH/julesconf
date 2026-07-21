@@ -46,6 +46,10 @@ docs = [
     "marimo-md-export>=0.5.2",
     "mkdocstrings[python]>=1.0.4",
     "zensical>=0.0.40",
+    {include-group = "examples"},
+]
+examples = [
+    "matplotlib>=3.10.9",
 ]
 test = [
     "coverage>=7.13.5",
@@ -91,7 +95,7 @@ select = [
 # contain prose that naturally exceeds 88 chars (E501),
 # include academic citations with en dashes (RUF001),
 # and may have unused variables from exploratory cells (F841).
-"examples/*/notebook.py" = ["B018", "E501", "F841", "RUF001"]
+"examples/**/*.py" = ["B018", "D", "E501", "F841", "RUF001"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

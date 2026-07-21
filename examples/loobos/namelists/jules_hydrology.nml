@@ -1,5 +1,4 @@
 &JULES_HYDROLOGY
-l_baseflow_corr=F,
 l_hydrology=T,
 l_var_rainfrac=T,
 

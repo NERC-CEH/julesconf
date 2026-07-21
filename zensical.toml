@@ -12,6 +12,7 @@ repo_url = "https://github.com/NERC-CEH/julesconf"
 
 nav = [
   { "Home" = "index.md" },
+  { "101" = "101.md" },
   { "API Reference" = [
     { "Config" = "api/config.md" },
     { "Schemas" = [
