@@ -300,12 +300,21 @@ class JulesNamelists(NamelistModel):
     # ------------------------------------------------------------------
 
     @classmethod
-    def _validate(cls, data: dict, *, strict: bool) -> "JulesNamelists":
-        """Validate a config dict, optionally rejecting unknown members."""
-        if not strict:
-            return cls.model_validate(data)
+    def _validate(
+        cls, data: dict, *, strict: bool, allow_grouped: bool = False
+    ) -> "JulesNamelists":
+        """Validate a config dict, optionally rejecting unknown members.
+
+        Assembly of the grouped form happens *inside* the warning filter, so
+        `strict` catches a mistyped parameter on a `[[pft]]` entry too.
+        """
+        from julesconf.schemas._grouped import assemble, is_grouped
+
         with warnings.catch_warnings():
-            warnings.simplefilter("error", UnknownNamelistKeyWarning)
+            if strict:
+                warnings.simplefilter("error", UnknownNamelistKeyWarning)
+            if allow_grouped and is_grouped(data):
+                data = assemble(data)
             return cls.model_validate(data)
 
     @classmethod
@@ -339,8 +348,12 @@ class JulesNamelists(NamelistModel):
         """Read and validate a TOML configuration file.
 
         Args:
-            path: Path to a `.toml` file laid out as `[<namelist>.<block>]`
-                tables, mirroring the namelist structure.
+            path: Path to a `.toml` file. Either form is accepted and
+                detected automatically: the flat form, laid out as
+                `[<namelist>.<block>]` tables mirroring the namelist
+                structure; or the grouped form, using `[[pft]]`,
+                `[[crop_pft]]` and `[[nvg]]` arrays of tables for the
+                surface-type parameters.
             strict: If `True`, raise on any member julesconf does not model.
 
         Returns:
@@ -348,9 +361,11 @@ class JulesNamelists(NamelistModel):
 
         Raises:
             UnknownNamelistKeyWarning: If `strict` and an unknown member is found.
+            GroupedConfigError: If a grouped config mixes the two forms or
+                specifies a parameter on only some entries of a group.
         """
         with open(path, "rb") as f:
-            return cls._validate(tomllib.load(f), strict=strict)
+            return cls._validate(tomllib.load(f), strict=strict, allow_grouped=True)
 
     # ------------------------------------------------------------------
     # Writing
@@ -387,26 +402,40 @@ class JulesNamelists(NamelistModel):
             directory, self.to_namelist_dict(), overwrite_ok=overwrite_ok
         )
 
-    def to_toml_dict(self) -> dict[str, Any]:
+    def to_toml_dict(self, *, grouped: bool = True) -> dict[str, Any]:
         """Return the config as a dict ready for TOML serialisation.
 
         Unlike `to_namelist_dict`, `PerElementDefault` fields are *not*
         expanded — a TOML config stays terse — and enum fields are written as
         member names rather than integers.
 
-        Returns:
-            A `{namelist: {block: {member: value}}}` dict.
-        """
-        return _to_enum_names(self.model_dump(exclude_none=True))
+        Args:
+            grouped: If `True`, pivot the surface-type parameters into `pft`,
+                `crop_pft` and `nvg` arrays of tables. If `False`, emit the
+                flat form that mirrors the namelists one-to-one.
 
-    def to_toml(self, path: str | PathLike) -> None:
+        Returns:
+            A config dict, in the requested form.
+        """
+        from julesconf.schemas._grouped import disassemble
+
+        data = _to_enum_names(self.model_dump(exclude_none=True))
+        return disassemble(data) if grouped else data
+
+    def to_toml(self, path: str | PathLike, *, grouped: bool = True) -> None:
         """Write the config to a TOML file.
 
         Args:
             path: Destination `.toml` file.
+            grouped: If `True` (the default), write the grouped form, in which
+                each surface type is one `[[pft]]` / `[[crop_pft]]` / `[[nvg]]`
+                table rather than a position in 113 parallel arrays. Pass
+                `False` for the flat form, which mirrors the namelists exactly
+                and is the more faithful choice when migrating a config whose
+                arrays are longer than JULES reads.
         """
         with open(path, "wb") as f:
-            tomli_w.dump(self.to_toml_dict(), f)
+            tomli_w.dump(self.to_toml_dict(grouped=grouped), f)
 
     @model_validator(mode="after")
     def _check_list_lengths(self) -> "JulesNamelists":

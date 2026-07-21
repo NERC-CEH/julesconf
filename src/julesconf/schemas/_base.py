@@ -1,12 +1,14 @@
 """Shared base model for JULES namelist schemas."""
 
 import warnings
+from collections.abc import Iterator
 from functools import cache
 from typing import Any, get_args, get_origin
 
 from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic.fields import FieldInfo
 
-__all__ = ["NamelistModel", "UnknownNamelistKeyWarning"]
+__all__ = ["NamelistModel", "UnknownNamelistKeyWarning", "iter_leaf_fields"]
 
 
 def _is_list_annotation(annotation: Any) -> bool:
@@ -42,7 +44,7 @@ class NamelistModel(BaseModel):
         warnings.simplefilter("error", UnknownNamelistKeyWarning)
     """
 
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="ignore", use_attribute_docstrings=True)
 
     @classmethod
     @cache
@@ -88,3 +90,27 @@ class NamelistModel(BaseModel):
                     stacklevel=2,
                 )
         return data
+
+
+def iter_leaf_fields(
+    model: type[NamelistModel], path: tuple[str, ...] = ()
+) -> Iterator[tuple[tuple[str, ...], str, FieldInfo]]:
+    """Walk a model tree, yielding every field that is not itself a submodel.
+
+    Several pieces of machinery are driven by field metadata and need the same
+    traversal: the `ListLen` length check, `PerElementDefault` expansion, and
+    the generated grouped-config models.
+
+    Args:
+        model: The model class to walk.
+        path: Field names of the enclosing blocks, used internally.
+
+    Yields:
+        `(block_path, field_name, field_info)` for each leaf field.
+    """
+    for name, info in model.model_fields.items():
+        annotation = info.annotation
+        if isinstance(annotation, type) and issubclass(annotation, NamelistModel):
+            yield from iter_leaf_fields(annotation, (*path, name))
+        else:
+            yield path, name, info

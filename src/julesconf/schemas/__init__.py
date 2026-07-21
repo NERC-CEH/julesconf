@@ -21,6 +21,13 @@ schema does not yet cover.
 """
 
 from julesconf.schemas._base import NamelistModel, UnknownNamelistKeyWarning
+from julesconf.schemas._grouped import (
+    CropPft,
+    GroupedConfigError,
+    Nvg,
+    Pft,
+    ToleratedLengthWarning,
+)
 from julesconf.schemas._namelists import (
     POSTPONED_NAMELISTS,
     JulesNamelists,
@@ -59,7 +66,9 @@ __all__ = [
     "CanModel",
     "CanRadMod",
     "Ch4Substrate",
+    "CropPft",
     "Fraction",
+    "GroupedConfigError",
     "IgnitionMethod",
     "IrrCrop",
     "JulesNamelists",
@@ -68,7 +77,9 @@ __all__ = [
     "LsmId",
     "NamelistModel",
     "NonNegFloat",
+    "Nvg",
     "PerElementDefault",
+    "Pft",
     "PhotoModel",
     "PostponedNamelistWarning",
     "RiverRoutingAlgorithm",
@@ -76,6 +87,7 @@ __all__ = [
     "SoilBgcModel",
     "SoilhcMethod",
     "StomataModel",
+    "ToleratedLengthWarning",
     "UnknownNamelistKeyWarning",
     "ZeroOne",
     "name_or_value",

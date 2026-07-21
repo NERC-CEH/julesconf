@@ -4,8 +4,13 @@ This is the **only** module that reads `examples/`. Commit `4e0678d`
 deliberately decoupled the test suite from the example data, and unit tests
 should stay self-contained; but the round-trip gates are close to meaningless
 against a synthetic minimal config, which has no `nvars` blocks, no populated
-lists and no enum values. Loobos exercises 6 `nvars` blocks, all 29 files, and
-both the crop and TRIFFID parameter sets.
+lists and no enum values. Loobos exercises 6 `nvars` blocks, all 29 files and
+`npft=5` / `nnvg=4`.
+
+Loobos does **not** exercise crops or TRIFFID: `crop_params.nml` and
+`triffid_params.nml` are both empty and `ncpft` is unset, so `nnpft == npft`
+and the `[[crop_pft]]` half of the grouped form never runs here. That cover
+lives in `test_toml_grouped.py`, and the two must be read together.
 
 See the "Test suite" section of `notes/toml_config.md`.
 """
@@ -101,25 +106,78 @@ def test_round_trip_is_idempotent(tmp_path, loobos):
 
 
 def test_toml_round_trip_matches_direct_write(tmp_path, loobos):
-    """namelists -> TOML -> namelists equals namelists -> namelists."""
+    """namelists -> flat TOML -> namelists equals namelists -> namelists."""
     direct, via_toml = tmp_path / "direct", tmp_path / "via_toml"
     loobos.to_namelists(direct, overwrite_ok=True)
 
     toml_path = tmp_path / "loobos.toml"
-    loobos.to_toml(toml_path)
+    loobos.to_toml(toml_path, grouped=False)
     JulesNamelists.from_toml(toml_path).to_namelists(via_toml, overwrite_ok=True)
 
     assert NamelistConfig().read(direct) == NamelistConfig().read(via_toml)
 
 
 def test_toml_preserves_every_member(tmp_path, loobos, loobos_raw):
-    """The TOML form loses nothing from the original namelists."""
+    """The flat TOML form loses nothing from the original namelists."""
     toml_path = tmp_path / "loobos.toml"
-    loobos.to_toml(toml_path)
+    loobos.to_toml(toml_path, grouped=False)
 
     out = tmp_path / "out"
     JulesNamelists.from_toml(toml_path).to_namelists(out, overwrite_ok=True)
     assert_superset(loobos_raw, NamelistConfig().read(out))
+
+
+# ---------------------------------------------------------------------------
+# Q1 -- the grouped form round-trips real data
+# ---------------------------------------------------------------------------
+
+
+def test_grouped_toml_round_trip_matches_direct_write(tmp_path, loobos):
+    """namelists -> grouped TOML -> namelists equals namelists -> namelists."""
+    direct, via_toml = tmp_path / "direct", tmp_path / "via_toml"
+    loobos.to_namelists(direct, overwrite_ok=True)
+
+    toml_path = tmp_path / "loobos.toml"
+    loobos.to_toml(toml_path, grouped=True)
+    JulesNamelists.from_toml(toml_path).to_namelists(via_toml, overwrite_ok=True)
+
+    assert NamelistConfig().read(direct) == NamelistConfig().read(via_toml)
+
+
+def test_grouped_toml_preserves_every_member(tmp_path, loobos, loobos_raw):
+    """Nothing in the real config is lost by the pivot."""
+    toml_path = tmp_path / "loobos.toml"
+    loobos.to_toml(toml_path, grouped=True)
+
+    out = tmp_path / "out"
+    JulesNamelists.from_toml(toml_path).to_namelists(out, overwrite_ok=True)
+    assert_superset(loobos_raw, NamelistConfig().read(out))
+
+
+def test_grouped_toml_replaces_the_pivoted_tables(loobos):
+    """The five tables the pivot subsumes are gone, replaced by the arrays."""
+    grouped = loobos.to_toml_dict(grouped=True)
+
+    for table in ("pft_params", "nveg_params", "jules_surface_types"):
+        assert table not in grouped
+    assert [e["type"] for e in grouped["pft"]] == [
+        "brd_leaf",
+        "ndl_leaf",
+        "c3_grass",
+        "c4_grass",
+        "shrub",
+    ]
+    assert [e["type"] for e in grouped["nvg"]] == ["urban", "lake", "soil", "ice"]
+    assert "crop_pft" not in grouped  # ncpft = 0
+
+
+def test_grouped_toml_is_smaller_than_the_flat_form(tmp_path, loobos):
+    """The pivot exists to reduce what a user has to read."""
+    flat, grouped = tmp_path / "flat.toml", tmp_path / "grouped.toml"
+    loobos.to_toml(flat, grouped=False)
+    loobos.to_toml(grouped, grouped=True)
+
+    assert len(grouped.read_text().splitlines()) < len(flat.read_text().splitlines())
 
 
 # ---------------------------------------------------------------------------

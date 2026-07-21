@@ -47,6 +47,59 @@ def minimal_config() -> dict:
     return minimal_valid()
 
 
+def minimal_grouped(n_pft: int = 2, n_crop: int = 0, n_nvg: int = 2) -> dict:
+    """Return a minimal valid config in the grouped form.
+
+    The `jules_surface_types`, `pft_params` and `nveg_params` tables are
+    replaced by the arrays of tables that derive them.
+
+    Args:
+        n_pft: Number of natural PFT entries.
+        n_crop: Number of crop PFT entries.
+        n_nvg: Number of non-vegetated entries.
+
+    Returns:
+        A dict suitable for `JulesNamelists.from_toml`'s grouped path.
+    """
+    data = minimal_valid()
+    for key in ("jules_surface_types", "pft_params", "nveg_params"):
+        del data[key]
+
+    veg = ["brd_leaf", "ndl_leaf", "c3_grass", "c4_grass", "shrub"]
+    nvg = ["urban", "lake", "soil", "ice"]
+
+    def entries(names: list[str], count: int, offset: int = 0) -> list[dict]:
+        # A surface type identifier is optional, and there are only so many;
+        # entries beyond the supply simply go untyped.
+        return [
+            {"type": names[offset + i]} if offset + i < len(names) else {}
+            for i in range(count)
+        ]
+
+    data["pft"] = entries(veg, n_pft)
+    if n_crop:
+        data["crop_pft"] = entries(veg, n_crop, offset=n_pft)
+    data["nvg"] = entries(nvg, n_nvg)
+    return data
+
+
+def walk_fields(model, path=()):
+    """Walk a model tree yielding `(dotted_path, field_info)` for leaf fields.
+
+    Deliberately a second implementation of `julesconf.schemas._base.
+    iter_leaf_fields`. The grouped models are generated from that traversal, so
+    a test that reused it could not detect a bug in it.
+    """
+    from julesconf.schemas._base import NamelistModel
+
+    for name, info in model.model_fields.items():
+        annotation = info.annotation
+        if isinstance(annotation, type) and issubclass(annotation, NamelistModel):
+            yield from walk_fields(annotation, (*path, name))
+        else:
+            yield ".".join((*path, name)), info
+
+
 def flatten(data: dict) -> dict:
     """Flatten a `{namelist: {block: {member: value}}}` dict to dotted keys.
 

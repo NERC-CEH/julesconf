@@ -19,6 +19,7 @@ nav = [
       { "Overview" = "api/schemas/index.md" },
       { "JulesNamelists" = "api/schemas/namelists.md" },
       { "Field constraints" = "api/schemas/constraints.md" },
+      { "Grouped configuration" = "api/schemas/grouped.md" },
       { "ancillaries.nml" = "api/schemas/ancillaries.md" },
       { "crop_params.nml" = "api/schemas/crop_params.md" },
       { "drive.nml" = "api/schemas/drive.md" },

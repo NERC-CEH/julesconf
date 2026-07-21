@@ -27,8 +27,10 @@ just
 | `src/julesconf/schemas/` | Pydantic v2 models for 29 JULES namelists (pinned to v7.9) |
 | `src/julesconf/schemas/_namelists.py` | Top-level `JulesNamelists` combining all 29 + cross-namelist checks |
 | `src/julesconf/schemas/constraints.py` | Public field vocabulary: `Fraction`, `NonNegFloat`, `ZeroOne`, `SentinelOrFraction`, `ListLen`, `name_or_value` |
+| `src/julesconf/schemas/_grouped.py` | Grouped TOML form: generated `Pft`/`CropPft`/`Nvg` models + `assemble`/`disassemble` |
 | `tests/test_config.py` | Handler + DirConfig tests (hypothesis property-based) |
-| `tests/schemas/` | Schema tests grouped by concern (`test_bounds`, `test_enums`, `test_cross_namelist`, `test_constraints`, `test_extra_keys`, `test_namelists`) |
+| `tests/schemas/` | Schema tests grouped by concern (`test_bounds`, `test_enums`, `test_cross_namelist`, `test_constraints`, `test_extra_keys`, `test_namelists`, `test_grouped_models`) |
+| `tests/test_toml_grouped.py` | Phase 2 gates. The **only** cover for crop PFTs — Loobos has `ncpft = 0` |
 | `examples/loobos/` | Real Loobos config (29 `.nml` files + input data). Used by `examples/101.py`, **not** by the test suite |
 
 ## Reference docs (ground truth)
@@ -55,12 +57,17 @@ Consequences to be aware of:
 - Enum fields accept int value OR string name via `name_or_value()` validator
 - Module naming rule: public modules in `schemas/` are named after `.nml` files, one-to-one. Everything else is either `_`-prefixed (`_base.py`, `_namelists.py`) or the shared `constraints.py`, and is re-exported from `schemas/__init__.py`
 - Each namelist module's `__all__` lists its top-level `*Namelist` model **and** its per-block models (`JulesPftparm`, …) — both are public
+- TOML has two forms. Flat mirrors the namelists one-to-one; grouped pivots the `ListLen` fields into `[[pft]]`/`[[crop_pft]]`/`[[nvg]]` arrays of tables. `to_toml` writes **grouped by default**; `from_toml` auto-detects. `grouped=False` is the escape hatch, and is required to preserve a TRIFFID array supplied at the tolerated `npft` length
+- `Pft`/`CropPft`/`Nvg` are **generated** from `ListLen` metadata via `create_model`, never hand-written. `test_grouped_models.py::test_generated_model_covers_exactly_its_dims` is the anti-drift guard that makes this safe; it deliberately uses a second, independent model walk (`tests/conftest.py::walk_fields`) so a bug in `_base.iter_leaf_fields` cannot hide from it
+- `CONTRIBUTORS` in `_grouped.py` is the single source of truth for both group membership and array ordering (natural PFTs, then crop PFTs, then non-vegetated)
+- `NamelistModel` sets `use_attribute_docstrings=True`, so the `"""…"""` under each field becomes its `FieldInfo.description` and carries into the generated models and the API docs
 
 ## Testing quirks
 
 - Tests **must `chdir` into tmp_path** because handlers filter absolute paths
 - Hypothesis + `tmp_path` fixtures need `suppress_health_check=[HealthCheck.function_scoped_fixture]`
-- Tests build their own synthetic namelist dicts (`_minimal_valid()` in `test_namelists.py` and `test_cross_namelist.py`) rather than reading `examples/loobos/`. Commit `4e0678d` decoupled them deliberately — no test currently validates real JULES namelists
+- Tests build their own synthetic namelist dicts (`minimal_valid()` / `minimal_grouped()` in `tests/conftest.py`) rather than reading `examples/loobos/`. Commit `4e0678d` decoupled them deliberately; `tests/test_integration_loobos.py` is the single sanctioned exception
+- **Loobos does not exercise crops or TRIFFID.** `crop_params.nml` and `triffid_params.nml` are empty and `ncpft` is unset, so `nnpft == npft`. Anything touching `[[crop_pft]]`, `nnpft` ordering or `ListLen.tolerates` needs a synthetic fixture — the integration test will pass regardless
 
 ## Toolchain quirks
 
