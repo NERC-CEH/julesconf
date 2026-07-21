@@ -47,7 +47,7 @@ class JulesNvegparm(NamelistModel):
     """Surface emissivity of non-vegetated surfaces."""
     z0hm_nvg_io: Annotated[list[NonNegFloat] | None, ListLen("nnvg")] = None
     """Ratio of roughness length for heat to roughness length for momentum."""
-    z0hm_classic_nvg_io: Annotated[list[NonNegFloat], ListLen("nnvg")] | None = None
+    z0hm_classic_nvg_io: Annotated[list[NonNegFloat] | None, ListLen("nnvg")] = None
     """Ratio of roughness length for heat to momentum for the CLASSIC aerosol scheme only."""
 
 

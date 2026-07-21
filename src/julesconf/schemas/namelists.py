@@ -9,10 +9,10 @@ Usage::
     JulesNamelists.model_validate(data)
 """
 
-from pydantic import Field, model_validator
+from pydantic import model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas._utils import ListLen
+from julesconf.schemas._utils import find_list_len
 from julesconf.schemas.ancillaries import AncillariesNamelist
 from julesconf.schemas.crop_params import CropParamsNamelist
 from julesconf.schemas.drive import DriveNamelist
@@ -68,9 +68,7 @@ class JulesNamelists(NamelistModel):
     jules_rivers: JulesRiversNamelist = JulesRiversNamelist()
     jules_snow: JulesSnowNamelist = JulesSnowNamelist()
     jules_soil: JulesSoilNamelist
-    jules_soil_biogeochem: JulesSoilBiogeochemNamelist = Field(
-        default_factory=JulesSoilBiogeochemNamelist
-    )
+    jules_soil_biogeochem: JulesSoilBiogeochemNamelist = JulesSoilBiogeochemNamelist()
     jules_surface: JulesSurfaceNamelist
     jules_surface_types: JulesSurfaceTypesNamelist
     jules_vegetation: JulesVegetationNamelist
@@ -88,34 +86,41 @@ class JulesNamelists(NamelistModel):
 
     @model_validator(mode="after")
     def _check_list_lengths(self) -> "JulesNamelists":
-        _targets = [
-            "triffid_params.jules_triffid",
-            "crop_params.jules_cropparm",
-            "pft_params.jules_pftparm",
-            "nveg_params.jules_nvegparm",
-            "jules_snow.jules_snow",
-            "jules_deposition.jules_deposition_species",
-        ]
+        """Check every ``ListLen``-marked list against its dimension.
+
+        Walks the whole model tree rather than a fixed set of namelists, so a
+        ``ListLen`` field added anywhere is checked automatically.
+        """
+        surface_types = self.jules_surface_types.jules_surface_types
         dims = {
-            "npft": self.jules_surface_types.jules_surface_types.npft,
-            "nnvg": self.jules_surface_types.jules_surface_types.nnvg,
-            "ncpft": self.jules_surface_types.jules_surface_types.ncpft,
-            "ntype": (
-                self.jules_surface_types.jules_surface_types.npft
-                + self.jules_surface_types.jules_surface_types.nnvg
-            ),
+            "npft": surface_types.npft,
+            "nnvg": surface_types.nnvg,
+            "ncpft": surface_types.ncpft,
+            "ntype": surface_types.npft + surface_types.nnvg,
         }
-        for path in _targets:
-            submodel = self
-            for attr in path.split("."):
-                submodel = getattr(submodel, attr)
-            for field_name, field_info in type(submodel).model_fields.items():
-                for meta in field_info.metadata:
-                    if isinstance(meta, ListLen):
-                        value = getattr(submodel, field_name)
-                        if isinstance(value, list) and len(value) != dims[meta.dim]:
-                            raise ValueError(
-                                f"{path}.{field_name} has {len(value)} element(s),"
-                                f" expected {meta.dim}={dims[meta.dim]}"
-                            )
+        self._check_model_list_lengths(self, "", dims)
         return self
+
+    @staticmethod
+    def _check_model_list_lengths(
+        model: NamelistModel, path: str, dims: dict[str, int]
+    ) -> None:
+        """Recursively validate ``ListLen`` fields on ``model`` and its submodels."""
+        for field_name, field_info in type(model).model_fields.items():
+            value = getattr(model, field_name)
+            field_path = f"{path}.{field_name}" if path else field_name
+
+            if isinstance(value, NamelistModel):
+                JulesNamelists._check_model_list_lengths(value, field_path, dims)
+                continue
+
+            meta = find_list_len(field_info)
+            if (
+                meta is not None
+                and isinstance(value, list)
+                and len(value) != dims[meta.dim]
+            ):
+                raise ValueError(
+                    f"{field_path} has {len(value)} element(s),"
+                    f" expected {meta.dim}={dims[meta.dim]}"
+                )

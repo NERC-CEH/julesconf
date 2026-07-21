@@ -94,7 +94,7 @@ class JulesPftparm(NamelistModel):
     """Parameter for decay of nitrogen through canopy by LAI."""
     kpar_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
     """PAR Extinction coefficient."""
-    lai_alb_lim_io: Annotated[list[NonNegFloat], ListLen("npft")] | None = None
+    lai_alb_lim_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
     """Minimum LAI in albedo calculation without snow."""
     lma_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
     """Leaf mass per unit area."""
@@ -134,7 +134,7 @@ class JulesPftparm(NamelistModel):
     """Y-intercept in linear regression between Vcmax and Narea."""
     vsl_io: Annotated[list[float] | None, ListLen("npft")] = None
     """Slope in linear regression between Vcmax and Narea."""
-    z0hm_classic_pft_io: Annotated[list[NonNegFloat], ListLen("npft")] | None = None
+    z0hm_classic_pft_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
     """Roughness length ratio for heat/momentum for CLASSIC."""
     z0hm_pft_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
     """Ratio of roughness length for heat to momentum."""

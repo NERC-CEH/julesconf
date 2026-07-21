@@ -3,6 +3,8 @@
 import pytest
 from pydantic import ValidationError
 
+from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._utils import ListLen, find_list_len
 from julesconf.schemas.namelists import JulesNamelists
 
 
@@ -116,3 +118,70 @@ def test_deposition_ntype_wrong():
         match=r"jules_deposition\.jules_deposition_species\.rsurf_std_io",
     ):
         JulesNamelists.model_validate(data)
+
+
+# ---------------------------------------------------------------------------
+# Regression: fields that spelled the annotation as
+# ``Annotated[list[X], ListLen(...)] | None``, hiding the marker from the
+# length check inside a union member so it silently never ran.
+# ---------------------------------------------------------------------------
+
+
+def test_pft_lai_alb_lim_wrong_npft():
+    data = _minimal_valid()
+    data["pft_params"] = {"jules_pftparm": {"lai_alb_lim_io": [1.0] * 4}}
+    with pytest.raises(
+        ValidationError, match=r"pft_params\.jules_pftparm\.lai_alb_lim_io"
+    ):
+        JulesNamelists.model_validate(data)
+
+
+def test_pft_z0hm_classic_wrong_npft():
+    data = _minimal_valid()
+    data["pft_params"] = {"jules_pftparm": {"z0hm_classic_pft_io": [1.0] * 4}}
+    with pytest.raises(
+        ValidationError, match=r"pft_params\.jules_pftparm\.z0hm_classic_pft_io"
+    ):
+        JulesNamelists.model_validate(data)
+
+
+def test_nveg_z0hm_classic_wrong_nnvg():
+    data = _minimal_valid()
+    data["nveg_params"] = {"jules_nvegparm": {"z0hm_classic_nvg_io": [1.0] * 3}}
+    with pytest.raises(
+        ValidationError, match=r"nveg_params\.jules_nvegparm\.z0hm_classic_nvg_io"
+    ):
+        JulesNamelists.model_validate(data)
+
+
+# ---------------------------------------------------------------------------
+# Meta: every ListLen in the model tree must be reachable by the length check
+# ---------------------------------------------------------------------------
+
+
+def _walk_fields(model: type[NamelistModel], path: str = ""):
+    """Yield ``(dotted_path, field_info)`` for every field in the model tree."""
+    for name, field_info in model.model_fields.items():
+        field_path = f"{path}.{name}" if path else name
+        annotation = field_info.annotation
+        if isinstance(annotation, type) and issubclass(annotation, NamelistModel):
+            yield from _walk_fields(annotation, field_path)
+        else:
+            yield field_path, field_info
+
+
+def test_every_list_len_uses_canonical_spelling():
+    """Every ListLen must sit on the outermost ``Annotated``.
+
+    ``find_list_len`` tolerates ``Annotated[list[X], ListLen(...)] | None``, but
+    that spelling hides the marker from ``FieldInfo.metadata`` and previously
+    disabled the length check silently. Keep one spelling across the schemas:
+    ``Annotated[list[X] | None, ListLen(...)]``.
+    """
+    non_canonical = [
+        path
+        for path, field_info in _walk_fields(JulesNamelists)
+        if find_list_len(field_info) is not None
+        and not any(isinstance(m, ListLen) for m in field_info.metadata)
+    ]
+    assert non_canonical == []

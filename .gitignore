@@ -58,3 +58,5 @@ reference/
 
 # Example JULES input data kept locally for future testing (provenance TBD)
 tests/data/loobos/inputs/
+
+notes/
