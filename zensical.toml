@@ -12,15 +12,35 @@ repo_url = "https://github.com/NERC-CEH/julesconf"
 
 nav = [
   { "Home" = "index.md" },
-  { "101" = "101.md" },
-  { "Configuration guide" = "guide/configuration.md" },
-  { "API Reference" = [
-    { "Config" = "api/config.md" },
-    { "Schemas" = [
+  { "Tutorials" = [
+    { "Get started" = "tutorials/get-started.md" },
+    { "Editing namelists directly" = "tutorials/editing-namelists.md" },
+    { "Authoring a config in TOML" = "tutorials/authoring-toml.md" },
+  ]},
+  { "How-to guides" = [
+    { "Install julesconf" = "how-to/install.md" },
+    { "Migrate a legacy config to TOML" = "how-to/migrate-to-toml.md" },
+    { "Add a plant functional type" = "how-to/add-a-pft.md" },
+    { "Enforce strict validation" = "how-to/strict-validation.md" },
+    { "Validate a single namelist" = "how-to/validate-single-namelist.md" },
+    { "Add a schema for a new namelist" = "how-to/add-a-schema.md" },
+  ]},
+  { "Concepts" = [
+    { "Why not just write namelists?" = "concepts/why-not-namelists.md" },
+    { "The two file forms" = "concepts/file-forms.md" },
+    { "The containers" = "concepts/containers.md" },
+    { "The explicit-defaults guarantee" = "concepts/defaults-guarantee.md" },
+    { "What julesconf covers" = "concepts/coverage.md" },
+  ]},
+  { "Reference" = [
+    { "JulesNamelists" = "api/schemas/namelists.md" },
+    { "Grouped configuration" = "api/schemas/grouped.md" },
+    { "Option values (enums)" = "api/schemas/enums.md" },
+    { "Field constraints" = "api/schemas/constraints.md" },
+    { "Warnings and errors" = "api/schemas/warnings.md" },
+    { "Containers & handlers" = "api/config.md" },
+    { "Namelist schemas" = [
       { "Overview" = "api/schemas/index.md" },
-      { "JulesNamelists" = "api/schemas/namelists.md" },
-      { "Field constraints" = "api/schemas/constraints.md" },
-      { "Grouped configuration" = "api/schemas/grouped.md" },
       { "ancillaries.nml" = "api/schemas/ancillaries.md" },
       { "crop_params.nml" = "api/schemas/crop_params.md" },
       { "drive.nml" = "api/schemas/drive.md" },

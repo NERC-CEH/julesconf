@@ -27,6 +27,6 @@ typecheck:
 
 # Build the documentation.
 docs:
-  cd examples/ && marimo-md-export 101.py ../docs/101.md
+  cd examples/ && marimo-md-export 101.py ../docs/tutorials/editing-namelists.md
   ruff format examples/  # override marimo's annoying reformatting
   zensical build

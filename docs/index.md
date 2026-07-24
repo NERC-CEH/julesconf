@@ -4,47 +4,41 @@ icon: lucide/rocket
 
 # julesconf
 
-More robust tooling for JULES configurations. Configure a JULES run from a
-single readable TOML file, and let julesconf write the 29 Fortran namelist
-files that the model actually consumes.
+More robust tooling for JULES configurations. A JULES run is configured through 29
+Fortran namelist files; julesconf gives you a validated model over them, and a
+single readable TOML file you can configure a run from instead.
 
 ```python
 from julesconf.schemas import JulesNamelists
 
-config = JulesNamelists.from_toml("config.toml")
-config.to_namelists("/path/to/jules/namelists")
+config = JulesNamelists.from_toml("config.toml")   # or from_namelists(dir)
+config.to_namelists("run/namelists")               # write what JULES consumes
 ```
 
-## Why not just write the namelists?
+Namelists stay first-class — read and write them directly. TOML is the terse form
+recommended for new projects, with a
+[grouped form](api/schemas/grouped.md) that turns each surface type into one named
+table so a length mismatch is not even expressible.
+[Why does this help?](concepts/why-not-namelists.md)
 
-A JULES run is configured through 29 Fortran namelist files. That format has
-three properties that make it hard to author correctly, and julesconf is
-positioned to fix all three.
+## Find your way
 
-**Defaults are invisible and unverified.** Omit a namelist member and JULES
-substitutes an internal default. What that default is, and whether it matches
-the user guide, cannot be told from the config — you have to read the Fortran.
-julesconf inverts this: you write only what you care about, and it writes
-namelists that state every parameter it holds a default for, so the written
-config determines the run rather than a partial record of it.
-
-**Related parameters are scattered across files.** Configuring one plant
-functional type means editing dozens of parallel list fields spread over
-`pft_params.nml`, `triffid_params.nml`, `jules_snow.nml` and `crop_params.nml`,
-each of which must have the same length in the same order. julesconf's
-[grouped form](api/schemas/grouped.md) pivots those arrays so each surface type
-is one named object, and a length mismatch is no longer even expressible.
-
-**Position is the only identity.** A PFT is an index — nothing in the config
-records that element 3 of `canht_ft_io` and element 3 of `g_area_io` describe
-the same thing. The grouped form makes each surface type an entry keyed by
-`type`, so identity is explicit rather than conventional.
-
-## Where next
-
-- **[Configuration guide](guide/configuration.md)** — the two file forms, the
-  defaults guarantee, migrating a legacy config, and strict validation.
-- **[Grouped configuration](api/schemas/grouped.md)** — the `[[pft]]` /
-  `[[crop_pft]]` / `[[nvg]]` arrays of tables in detail.
-- **[API reference](api/schemas/namelists.md)** — `JulesNamelists` and the
-  per-namelist schemas.
+- **[Tutorials](tutorials/get-started.md)** — learn by doing. Start with
+  **[Get started](tutorials/get-started.md)**, then
+  **[author a config in TOML](tutorials/authoring-toml.md)** or
+  **[edit namelists directly](tutorials/editing-namelists.md)**.
+- **[How-to guides](how-to/install.md)** — task recipes:
+  [install](how-to/install.md),
+  [migrate a legacy config](how-to/migrate-to-toml.md),
+  [add a PFT](how-to/add-a-pft.md),
+  [enforce strict validation](how-to/strict-validation.md).
+- **[Concepts](concepts/why-not-namelists.md)** — how it fits together:
+  [the two file forms](concepts/file-forms.md),
+  [the containers](concepts/containers.md),
+  [the defaults guarantee](concepts/defaults-guarantee.md),
+  [what julesconf covers](concepts/coverage.md).
+- **[Reference](api/schemas/namelists.md)** —
+  [`JulesNamelists`](api/schemas/namelists.md),
+  [option values](api/schemas/enums.md),
+  [warnings and errors](api/schemas/warnings.md),
+  and the [per-namelist schemas](api/schemas/index.md).
