@@ -27,8 +27,10 @@ just
 | `src/julesconf/schemas/` | Pydantic v2 models for 29 JULES namelists (pinned to v7.9) |
 | `src/julesconf/schemas/_namelists.py` | Top-level `JulesNamelists` combining all 29 + cross-namelist checks |
 | `src/julesconf/schemas/constraints.py` | Public field vocabulary: `Fraction`, `NonNegFloat`, `ZeroOne`, `SentinelOrFraction`, `ListLen`, `name_or_value` |
+| `src/julesconf/rose/_config.py` | `RoseConfig` — parser/serialiser for the Met Office rose INI format. Pure format layer, knows nothing about JULES |
 | `src/julesconf/schemas/_grouped.py` | Grouped TOML form: generated `Pft`/`CropPft`/`Nvg` models + `assemble`/`disassemble` |
 | `tests/test_config.py` | Handler + DirConfig tests (hypothesis property-based) |
+| `tests/rose/test_config.py` | Rose format tests. Fixtures are hand-written miniatures — the real `rose-app.conf`/`rose-meta.conf` files are deliberately **not** vendored |
 | `tests/schemas/` | Schema tests grouped by concern (`test_bounds`, `test_enums`, `test_cross_namelist`, `test_constraints`, `test_extra_keys`, `test_namelists`, `test_grouped_models`) |
 | `tests/test_toml_grouped.py` | Phase 2 gates. The **only** cover for crop PFTs — Loobos has `ncpft = 0` |
 | `examples/loobos/` | Real Loobos config (29 `.nml` files + input data). Used by `examples/101.py`, **not** by the test suite |
@@ -60,6 +62,8 @@ Consequences to be aware of:
 - TOML has two forms. Flat mirrors the namelists one-to-one; grouped pivots the `ListLen` fields into `[[pft]]`/`[[crop_pft]]`/`[[nvg]]` arrays of tables. `to_toml` writes **grouped by default**; `from_toml` auto-detects. `grouped=False` is the escape hatch, and is required to preserve a TRIFFID array supplied at the tolerated `npft` length
 - `Pft`/`CropPft`/`Nvg` are **generated** from `ListLen` metadata via `create_model`, never hand-written. `test_grouped_models.py::test_generated_model_covers_exactly_its_dims` is the anti-drift guard that makes this safe; it deliberately uses a second, independent model walk (`tests/conftest.py::walk_fields`) so a bug in `_base.iter_leaf_fields` cannot hide from it
 - `CONTRIBUTORS` in `_grouped.py` is the single source of truth for both group membership and array ordering (natural PFTs, then crop PFTs, then non-vegetated)
+- `julesconf.rose` is written from scratch against the format, **not** on top of `metomi-rose` — that package is GPL-3 and julesconf is MIT. Do not add it as a dependency
+- `RoseConfig.dump` exists so that `parse -> dump` byte-identity is available as the parser's acceptance test; julesconf does not ship rose configs. It writes in declaration order rather than sorting (rose sorts on write, so files rose produced come back unchanged either way)
 - `NamelistModel` sets `use_attribute_docstrings=True`, so the `"""…"""` under each field becomes its `FieldInfo.description` and carries into the generated models and the API docs
 
 ## Testing quirks
