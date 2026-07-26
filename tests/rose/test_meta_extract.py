@@ -384,3 +384,166 @@ def test_audit_cli_writes_the_report(tmp_path: Path, capsys):
 
     assert rme.main(["audit", "--extract", str(EXTRACT_PATH)]) == 0
     assert "julesconf schema audit" in capsys.readouterr().out
+
+
+# --------------------------------------------------------------------------
+# The disposition lockfile
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("expression", "expected"),
+    [
+        ("len(this) != namelist:jules_surface_types=npft", "npft"),
+        ("len(this) != (namelist:jules_soil_props=nvars)", "nvars"),
+        (
+            "len(this) != (namelist:jules_surface_types=npft +"
+            " namelist:jules_surface_types=nnvg)",
+            "ntype",
+        ),
+        ("this == 1 and namelist:jules_vegetation=l_triffid == '.true.'", None),
+    ],
+)
+def test_len_rule_dim(expression, expected):
+    assert rme._len_rule_dim(expression) == expected
+
+
+def test_build_disposition_auto_classifies_a_new_rule(extract):
+    entries, counts = rme.build_disposition(extract, {})
+    assert counts["added"] == extract["counts"]["rules"]
+    assert counts["removed"] == 0
+
+    cable = entries["namelist:cable_pftparm=a1gs_io#fail-if#1"]
+    assert cable["status"] == "out-of-scope"
+
+    listlen = entries["namelist:jules_pftparm=canht_ft_io#fail-if#1"]
+    assert listlen["status"] == "covered-by-listlen"
+    assert listlen["where"] == "ListLen('npft')"
+
+
+def test_build_disposition_preserves_a_curated_entry(extract):
+    rule_id = "namelist:jules_soil_biogeochem=soil_bgc_model#fail-if#1"
+    curated = {rule_id: {"status": "implemented", "where": "somewhere", "hash": "old"}}
+    entries, counts = rme.build_disposition(extract, curated)
+    assert entries[rule_id]["status"] == "implemented"
+    assert entries[rule_id]["where"] == "somewhere"
+    # The hash is always refreshed from the extract.
+    assert entries[rule_id]["hash"] != "old"
+    assert counts["added"] == extract["counts"]["rules"] - 1
+
+
+def test_build_disposition_drops_a_rotten_entry(extract):
+    _, counts = rme.build_disposition(extract, {"namelist:gone=away#fail-if#1": {}})
+    assert counts["removed"] == 1
+
+
+def test_render_disposition_round_trips(extract):
+    import tomllib
+
+    entries, _ = rme.build_disposition(extract, {})
+    text = rme.render_disposition(entries)
+    assert text.startswith("# Disposition of every conditional rule")
+    assert tomllib.loads(text) == entries
+
+
+def test_disposition_cli_matches_the_committed_lockfile(tmp_path: Path):
+    """Regenerating the lockfile must be a no-op, so a stale one is visible."""
+    destination = tmp_path / "rules_disposition.toml"
+    destination.write_text(rme.DEFAULT_DISPOSITION.read_text(encoding="utf-8"))
+    assert (
+        rme.main(
+            [
+                "disposition",
+                "--extract",
+                str(EXTRACT_PATH),
+                "-o",
+                str(destination),
+            ]
+        )
+        == 0
+    )
+    assert destination.read_text(encoding="utf-8") == rme.DEFAULT_DISPOSITION.read_text(
+        encoding="utf-8"
+    )
+
+
+# --------------------------------------------------------------------------
+# Drift
+# --------------------------------------------------------------------------
+
+
+def _one_rule_extract(rule_id: str, expression: str, reason: str = "") -> dict:
+    rule = {
+        "id": rule_id,
+        "kind": "fail-if",
+        "expression": expression,
+        "hash": rme.rule_hash(expression),
+    }
+    if reason:
+        rule["reason"] = reason
+    return {
+        "provenance": {"version": "vn7.9", "commit": "abc123"},
+        "fields": {"block=member": {"block": "b", "member": "m", "rules": [rule]}},
+    }
+
+
+def test_render_drift_reports_nothing_when_identical():
+    one = _one_rule_extract("a#fail-if#1", "this == 1")
+    _, drifted = rme.render_drift(one, one, {})
+    assert not drifted
+
+
+def test_render_drift_lists_added_removed_and_changed():
+    before = _one_rule_extract("a#fail-if#1", "this == 1", "old reason")
+    after = _one_rule_extract("a#fail-if#1", "this == 2", "new reason")
+    after["fields"]["other"] = {
+        "block": "b",
+        "member": "n",
+        "rules": [
+            {
+                "id": "b#fail-if#1",
+                "kind": "fail-if",
+                "expression": "this == 3",
+                "hash": rme.rule_hash("this == 3"),
+                "reason": "brand new",
+            }
+        ],
+    }
+    report, drifted = rme.render_drift(
+        before, after, {"a#fail-if#1": {"status": "implemented"}}
+    )
+    assert drifted
+    assert "added: 1  removed: 0  changed: 1" in report
+    assert "## Added (1)" in report
+    assert "brand new" in report
+    assert "was: `this == 1`" in report
+    assert "_implemented_" in report
+
+
+def test_drift_cli_reports_no_drift(tmp_path: Path, capsys):
+    assert rme.main(["drift", str(EXTRACT_PATH), "--baseline", str(EXTRACT_PATH)]) == 0
+    assert "drift=false" in capsys.readouterr().out
+
+
+def test_drift_cli_writes_a_report(tmp_path: Path, capsys):
+    candidate = json.loads(EXTRACT_PATH.read_text(encoding="utf-8"))
+    del candidate["fields"]["jules_soil=l_bedrock"]["rules"]
+    destination = tmp_path / "drift.md"
+    candidate_path = tmp_path / "upstream.json"
+    candidate_path.write_text(json.dumps(candidate))
+
+    assert (
+        rme.main(
+            [
+                "drift",
+                str(candidate_path),
+                "--baseline",
+                str(EXTRACT_PATH),
+                "-o",
+                str(destination),
+            ]
+        )
+        == 0
+    )
+    assert "drift=true" in capsys.readouterr().out
+    assert "## Removed (4)" in destination.read_text(encoding="utf-8")

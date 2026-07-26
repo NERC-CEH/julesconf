@@ -4,9 +4,12 @@ Reference: JULES user guide v7.9,
 `jules-lsm.github.io/user_guide/doc/source/namelists/jules_surface_types.nml.rst`
 """
 
+from typing import ClassVar
+
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._conditional import fail_if
 
 __all__ = ["JulesSurfaceTypes", "JulesSurfaceTypesNamelist"]
 
@@ -75,10 +78,93 @@ class JulesSurfaceTypes(NamelistModel):
     shrub_eg: int | None = None
     """Index of shrub (evergreen) PFT surface type (#502)."""
 
+    _PFT_MEMBERS: ClassVar[tuple[str, ...]] = (
+        "brd_leaf",
+        "brd_leaf_dec",
+        "brd_leaf_eg_trop",
+        "brd_leaf_eg_temp",
+        "ndl_leaf",
+        "ndl_leaf_dec",
+        "ndl_leaf_eg",
+        "c3_grass",
+        "c3_crop",
+        "c3_pasture",
+        "c4_grass",
+        "c4_crop",
+        "c4_pasture",
+        "shrub",
+        "shrub_dec",
+        "shrub_eg",
+    )
+    """Members naming a vegetated surface type, which must index a PFT."""
+
+    _NVG_MEMBERS: ClassVar[tuple[str, ...]] = (
+        "urban",
+        "lake",
+        "soil",
+        "ice",
+        "urban_canyon",
+        "urban_roof",
+        "elev_ice",
+        "elev_rock",
+    )
+    """Members naming a non-vegetated surface type, which must index past the PFTs."""
+
     @model_validator(mode="after")
     def _check_ncpft(self) -> "JulesSurfaceTypes":
         if self.ncpft >= self.npft:
             raise ValueError(f"ncpft={self.ncpft} must be < npft={self.npft}")
+        return self
+
+    @model_validator(mode="after")
+    def _check_pseudo_levels(self) -> "JulesSurfaceTypes":
+        """Check every surface type index against `npft` and `nnvg`.
+
+        JULES lays the surface types out as the `npft` PFTs followed by the
+        `nnvg` non-vegetated types, so a vegetated index must be at most
+        `npft`, and a non-vegetated one must be greater than `npft` and at
+        most `npft + nnvg`. `-1` is the "not used" sentinel for the elevated
+        types.
+        """
+        ntype = self.npft + self.nnvg
+        for member in self._PFT_MEMBERS:
+            value = getattr(self, member)
+            fail_if(
+                value is not None and value > self.npft,
+                f"{member}: Pseudo level must be less than or equal to npft",
+            )
+        for member in (*self._NVG_MEMBERS, "usr_type"):
+            value = getattr(self, member)
+            if value is None or value == -1:
+                continue
+            fail_if(
+                value > ntype,
+                f"{member}: Pseudo level must be less than or equal to npft+nnvg",
+            )
+            # The metadata gives `usr_type` the upper bound only: a user type
+            # may legitimately be numbered among the PFTs.
+            fail_if(
+                member != "usr_type" and value <= self.npft,
+                f"{member}: PFTs must be grouped together first with"
+                " non-vegetated tiles following",
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _check_urban_tiles(self) -> "JulesSurfaceTypes":
+        """The one-tile and two-tile urban schemes are mutually exclusive."""
+        one_tile = (self.urban or 0) > 0
+        canyon = (self.urban_canyon or 0) > 0
+        roof = (self.urban_roof or 0) > 0
+        fail_if(
+            one_tile and (canyon or roof),
+            "urban cannot be combined with urban_canyon/urban_roof:"
+            " use either the one-tile or the two-tile urban scheme",
+        )
+        fail_if(
+            canyon != roof,
+            "Both the canyon and roof surface type must be present",
+        )
         return self
 
 

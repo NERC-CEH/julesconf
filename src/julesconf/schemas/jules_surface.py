@@ -4,9 +4,10 @@ Reference: JULES user guide v7.9,
 `jules-lsm.github.io/user_guide/doc/source/namelists/jules_surface.nml.rst`
 """
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._conditional import warn_inactive
 
 __all__ = ["JulesSurface", "JulesSurfaceNamelist"]
 
@@ -58,6 +59,13 @@ class JulesSurface(NamelistModel):
     anthrop_heat_mean: float = 20.0
     beta_cnv_bl: float | None = None
     """Dimensionless coefficient scaling boundary layer convective gustiness contribution."""
+
+    @model_validator(mode="after")
+    def _warn_inactive_members(self) -> "JulesSurface":
+        """`i_aggregate_opt` is only read when tiles are aggregated."""
+        if not self.l_aggregate:
+            warn_inactive(self, ("i_aggregate_opt",), because="l_aggregate is false")
+        return self
 
 
 class JulesSurfaceNamelist(NamelistModel):

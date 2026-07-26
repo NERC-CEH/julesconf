@@ -6,9 +6,10 @@ Reference: JULES user guide v7.9,
 
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._conditional import warn_inactive
 
 __all__ = ["JulesWaterResources", "JulesWaterResourcesNamelist"]
 
@@ -44,6 +45,27 @@ class JulesWaterResources(NamelistModel):
     """Fraction of water returned to the system after industrial abstraction."""
     rf_livestock: float | None = Field(default=None, ge=0, le=1)
     """Fraction of water returned to the system after livestock abstraction."""
+
+    @model_validator(mode="after")
+    def _warn_inactive_members(self) -> "JulesWaterResources":
+        """Every other member of the block is read only when water resources are on."""
+        if not self.l_water_resources:
+            warn_inactive(
+                self,
+                (
+                    "l_prioritise",
+                    "l_water_domestic",
+                    "l_water_environment",
+                    "l_water_industry",
+                    "l_water_irrigation",
+                    "l_water_livestock",
+                    "l_water_transfers",
+                    "nr_gwater_model",
+                    "nstep_water_res",
+                ),
+                because="l_water_resources is false",
+            )
+        return self
 
 
 class JulesWaterResourcesNamelist(NamelistModel):

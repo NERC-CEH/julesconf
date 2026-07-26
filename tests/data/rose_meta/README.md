@@ -30,6 +30,32 @@ To see how julesconf's schemas compare against it:
 python scripts/rose_meta_extract.py audit
 ```
 
+## `rules_disposition.toml`
+
+The extract declares 1,435 conditional rules — 577 `fail-if`, 855 `trigger` and
+3 `warn-if`. `rules_disposition.toml` records what julesconf does about each
+one, with a `status` of `implemented`, `covered-by-listlen`, `out-of-scope` or
+`todo`, and the hash of the rule expression the decision was taken against.
+
+`tests/schemas/test_rose_rule_coverage.py` fails if a rule has no entry, if an
+entry names a rule that no longer exists, or if a rule's expression changed
+since its disposition was recorded. `todo` is a tracked backlog and does *not*
+fail: the gate is only that every upstream rule has been looked at.
+
+Refresh it after regenerating the extract. Curated statuses survive:
+
+```
+python scripts/rose_meta_extract.py disposition
+```
+
+`.github/workflows/rose-meta-freshness.yml` runs monthly, rebuilds the extract
+from upstream `main` and opens a `rose-meta-drift` issue when anything moves.
+The report it posts is produced by:
+
+```
+python scripts/rose_meta_extract.py drift upstream.json
+```
+
 ## Licence and attribution
 
 The metadata this file is derived from is © Crown copyright, Met Office, and is

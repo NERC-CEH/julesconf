@@ -7,7 +7,10 @@ Reference: JULES user guide v7.9,
 from enum import IntEnum
 from typing import Annotated
 
+from pydantic import model_validator
+
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._conditional import fail_if
 from julesconf.schemas.constraints import name_or_value
 
 __all__ = [
@@ -42,6 +45,15 @@ class JulesModelEnvironment(NamelistModel):
     """Environment in which JULES is run: `standalone` (0), `um` (1), `cable` (2)."""
     lsm_id: Annotated[LsmId, name_or_value(LsmId)] = LsmId.jules
     """Land surface model flavour: `jules` (1), `cable` (2)."""
+
+    @model_validator(mode="after")
+    def _check_lsm_parent(self) -> "JulesModelEnvironment":
+        """CABLE cannot be driven by the UM."""
+        fail_if(
+            self.lsm_id == LsmId.cable and self.l_jules_parent == JulesParent.um,
+            "CABLE (JAC) cannot currently be used with the UM.",
+        )
+        return self
 
 
 class ModelEnvironmentNamelist(NamelistModel):

@@ -35,6 +35,7 @@ from julesconf.schemas._base import (
     UnknownNamelistKeyWarning,
     _warn_repeated_groups,
 )
+from julesconf.schemas._conditional import fail_if, warn_inactive
 from julesconf.schemas.ancillaries import AncillariesNamelist
 from julesconf.schemas.constraints import (
     SIBLING_DIMS,
@@ -476,6 +477,211 @@ class JulesNamelists(NamelistModel):
         """
         with open(path, "wb") as f:
             tomli_w.dump(self.to_toml_dict(grouped=grouped), f)
+
+    # ------------------------------------------------------------------
+    # Cross-namelist conditional rules
+    #
+    # Each of these transcribes one or more `fail-if` / `trigger` rules from
+    # the JULES rose metadata whose condition names a member of a *different*
+    # block, which the block itself cannot see. Which upstream rule each check
+    # implements is recorded in `tests/data/rose_meta/rules_disposition.toml`.
+    # ------------------------------------------------------------------
+
+    @model_validator(mode="after")
+    def _check_triffid_consistency(self) -> "JulesNamelists":
+        """Check the soil carbon model against TRIFFID."""
+        from julesconf.schemas.jules_soil_biogeochem import SoilBgcModel
+
+        model = self.jules_soil_biogeochem.jules_soil_biogeochem.soil_bgc_model
+        triffid = self.jules_vegetation.jules_vegetation.l_triffid
+        fail_if(
+            model == SoilBgcModel.single_pool and triffid,
+            "Can't use 1-pool with TRIFFID",
+        )
+        fail_if(
+            model == SoilBgcModel.four_pool and not triffid,
+            "Can't use 4-pool soil C without TRIFFID",
+        )
+        fail_if(
+            model == SoilBgcModel.ecosse and not triffid,
+            "Can't use ECOSSE without TRIFFID",
+        )
+        return self
+
+    @model_validator(mode="after")
+    def _check_irrigation_consistency(self) -> "JulesNamelists":
+        """Check the irrigation switches against the schemes they depend on."""
+        from julesconf.schemas.jules_rivers import RiverRoutingAlgorithm
+
+        irrig = self.jules_irrig.jules_irrig
+        rivers = self.jules_rivers.jules_rivers
+        fail_if(
+            irrig.l_irrig_dmd and self.jules_soil.jules_soil.l_holdwater,
+            "Irrigation can't be used with l_holdwater = TRUE",
+        )
+        if irrig.l_irrig_limit:
+            fail_if(not rivers.l_rivers, "l_rivers must TRUE if l_irrig_limit = TRUE")
+            fail_if(
+                rivers.i_river_vn != RiverRoutingAlgorithm.standalone_trip,
+                "i_river_vn must be 3 (trip) if l_irrig_limit = TRUE",
+            )
+            fail_if(
+                not self.jules_hydrology.jules_hydrology.l_top,
+                "l_top must TRUE if l_irrig_limit = TRUE",
+            )
+            fail_if(
+                self.jules_water_resources.jules_water_resources.l_water_irrigation,
+                "l_irrig_limit must be F if l_water_irrigation=T",
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _check_um_only_options(self) -> "JulesNamelists":
+        """Check options that are available only to, or only outside, the UM."""
+        from julesconf.schemas.jules_rivers import RiverRoutingAlgorithm
+        from julesconf.schemas.jules_vegetation import StomataModel
+        from julesconf.schemas.model_environment import JulesParent
+
+        parent = self.model_environment.jules_model_environment.l_jules_parent
+        veg = self.jules_vegetation.jules_vegetation
+        rivers = self.jules_rivers.jules_rivers
+        if parent == JulesParent.um:
+            fail_if(self.jules_soil.jules_soil.l_tile_soil, "Not available in the UM")
+            fail_if(veg.l_red, "RED is not available to the UM.")
+            fail_if(veg.l_sugar, "SUGAR is not available to the UM.")
+            fail_if(
+                veg.fsmc_shape == 1,
+                "Piece-wise linear in soil potential is not currently available to the UM. Should be 0 (volumetric soil moisture).",
+            )
+            fail_if(
+                veg.stomata_model == StomataModel.sox,
+                "stomata_model = sox is not available to the UM",
+            )
+            fail_if(
+                self.jules_water_resources.jules_water_resources.l_water_resources,
+                "Must be false in the UM.",
+            )
+            fail_if(
+                self.jules_surface_types.jules_surface_types.ncpft > 0,
+                "This is not available to the UM. Should be zero.",
+            )
+            fail_if(
+                self.jules_irrig.jules_irrig.l_irrig_limit,
+                "Irrigation limitation is not tested in the UM yet.",
+            )
+            fail_if(
+                rivers.i_river_vn
+                not in (None, RiverRoutingAlgorithm.um_trip, RiverRoutingAlgorithm.rfm),
+                "UM_TRIP and RFM are the only options compatible with the UM.",
+            )
+        else:
+            fail_if(
+                rivers.i_river_vn == RiverRoutingAlgorithm.um_trip,
+                "UM_TRIP is not compatible with standalone.",
+            )
+            fail_if(
+                self.jules_surface.jules_surface.iscrntdiag in (2, 3),
+                "The preferred option in standalone is 0. The decoupled option"
+                " specified is not recommended until driving JULES with a"
+                " decoupled variable is fully tested.",
+            )
+        fail_if(
+            self.jules_rivers.jules_overbank.l_riv_overbank
+            and parent != JulesParent.standalone,
+            "Overbank inundation is not available to the UM or OASIS.",
+        )
+        return self
+
+    @model_validator(mode="after")
+    def _check_vegetation_consistency(self) -> "JulesNamelists":
+        """Check vegetation options against the blocks they read from."""
+        veg = self.jules_vegetation.jules_vegetation
+        fail_if(
+            veg.l_red and self.jules_surface_types.jules_surface_types.ncpft > 0,
+            "RED cannot be used with crop PFTs (ncpft > 0)",
+        )
+        fail_if(
+            veg.fsmc_shape == 1
+            and not (veg.l_use_pft_psi and self.ancillaries.jules_soil_props.const_z),
+            "1. Piece-wise linear in soil potential. Currently only allowed when"
+            " const_z = T and l_use_pft_psi = T.",
+        )
+        return self
+
+    @model_validator(mode="after")
+    def _check_urban_consistency(self) -> "JulesNamelists":
+        """Check the urban schemes against the surface types and ancillaries."""
+        urban = self.urban.jules_urban
+        types = self.jules_surface_types.jules_surface_types
+        two_tile = (types.urban_canyon or 0) > 0 or (types.urban_roof or 0) > 0
+        fail_if(
+            urban.l_moruses_albedo and not self.jules_radiation.jules_radiation.l_cosz,
+            "Requires l_cosz = TRUE",
+        )
+        fail_if(
+            self.jules_surface.jules_surface.l_urban2t and not two_tile,
+            "When l_urban2t there must be a canyon and a roof surface type",
+        )
+        fail_if(
+            two_tile and self.ancillaries.urban_properties.nvars == 0,
+            "Urban properties need to be supplied when using two-tile urban schemes",
+        )
+        return self
+
+    @model_validator(mode="after")
+    def _check_deposition_consistency(self) -> "JulesNamelists":
+        """Dry deposition needs the individual surface tiles."""
+        fail_if(
+            self.jules_deposition.jules_deposition.l_deposition
+            and self.jules_surface.jules_surface.l_aggregate,
+            "Deposition does not work with aggregated tile",
+        )
+        return self
+
+    @model_validator(mode="after")
+    def _check_imogen_consistency(self) -> "JulesNamelists":
+        """IMOGEN runs use a 360-day calendar and start at the turn of a year."""
+        if self.imogen.imogen_onoff_switch.l_imogen:
+            fail_if(
+                not self.timesteps.jules_time.l_360,
+                "This should be .true. in IMOGEN.",
+            )
+            fail_if(
+                "01-01 00:00:00" not in self.timesteps.jules_time.main_run_start,
+                "IMOGEN runs must start at 00:00:00 on 1st Jan for some year",
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _warn_inactive_across_namelists(self) -> "JulesNamelists":
+        """Warn about members a switch in *another* namelist makes inactive."""
+        from julesconf.schemas.jules_vegetation import CanModel
+
+        if not self.jules_hydrology.jules_hydrology.l_top:
+            warn_inactive(
+                self.jules_soil_biogeochem.jules_soil_biogeochem,
+                ("ch4_substrate", "l_ch4_tlayered", "l_ch4_interactive"),
+                because="jules_hydrology l_top is false, so there is no"
+                " wetland fraction to emit methane from",
+            )
+        if not self.jules_vegetation.jules_vegetation.l_triffid:
+            warn_inactive(
+                self.ancillaries.jules_agric,
+                ("zero_agric", "zero_past"),
+                because="jules_vegetation l_triffid is false",
+            )
+        if self.jules_vegetation.jules_vegetation.can_model != CanModel.radiative_snow:
+            warn_inactive(
+                self.jules_snow.jules_snow,
+                (
+                    "cansnowpft",
+                    "snowinterceptfact",
+                    "snowloadlai",
+                    "snowunloadfact",
+                ),
+                because="jules_vegetation can_model is not radiative_snow",
+            )
+        return self
 
     @model_validator(mode="after")
     def _check_list_lengths(self) -> "JulesNamelists":

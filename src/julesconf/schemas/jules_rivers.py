@@ -5,11 +5,12 @@ Reference: JULES user guide v7.9,
 """
 
 from enum import IntEnum
-from typing import Annotated, Literal
+from typing import Annotated, ClassVar, Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._conditional import warn_inactive
 from julesconf.schemas.constraints import name_or_value
 
 __all__ = [
@@ -64,6 +65,54 @@ class JulesRivers(NamelistModel):
     trip_globe_shape: Literal[1, 2] = 2
     """Earth shape used in the UM-TRIP scheme: 1 = spherical, 2 = ellipsoidal."""
 
+    _ROUTING_ONLY: ClassVar[dict[str, tuple[RiverRoutingAlgorithm, ...]]] = {
+        "cland": (RiverRoutingAlgorithm.rfm,),
+        "criver": (RiverRoutingAlgorithm.rfm,),
+        "cbland": (RiverRoutingAlgorithm.rfm,),
+        "cbriver": (RiverRoutingAlgorithm.rfm,),
+        "retl": (RiverRoutingAlgorithm.rfm,),
+        "retr": (RiverRoutingAlgorithm.rfm,),
+        "a_thresh": (RiverRoutingAlgorithm.rfm,),
+        "runoff_factor": (RiverRoutingAlgorithm.rfm,),
+        "rivers_speed": (
+            RiverRoutingAlgorithm.um_trip,
+            RiverRoutingAlgorithm.standalone_trip,
+        ),
+        "rivers_meander": (
+            RiverRoutingAlgorithm.um_trip,
+            RiverRoutingAlgorithm.standalone_trip,
+        ),
+        "lake_water_conserve_method": (RiverRoutingAlgorithm.um_trip,),
+        "trip_globe_shape": (RiverRoutingAlgorithm.um_trip,),
+    }
+    """Which routing algorithms read each scheme-specific parameter.
+
+    Transcribed from the `namelist:jules_rivers=i_river_vn` `trigger` rules in
+    the JULES vn7.9 rose metadata.
+    """
+
+    @model_validator(mode="after")
+    def _warn_inactive_members(self) -> "JulesRivers":
+        """Warn about routing parameters the selected scheme does not read."""
+        if not self.l_rivers:
+            warn_inactive(
+                self,
+                ("i_river_vn", "nstep_rivers", *self._ROUTING_ONLY),
+                because="l_rivers is false",
+            )
+            return self
+        if self.i_river_vn is not None:
+            warn_inactive(
+                self,
+                [
+                    member
+                    for member, algorithms in self._ROUTING_ONLY.items()
+                    if self.i_river_vn not in algorithms
+                ],
+                because=f"i_river_vn is {self.i_river_vn.name}",
+            )
+        return self
+
 
 class JulesOverbank(NamelistModel):
     """`JULES_OVERBANK` namelist members."""
@@ -93,3 +142,12 @@ class JulesRiversNamelist(NamelistModel):
 
     jules_rivers: JulesRivers = JulesRivers()
     jules_overbank: JulesOverbank = JulesOverbank()
+
+    @model_validator(mode="after")
+    def _warn_inactive_overbank(self) -> "JulesRiversNamelist":
+        """Overbank inundation is a river routing option, so it needs `l_rivers`."""
+        if not self.jules_rivers.l_rivers:
+            warn_inactive(
+                self.jules_overbank, ("l_riv_overbank",), because="l_rivers is false"
+            )
+        return self

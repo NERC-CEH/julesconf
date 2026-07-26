@@ -25,6 +25,7 @@ from julesconf.schemas._base import (
     RepeatedNamelistGroupWarning,
     UnknownNamelistKeyWarning,
 )
+from julesconf.schemas._conditional import InactiveNamelistKeyWarning
 from julesconf.schemas._grouped import (
     CropPft,
     GroupedConfigError,
@@ -74,6 +75,7 @@ __all__ = [
     "Fraction",
     "GroupedConfigError",
     "IgnitionMethod",
+    "InactiveNamelistKeyWarning",
     "IrrCrop",
     "JulesNamelists",
     "JulesParent",

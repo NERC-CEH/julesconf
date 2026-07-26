@@ -25,6 +25,21 @@ exists so the exclusion is visible rather than looking like support.
 
 ::: julesconf.schemas.PostponedNamelistWarning
 
+### `InactiveNamelistKeyWarning`
+
+A member that holds a non-default value JULES will never read, because a switch
+elsewhere in the config selects a different scheme — `kaps` under the 4-pool soil
+carbon model, the RFM river parameters under TRIP, the bedrock parameters with
+`l_bedrock = FALSE`. These come from the `trigger` rules in the JULES rose
+metadata, which rose greys out in its config editor and JULES simply ignores.
+Not an error, but rarely what the author intended.
+
+Only a value that *differs from the schema default* is reported, so a config that
+has been through `to_namelists` — which writes every member julesconf holds a
+default for — does not warn about every inactive member of every unused scheme.
+
+::: julesconf.schemas.InactiveNamelistKeyWarning
+
 ### `ToleratedLengthWarning`
 
 Emitted when writing the [grouped TOML form](grouped.md) from a config whose TRIFFID
@@ -48,7 +63,7 @@ The message names the offending entry and field.
 
 ## Escalating warnings to errors
 
-All four use the standard `warnings` machinery, so each can be turned into an error
+All of these use the standard `warnings` machinery, so each can be turned into an error
 on its own:
 
 ```python

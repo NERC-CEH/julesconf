@@ -5,11 +5,12 @@ Reference: JULES user guide v7.9,
 """
 
 from enum import IntEnum
-from typing import Annotated
+from typing import Annotated, ClassVar
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._conditional import fail_if, warn_inactive
 from julesconf.schemas.constraints import name_or_value
 
 __all__ = [
@@ -135,6 +136,84 @@ class JulesSoilBiogeochem(NamelistModel):
     """Timescale over which methanogenic traits adapt to temperature change."""
     q10_ev_ch4: float = 2.2
     """Q10 for temperature response of methanogenic traits under adaptation."""
+
+    _MODEL_ONLY: ClassVar[dict[str, tuple[SoilBgcModel, ...]]] = {
+        "l_q10": (SoilBgcModel.single_pool, SoilBgcModel.four_pool),
+        "q10_soil": (
+            SoilBgcModel.single_pool,
+            SoilBgcModel.four_pool,
+            SoilBgcModel.ecosse,
+        ),
+        "l_soil_resp_lev2": (SoilBgcModel.single_pool, SoilBgcModel.four_pool),
+        "kaps": (SoilBgcModel.single_pool,),
+        "kaps_4pool": (SoilBgcModel.four_pool,),
+        "sorp": (SoilBgcModel.four_pool,),
+        "n_inorg_turnover": (SoilBgcModel.four_pool,),
+        "bio_hum_cn": (SoilBgcModel.four_pool,),
+        "diff_n_pft": (SoilBgcModel.four_pool,),
+        "tau_lit": (SoilBgcModel.four_pool, SoilBgcModel.ecosse),
+        "tau_resp": (SoilBgcModel.four_pool,),
+    }
+    """Which `soil_bgc_model` choices read each member.
+
+    Transcribed from the `namelist:jules_soil_biogeochem=soil_bgc_model`
+    `trigger` rules in the JULES vn7.9 rose metadata. The `jules_soil_ecosse`
+    targets of the same rule are omitted: julesconf does not model that block.
+    """
+
+    @model_validator(mode="after")
+    def _check_ch4_interactive(self) -> "JulesSoilBiogeochem":
+        """Interactive methane requires the layered soil temperature."""
+        fail_if(
+            self.l_ch4_interactive and not self.l_ch4_tlayered,
+            "l_ch4_interactive requires l_ch4_tlayered = TRUE",
+        )
+        return self
+
+    @model_validator(mode="after")
+    def _check_layered_carbon(self) -> "JulesSoilBiogeochem":
+        """The layered soil carbon model is not available under ECOSSE."""
+        fail_if(
+            self.l_layeredc and self.soil_bgc_model == SoilBgcModel.ecosse,
+            "l_layeredc cannot be used with soil_bgc_model = ecosse",
+        )
+        return self
+
+    @model_validator(mode="after")
+    def _warn_inactive_members(self) -> "JulesSoilBiogeochem":
+        """Warn about members the selected schemes make inactive.
+
+        A member governed by more than one switch (`tau_resp` and `diff_n_pft`
+        need both the 4-pool model and `l_layeredc`) is reported once, against
+        the first switch that rules it out.
+        """
+        reasons: dict[str, str] = {}
+        for member, models in self._MODEL_ONLY.items():
+            if self.soil_bgc_model not in models:
+                reasons[member] = f"soil_bgc_model is {self.soil_bgc_model.name}"
+        if not self.l_layeredc:
+            for member in ("l_label_frac_cs", "z_burn_max", "tau_resp", "diff_n_pft"):
+                reasons.setdefault(member, "l_layeredc is false")
+        if not self.l_ch4_tlayered:
+            reasons.setdefault("tau_ch4", "l_ch4_tlayered is false")
+        if not self.l_ch4_microbe:
+            for member in (
+                "k2_ch4",
+                "kd_ch4",
+                "rho_ch4",
+                "q10_mic_ch4",
+                "cue_ch4",
+                "mu_ch4",
+                "frz_ch4",
+                "alpha_ch4",
+                "ev_ch4",
+                "q10_ev_ch4",
+            ):
+                reasons.setdefault(member, "l_ch4_microbe is false")
+
+        for member, because in reasons.items():
+            warn_inactive(self, (member,), because=because)
+        return self
 
 
 class JulesSoilBiogeochemNamelist(NamelistModel):

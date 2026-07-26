@@ -4,9 +4,10 @@ Reference: JULES user guide v7.9,
 `jules-lsm.github.io/user_guide/doc/source/namelists/jules_radiation.nml.rst`
 """
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._conditional import fail_if, warn_inactive
 
 __all__ = ["JulesRadiation", "JulesRadiationNamelist"]
 
@@ -48,6 +49,34 @@ class JulesRadiation(NamelistModel):
     """Ratio of the NIR to the VIS albedo of bare soil."""
     swdn_frac_albsoil: float | None = None
     """The fraction of total downward SW radiation assumed to be in the NIR part of the spectrum."""
+
+    @model_validator(mode="after")
+    def _check_snow_albedo(self) -> "JulesRadiation":
+        """The two snow albedo schemes need the spectral albedo, and exclude each other."""
+        fail_if(
+            self.l_snow_albedo and not self.l_spec_albedo,
+            "Prognostic snow albedo can only be used when l_spec_albedo=T",
+        )
+        fail_if(
+            self.l_embedded_snow and not self.l_spec_albedo,
+            "If l_embedded_snow = T then l_spec_albedo must also be T",
+        )
+        fail_if(
+            self.l_embedded_snow and self.l_snow_albedo,
+            "Embedded canopy snow albedo model is exclusive of l_snow_albedo.",
+        )
+        return self
+
+    @model_validator(mode="after")
+    def _warn_inactive_members(self) -> "JulesRadiation":
+        """Warn about members that only the spectral albedo scheme reads."""
+        if not self.l_spec_albedo:
+            warn_inactive(
+                self,
+                ("l_spec_alb_bs", "l_niso_direct", "l_embedded_snow"),
+                because="l_spec_albedo is false",
+            )
+        return self
 
 
 class JulesRadiationNamelist(NamelistModel):

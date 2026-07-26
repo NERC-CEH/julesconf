@@ -31,6 +31,8 @@ just
 | `src/julesconf/schemas/_grouped.py` | Grouped TOML form: generated `Pft`/`CropPft`/`Nvg` models + `assemble`/`disassemble` |
 | `tests/test_config.py` | Handler + DirConfig tests (hypothesis property-based) |
 | `tests/rose/test_config.py` | Rose format tests. Fixtures are hand-written miniatures — the real `rose-app.conf`/`rose-meta.conf` files are deliberately **not** vendored |
+| `src/julesconf/schemas/_conditional.py` | `InactiveNamelistKeyWarning` + the `is_specified` / `warn_inactive` / `fail_if` helpers the rose `fail-if` / `trigger` validators are built from |
+| `tests/data/rose_meta/rules_disposition.toml` | Disposition lockfile: one entry per rose rule, gated by `tests/schemas/test_rose_rule_coverage.py` |
 | `tests/schemas/` | Schema tests grouped by concern (`test_bounds`, `test_enums`, `test_cross_namelist`, `test_constraints`, `test_extra_keys`, `test_namelists`, `test_grouped_models`) |
 | `tests/test_toml_grouped.py` | Phase 2 gates. The **only** cover for crop PFTs — Loobos has `ncpft = 0` |
 | `examples/loobos/` | Real Loobos config (29 `.nml` files + input data). Used by `examples/101.py`, **not** by the test suite |
@@ -73,6 +75,9 @@ Modelling these as lists of blocks is **deferred until after alpha**. Until then
 - `ListLen` metadata on fields enables cross-namelist dimension validation in `JulesNamelists._check_list_lengths`, which walks the whole model tree via `find_list_len`
 - `ListLen` must sit on the **outermost** `Annotated`: `Annotated[list[X] | None, ListLen("npft")]`. The other spelling hides it from `FieldInfo.metadata`; `test_cross_namelist.py::test_every_list_len_uses_canonical_spelling` enforces this
 - Enum fields accept int value OR string name via `name_or_value()` validator
+- Conditional rules come from the JULES rose metadata and split by severity: `fail-if` → `ValueError` via `@model_validator(mode="after")`; `trigger` → `InactiveNamelistKeyWarning`, because JULES *ignores* an inactive member rather than rejecting it. Cross-namelist rules live on `JulesNamelists`; block-local ones live in their own module
+- `warn_inactive` fires only when a member **differs from its schema default**, not on `model_fields_set`. `to_namelist_dict` writes every defaulted member, so a read-write-read cycle would otherwise warn about every inactive member of every unused scheme
+- Every rose rule has an entry in `tests/data/rose_meta/rules_disposition.toml` (`implemented` / `covered-by-listlen` / `out-of-scope` / `todo`). `todo` does **not** fail CI — the gate is only that every upstream rule has been looked at. Regenerate with `python scripts/rose_meta_extract.py disposition`, which preserves curated statuses
 - Module naming rule: public modules in `schemas/` are named after `.nml` files, one-to-one. Everything else is either `_`-prefixed (`_base.py`, `_namelists.py`) or the shared `constraints.py`, and is re-exported from `schemas/__init__.py`
 - Each namelist module's `__all__` lists its top-level `*Namelist` model **and** its per-block models (`JulesPftparm`, …) — both are public
 - TOML has two forms. Flat mirrors the namelists one-to-one; grouped pivots the `ListLen` fields into `[[pft]]`/`[[crop_pft]]`/`[[nvg]]` arrays of tables. `to_toml` writes **grouped by default**; `from_toml` auto-detects. `grouped=False` is the escape hatch, and is required to preserve a TRIFFID array supplied at the tolerated `npft` length
@@ -107,3 +112,8 @@ lint job:   lint-check → typecheck
 test job:   test-cov across Python 3.12, 3.13, 3.14
 docs job:   docs → deploy to GitHub Pages (currently commented out in workflow)
 ```
+
+`rose-meta-freshness.yml` runs monthly (and on demand): it sparsely clones
+`MetOffice/jules`, rebuilds the vn7.9 extract from upstream `main`, and opens or
+updates a `rose-meta-drift` issue if any conditional rule was added, removed or
+changed. It never fails the build.

@@ -7,9 +7,10 @@ Reference: JULES user guide v7.9,
 from enum import IntEnum
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._conditional import fail_if, warn_inactive
 from julesconf.schemas.constraints import (
     ListLen,
     PerElementDefault,
@@ -177,6 +178,74 @@ class JulesVegetation(NamelistModel):
         IgnitionMethod.constant
     )
     """INFERNO ignition type: `constant` (1), `prescribed_lightning` (2), `prescribed_population` (3)."""
+
+    @model_validator(mode="after")
+    def _check_triffid_switches(self) -> "JulesVegetation":
+        """Check the TRIFFID sub-switches against each other."""
+        fail_if(
+            self.l_trif_crop and self.l_trif_eq,
+            "l_trif_crop cannot be used with the equilibrium model (l_trif_eq)",
+        )
+        fail_if(
+            self.l_trif_fire and self.l_trif_eq,
+            "l_trif_fire cannot be used with the equilibrium model (l_trif_eq)",
+        )
+        fail_if(
+            self.l_trif_biocrop and not self.l_trif_crop,
+            "l_trif_biocrop requires l_trif_crop = TRUE",
+        )
+        return self
+
+    @model_validator(mode="after")
+    def _check_crop_switches(self) -> "JulesVegetation":
+        """Sequential cropping needs prescribed sowing dates."""
+        fail_if(
+            self.l_croprotate and not self.l_prescsow,
+            "l_prescsow must be TRUE if l_croprotate = TRUE",
+        )
+        return self
+
+    @model_validator(mode="after")
+    def _check_stomata_model(self) -> "JulesVegetation":
+        """The SOx stomatal conductance model constrains its neighbours."""
+        if self.stomata_model == StomataModel.sox:
+            fail_if(
+                self.l_scale_resp_pm,
+                "stomata_model = sox cannot be used with l_scale_resp_pm = TRUE",
+            )
+            fail_if(
+                self.can_rad_mod != CanRadMod.beers_law,
+                "stomata_model = sox requires can_rad_mod = beers_law",
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _warn_inactive_members(self) -> "JulesVegetation":
+        """Warn about members the vegetation switches make inactive."""
+        if not self.l_triffid:
+            warn_inactive(
+                self,
+                (
+                    "l_trif_eq",
+                    "triffid_period",
+                    "l_veg_compete",
+                    "l_landuse",
+                    "l_ht_compete",
+                    "l_nitrogen",
+                    "l_red",
+                    "l_trif_crop",
+                    "l_trif_fire",
+                    "frac_min",
+                    "frac_seed",
+                    "pow",
+                ),
+                because="l_triffid is false",
+            )
+        elif not self.l_trif_crop:
+            warn_inactive(self, ("l_trif_biocrop",), because="l_trif_crop is false")
+        if not self.l_phenol:
+            warn_inactive(self, ("phenol_period",), because="l_phenol is false")
+        return self
 
 
 class JulesVegetationNamelist(NamelistModel):

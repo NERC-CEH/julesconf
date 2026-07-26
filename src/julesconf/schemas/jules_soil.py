@@ -10,6 +10,7 @@ from typing import Annotated
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._conditional import fail_if, warn_inactive
 from julesconf.schemas.constraints import ListLen, name_or_value
 
 __all__ = ["JulesSoil", "JulesSoilNamelist", "SoilhcMethod"]
@@ -75,6 +76,26 @@ class JulesSoil(NamelistModel):
             raise ValueError(
                 f"dzsoil_io has {len(self.dzsoil_io)} element(s),"
                 f" expected sm_levels={self.sm_levels}"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _check_dzsoil_elev(self) -> "JulesSoil":
+        """The elevated-tile bedrock layer must have a positive thickness."""
+        fail_if(
+            self.dzsoil_elev is not None and self.dzsoil_elev <= 0,
+            "Must have positive value",
+        )
+        return self
+
+    @model_validator(mode="after")
+    def _warn_inactive_members(self) -> "JulesSoil":
+        """Warn about bedrock parameters set while the bedrock is switched off."""
+        if not self.l_bedrock:
+            warn_inactive(
+                self,
+                ("ns_deep", "hcapdeep", "hcondeep", "dzdeep"),
+                because="l_bedrock is false",
             )
         return self
 

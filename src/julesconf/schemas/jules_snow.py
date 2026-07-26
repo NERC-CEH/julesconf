@@ -9,6 +9,7 @@ from typing import Annotated
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._conditional import warn_inactive
 from julesconf.schemas.constraints import ListLen, PerElementDefault
 
 __all__ = ["JulesSnow", "JulesSnowNamelist"]
@@ -119,6 +120,25 @@ class JulesSnow(NamelistModel):
         if self.dzsnow is not None and len(self.dzsnow) != self.nsmax:
             raise ValueError(
                 f"dzsnow has {len(self.dzsnow)} element(s), expected nsmax={self.nsmax}"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _warn_inactive_members(self) -> "JulesSnow":
+        """Warn about multi-layer snow parameters set while `nsmax` is zero."""
+        if self.nsmax <= 0:
+            warn_inactive(
+                self,
+                (
+                    "dzsnow",
+                    "rho_snow_fresh",
+                    "snowliqcap",
+                    "i_relayer_opt",
+                    "i_grain_growth_opt",
+                    "i_snow_cond_parm",
+                    "l_snow_nocan_hc",
+                ),
+                because="nsmax is 0, so the model has a single snow layer",
             )
         return self
 
