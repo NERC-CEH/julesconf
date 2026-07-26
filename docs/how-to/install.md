@@ -32,6 +32,15 @@ print(JULES_VERSION)   # the JULES user-guide version the schemas are pinned to
 `JULES_VERSION` tells you which JULES release the schemas track — see
 [what julesconf covers](../concepts/coverage.md) for why that matters.
 
+Installing also puts a `julesconf` command on your path:
+
+```
+julesconf --version
+julesconf validate run/namelists
+```
+
+See the [command-line reference](../api/cli.md).
+
 ## Set up for development
 
 To work on julesconf itself, clone the repository and sync the full environment,
@@ -51,3 +60,5 @@ the full set of tasks.
 - New to julesconf? Work through [Get started](../tutorials/get-started.md).
 - Have an existing namelists run? See
   [migrate a legacy config to TOML](migrate-to-toml.md).
+- Working from a rose suite? See
+  [convert a rose app to TOML](rose-to-toml.md).

@@ -22,14 +22,17 @@ just
 
 ## Key locations
 
-| `src/julesconf/config.py` | DirConfig classes (NamelistConfig, InputFilesConfig, JulesConfig) + 3 file handlers |
+| `src/julesconf/cli.py` | The `julesconf` console script (typer). A thin shell over `JulesNamelists` + `julesconf.rose` — no logic of its own |
 |---|---|
+| `src/julesconf/_errors.py` | Maps pydantic error `loc`s to `file.nml / BLOCK / member` and groups warnings by severity band. No CLI dependency; usable from library code |
+| `src/julesconf/config.py` | DirConfig classes (NamelistConfig, InputFilesConfig, JulesConfig) + 3 file handlers |
 | `src/julesconf/schemas/` | Pydantic v2 models for 29 JULES namelists (pinned to v7.9) |
 | `src/julesconf/schemas/_namelists.py` | Top-level `JulesNamelists` combining all 29 + cross-namelist checks |
 | `src/julesconf/schemas/constraints.py` | Public field vocabulary: `Fraction`, `NonNegFloat`, `ZeroOne`, `SentinelOrFraction`, `ListLen`, `name_or_value` |
 | `src/julesconf/rose/_config.py` | `RoseConfig` — parser/serialiser for the Met Office rose INI format. Pure format layer, knows nothing about JULES |
 | `src/julesconf/schemas/_grouped.py` | Grouped TOML form: generated `Pft`/`CropPft`/`Nvg` models + `assemble`/`disassemble` |
 | `tests/test_config.py` | Handler + DirConfig tests (hypothesis property-based) |
+| `tests/test_cli.py` | CLI + error-formatter tests. The formatter is tested directly **and** through the CLI |
 | `tests/rose/test_config.py` | Rose format tests. Fixtures are hand-written miniatures — the real `rose-app.conf`/`rose-meta.conf` files are deliberately **not** vendored |
 | `src/julesconf/schemas/_conditional.py` | `InactiveNamelistKeyWarning` + the `is_specified` / `warn_inactive` / `fail_if` helpers the rose `fail-if` / `trigger` validators are built from |
 | `tests/data/rose_meta/rules_disposition.toml` | Disposition lockfile: one entry per rose rule, gated by `tests/schemas/test_rose_rule_coverage.py` |
@@ -93,6 +96,16 @@ Modelling these as lists of blocks is **deferred until after alpha**. Until then
 - Hypothesis + `tmp_path` fixtures need `suppress_health_check=[HealthCheck.function_scoped_fixture]`
 - Tests build their own synthetic namelist dicts (`minimal_valid()` / `minimal_grouped()` in `tests/conftest.py`) rather than reading `examples/loobos/`. Commit `4e0678d` decoupled them deliberately; `tests/test_integration_loobos.py` is the single sanctioned exception
 - **Loobos does not exercise crops or TRIFFID.** `crop_params.nml` and `triffid_params.nml` are empty and `ncpft` is unset, so `nnpft == npft`. Anything touching `[[crop_pft]]`, `nnpft` ordering or `ListLen.tolerates` needs a synthetic fixture — the integration test will pass regardless
+
+## The CLI
+
+`julesconf` is a console script (`[project.scripts]` → `julesconf.cli:app`), built on `typer`. It must stay a **thin shell**: every command is one or two calls into `JulesNamelists` / `julesconf.rose`, with no validation, conversion or path logic of its own. Anything a command needs that the library cannot do belongs in the library.
+
+- Exit codes are part of the contract and are tested: `0` success, `1` invalid config or failed conversion, `2` usage error (typer/click raises these itself — do not catch them).
+- Rendering lives in `_errors.py`, not `cli.py`, so the same reports are available to library callers. It emits plain text wrapped at `_errors.WIDTH`; `cli.py` prints it through `rich` with `markup=False, highlight=False, soft_wrap=True`. Markup **must** stay off — error messages contain literal `[...]` (enum name lists) that rich would otherwise swallow.
+- Warnings are grouped by category and carry a severity band from `_errors.WARNING_KINDS`. `RepeatedNamelistGroupWarning` is pinned to the top of the report (`WarningKind.priority`) because it is a modelling gap, not a user error. Adding a warning class to the schemas means adding it to `WARNING_KINDS`; `tests/test_cli.py::test_every_julesconf_warning_has_presentation_metadata` fails otherwise.
+- `--quiet` drops the advisory band and the success line only. Data-loss warnings and errors are never suppressed.
+- `rose2nml` / `rose2toml` always report unresolved `$VAR` references by name. Under the default `--on-unbound keep` these reach the output verbatim and then fail validation as a bad path, so the report is what stops that looking like a mystery.
 
 ## Toolchain quirks
 

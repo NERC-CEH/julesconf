@@ -20,6 +20,7 @@ dependencies = [
     "numpy>=2.4.4",
     "pydantic>=2.13.4",
     "tomli-w>=1.0",
+    "typer>=0.20",
     "xarray>=2026.4.0",
 ]
 keywords = ["configuration", "config"]
@@ -30,6 +31,9 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
 ]
+
+[project.scripts]
+julesconf = "julesconf.cli:app"
 
 
 [dependency-groups]
