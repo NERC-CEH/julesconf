@@ -30,7 +30,11 @@ from julesconf.rose import (
     rose_app_to_namelists,
     rose_to_namelists,
 )
-from julesconf.schemas import JulesNamelists, UnknownNamelistKeyWarning
+from julesconf.schemas import (
+    JulesNamelists,
+    RepeatedNamelistGroupWarning,
+    UnknownNamelistKeyWarning,
+)
 
 DATA = Path(__file__).resolve().parent.parent / "data" / "rose_apps"
 
@@ -42,12 +46,6 @@ APPS = [
     "loobos_jules_es_1p0_deposition",
     "loobos_trif",
 ]
-
-# Apps whose crop parameters trip a real schema bug: `jules_cropparm.delta_io`
-# is typed `NonNegFloat`, but the JULES defaults for it are negative
-# (-0.0507, -0.1451, ...). Being fixed in the next phase; strict xfail so the
-# fix is noticed here.
-CROP_DELTA_IO_APPS = ["loobos_crops", "loobos_irrig"]
 
 
 def conf(text: str) -> str:
@@ -331,12 +329,12 @@ That is six more than the 29 julesconf models: the postponed `cable_*`,
 """
 
 UNKNOWN_MEMBER_COUNTS = {
-    "gswp2_gl7": 31,
-    "loobos_crops": 31,
-    "loobos_fire": 63,
-    "loobos_irrig": 33,
-    "loobos_jules_es_1p0_deposition": 55,
-    "loobos_trif": 38,
+    "gswp2_gl7": 4,
+    "loobos_crops": 4,
+    "loobos_fire": 4,
+    "loobos_irrig": 3,
+    "loobos_jules_es_1p0_deposition": 4,
+    "loobos_trif": 4,
 }
 """How many distinct members of each app julesconf does not model.
 
@@ -346,121 +344,74 @@ moving them down is the point of the exercise.
 """
 
 KNOWN_UNKNOWN_MEMBERS = [
-    # --- fire: the whole vn8.2 fire index switch set ---
-    "FireSwitches.canadian_flag",
-    "FireSwitches.canadian_hemi_opt",
-    "FireSwitches.mcarthur_flag",
-    "FireSwitches.mcarthur_opt",
-    "FireSwitches.nesterov_flag",
-    # --- agriculture / land use ---
-    "JulesAgric.frac_agr",
-    "JulesAgric.frac_past",
-    "JulesAgric.read_from_dump",
-    "JulesAgric.zero_agric",
-    "JulesAgric.zero_past",
-    "JulesCo2.read_from_dump",
-    # --- crops ---
-    "JulesCropparm.initial_c_dvi_io",
-    "JulesCropparm.initial_carbon_io",
-    "JulesCropparm.mu_io",
-    "JulesCropparm.sen_dvi_io",
-    "JulesCropparm.t_mort_io",
-    "JulesCropparm.yield_frac_io",
-    # --- ancillaries and the grid ---
-    "JulesFrac.frac_name",
-    "JulesInputGrid.grid_dim_name",
-    "JulesInputGrid.npoints",
-    "JulesLandFrac.file",
-    "JulesLandFrac.land_frac_name",
-    "JulesLatlon.read_from_dump",
-    "JulesLatlon.tpl_name",
-    "JulesModelGrid.land_only",
-    "JulesModelGrid.use_subgrid",
-    "JulesNlsizes.bl_levels",
-    "JulesSoilProps.read_list",
-    "JulesSoilProps.tpl_name",
-    "JulesSurfHgt.zero_height",
-    # --- irrigation ---
+    # --- post-vn7.9: present in the vn8.2 apps, absent from the vn7.9 rose
+    #     metadata and from the vn7.9 user guide, so out of scope until the
+    #     pin moves ---
     "JulesIrrig.irrig_option",
-    "JulesIrrigProps.const_frac_irr",
-    "JulesIrrigProps.const_irrfrac_irrtiles",
-    "JulesIrrigProps.read_file",
-    # --- BVOC emissions and fire-emission factors on the PFTs ---
-    "JulesPftparm.aef_io",
-    "JulesPftparm.avg_ba_io",
-    "JulesPftparm.ccleaf_max_io",
-    "JulesPftparm.ccleaf_min_io",
-    "JulesPftparm.ccwood_max_io",
-    "JulesPftparm.ccwood_min_io",
-    "JulesPftparm.ci_st_io",
-    "JulesPftparm.fef_bc_io",
-    "JulesPftparm.fef_c2h4_io",
-    "JulesPftparm.fef_c2h6_io",
-    "JulesPftparm.fef_c3h8_io",
-    "JulesPftparm.fef_ch4_io",
-    "JulesPftparm.fef_co2_io",
-    "JulesPftparm.fef_co_io",
-    "JulesPftparm.fef_dms_io",
-    "JulesPftparm.fef_hcho_io",
-    "JulesPftparm.fef_mecho_io",
-    "JulesPftparm.fef_nh3_io",
-    "JulesPftparm.fef_nox_io",
-    "JulesPftparm.fef_oc_io",
-    "JulesPftparm.fef_so2_io",
-    "JulesPftparm.gpp_st_io",
-    "JulesPftparm.ief_io",
-    "JulesPftparm.mef_io",
-    "JulesPftparm.tef_io",
-    # --- misc switches ---
-    "JulesPrntControl.prnt_writers",
     "JulesSoilBiogeochem.cs_decomp_soil_moist_func",
     "JulesSoilBiogeochem.l_bgc_heat",
-    "JulesTriffid.dpm_rpm_ratio_io",
-    "JulesTriffid.retran_l_io",
-    "JulesTriffid.retran_r_io",
-    "JulesVegetation.frac_min",
-    "JulesVegetation.frac_seed",
-    "JulesVegetation.l_bvoc_emis",
-    "JulesVegetation.l_gleaf_fix",
-    "JulesVegetation.l_ht_compete",
-    "JulesVegetation.l_landuse",
-    "JulesVegetation.l_leaf_n_resp_fix",
-    "JulesVegetation.l_limit_canhc",
-    "JulesVegetation.l_o3_damage",
-    "JulesVegetation.l_prescsow",
-    "JulesVegetation.l_red",
-    "JulesVegetation.l_scale_resp_pm",
-    "JulesVegetation.l_spec_veg_z0",
-    "JulesVegetation.l_stem_resp_fix",
-    "JulesVegetation.l_sugar",
-    "JulesVegetation.l_trif_biocrop",
-    "JulesVegetation.l_trif_crop",
-    "JulesVegetation.l_use_pft_psi",
-    "JulesVegetation.l_vegdrag_pft",
-    "JulesVegetation.phenol_period",
-    "JulesVegetation.pow",
-    # --- the ECOSSE soil scheme, absent from JulesNamelists entirely ---
+    # --- a whole vn7.9 namelist file julesconf does not model yet; adding it
+    #     means a new schema module *and* a new file in NamelistConfig, so it
+    #     is tracked separately from the per-member gap ---
     "JulesNamelists.jules_soil_ecosse",
-    # --- repeated groups: julesconf models one profile / dataset per file,
-    #     real apps declare several, and f90nml renames the duplicates ---
-    "OutputNamelist._grp_jules_output_profile_0",
-    "OutputNamelist._grp_jules_output_profile_1",
-    "OutputNamelist._grp_jules_output_profile_2",
-    "OutputNamelist._grp_jules_output_profile_3",
-    "OutputNamelist._grp_jules_output_profile_4",
-    "OutputNamelist._grp_jules_output_profile_5",
-    "OutputNamelist._grp_jules_output_profile_6",
-    "PrescribedDataNamelist._grp_jules_prescribed_dataset_0",
-    "PrescribedDataNamelist._grp_jules_prescribed_dataset_1",
-    "PrescribedDataNamelist._grp_jules_prescribed_dataset_2",
 ]
 """Every member of the corpus that julesconf does not model, corpus-wide.
 
 Each entry is `Model.member`. This is the schema-gap tracker: shrinking it
-is the point, growing it without noticing is the risk.
+is the point, growing it without noticing is the risk. It stood at 97 entries
+when the corpus was first vendored; see `notes/schema_gap_inventory.md` for
+the classification of the rest of the vn7.9 gap.
+
+Repeated namelist groups used to appear here as `_grp_*` pseudo-members. They
+are now reported as `RepeatedNamelistGroupWarning` instead — see
+`REPEATED_GROUPS`.
 """
 
 _WARNING_RE = re.compile(r"^(\w+): ignoring unknown namelist member '(\w+)'")
+_REPEATED_RE = re.compile(r"^(\w+): the namelist group '(\w+)' occurs (\d+) times")
+
+REPEATED_GROUPS = {
+    "gswp2_gl7": {"OutputNamelist.jules_output_profile": 2},
+    "loobos_crops": {"OutputNamelist.jules_output_profile": 3},
+    "loobos_fire": {"OutputNamelist.jules_output_profile": 3},
+    "loobos_irrig": {"OutputNamelist.jules_output_profile": 3},
+    "loobos_jules_es_1p0_deposition": {
+        "OutputNamelist.jules_output_profile": 7,
+        "PrescribedDataNamelist.jules_prescribed_dataset": 3,
+    },
+    "loobos_trif": {"OutputNamelist.jules_output_profile": 2},
+}
+"""Namelist groups each app repeats, and how many times.
+
+JULES emits one `jules_output_profile` group per output profile and one
+`jules_prescribed_dataset` per prescribed dataset. julesconf models a single
+block of each, so every app in the corpus loses data on a read-then-write
+cycle and must say so loudly. See `RepeatedNamelistGroupWarning`.
+"""
+
+
+def repeated_groups(data: dict) -> dict[str, int]:
+    """Validate a config dict and collect the repeated namelist groups.
+
+    Args:
+        data: A `{namelist: {block: {member: value}}}` dict.
+
+    Returns:
+        A `{Model.group: occurrences}` mapping.
+    """
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        with contextlib.suppress(ValueError):
+            JulesNamelists.model_validate(data)
+
+    found = {}
+    for entry in record:
+        if not issubclass(entry.category, RepeatedNamelistGroupWarning):
+            continue
+        match = _REPEATED_RE.match(str(entry.message))
+        assert match is not None, entry.message
+        found[f"{match[1]}.{match[2]}"] = int(match[3])
+    return found
 
 
 def unknown_members(data: dict) -> set[str]:
@@ -557,28 +508,10 @@ class TestCorpus:
     def test_unresolved_variables_are_kept_verbatim(self, converted):
         assert "$" in "".join(converted.values())
 
-    @pytest.mark.parametrize(
-        "app_name",
-        [
-            pytest.param(
-                name,
-                marks=pytest.mark.xfail(
-                    strict=True,
-                    reason=(
-                        "jules_cropparm.delta_io is typed NonNegFloat but the "
-                        "JULES defaults are negative; schema bug, fixed next phase"
-                    ),
-                ),
-            )
-            if name in CROP_DELTA_IO_APPS
-            else name
-            for name in APPS
-        ],
-        indirect=True,
-    )
     def test_validates_against_the_schemas(self, parsed):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UnknownNamelistKeyWarning)
+            warnings.simplefilter("ignore", RepeatedNamelistGroupWarning)
             JulesNamelists.model_validate(parsed)
 
     def test_unknown_members_are_the_known_set(self, app_name, parsed):
@@ -593,6 +526,12 @@ class TestCorpus:
             files = rose_to_namelists(RoseApp.parse_file(DATA / f"{name}.conf"), env={})
             seen |= unknown_members(read_back(files))
         assert seen == set(KNOWN_UNKNOWN_MEMBERS)
+
+    def test_repeated_groups_are_reported(self, app_name, parsed):
+        assert repeated_groups(parsed) == REPEATED_GROUPS[app_name]
+
+    def test_repeated_groups_do_not_also_look_like_unknown_members(self, parsed):
+        assert not any("_grp_" in member for member in unknown_members(parsed))
 
     def test_round_trips_through_a_directory(self, app_name, tmp_path):
         out = tmp_path / app_name

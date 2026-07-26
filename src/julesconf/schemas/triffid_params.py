@@ -9,7 +9,12 @@ from typing import Annotated
 from pydantic import Field
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas.constraints import Fraction, ListLen, NonNegFloat
+from julesconf.schemas.constraints import (
+    Fraction,
+    ListLen,
+    NonNegFloat,
+    PerElementDefault,
+)
 
 __all__ = ["JulesTriffid", "TriffidParamsNamelist"]
 
@@ -67,6 +72,26 @@ class JulesTriffid(NamelistModel):
         list[Fraction] | None, ListLen("nnpft", tolerates=("npft",))
     ] = None
     """Fraction of carbon flux from vegetation to wood products added to slow pool."""
+    retran_l_io: Annotated[
+        list[Fraction] | None,
+        ListLen("nnpft", tolerates=("npft",)),
+        PerElementDefault(0.5, "nnpft"),
+    ] = None
+    """Fraction of retranslocated leaf N."""
+    retran_r_io: Annotated[
+        list[Fraction] | None,
+        ListLen("nnpft", tolerates=("npft",)),
+        PerElementDefault(0.2, "nnpft"),
+    ] = None
+    """Fraction of retranslocated root N."""
+    dpm_rpm_ratio_io: Annotated[
+        list[NonNegFloat] | None, ListLen("nnpft", tolerates=("npft",))
+    ] = None
+    """Ratio of decomposable to resistant plant material in the litter input.
+
+    Present in the rose metadata (which carries no description for it) but not
+    documented in the v7.9 user guide.
+    """
 
 
 class TriffidParamsNamelist(NamelistModel):

@@ -242,7 +242,15 @@ def test_marker_covers_the_documented_per_element_defaults():
     # (5.0 m lake depth), and only JulesFlake overrides it. The other 10 inherit
     # the unmarked `_NvarsModel.const_val`, which is correct. This lookup is
     # keyed by member name alone, so it cannot tell those cases apart.
-    exclusions = {"const_val"}
+    # `is_climatology` collides the same way: `logical(nvars)` in
+    # JULES_RIVERS_PROPS but a plain `logical` in JULES_PRESCRIBED_DATASET,
+    # which is the only one julesconf models.
+    #
+    # `prescribed_levels` is documented `integer(n)` defaulting to all levels,
+    # but `n` is bounded by `JULES_SOIL::sm_levels`, which is neither a global
+    # `LIST_LEN_DIMS` name nor a sibling field, so `PerElementDefault` cannot
+    # express it.
+    exclusions = {"const_val", "is_climatology", "prescribed_levels"}
     missing = unmarked - marked - exclusions
     assert not missing, (
         f"fields with a documented per-element default but no PerElementDefault"

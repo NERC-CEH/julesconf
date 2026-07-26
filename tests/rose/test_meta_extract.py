@@ -331,19 +331,25 @@ def test_audit_excludes_postponed_namelists(audit):
     assert "jules_red" not in reported
 
 
-def test_audit_reports_the_known_list_length_contradiction(audit):
-    # The metadata says ncpft and the user guide says npft; the schemas follow
-    # the user guide. An upstream contradiction, not a julesconf bug.
-    assert any(
-        item.startswith("jules_cropparm=cfrac_s_io")
-        for item in audit.list_len_mismatches
-    )
+def test_audit_reports_no_list_length_disagreements(audit):
+    # The only one was `jules_cropparm=cfrac_s_io`, where the metadata says
+    # ncpft and the user guide says npft. The schemas still follow the user
+    # guide for the canonical length but tolerate ncpft on input, which is what
+    # every real configuration supplies, so the audit no longer flags it. The
+    # upstream contradiction itself is pinned in
+    # `tests/schemas/test_cross_namelist.py`.
+    assert audit.list_len_mismatches == []
 
 
 def test_audit_reports_bounds_we_impose_without_metadata_support(audit):
-    # delta_io is declared type=real with no range at all, but our schema makes
-    # it NonNegFloat, and real crop configs carry negative values.
+    # The metadata declares the whole of JULES_CROPPARM `type=real` with no
+    # `range=`, so every bound we place there is our own, taken from the user
+    # guide. `remob_io` is documented as a fraction, so `[0, 1]` is justified;
+    # `delta_io` was not, and the bound was a bug -- it must not come back.
     assert any(
+        item.startswith("jules_cropparm=remob_io") for item in audit.bounds_unspecified
+    )
+    assert not any(
         item.startswith("jules_cropparm=delta_io") for item in audit.bounds_unspecified
     )
 

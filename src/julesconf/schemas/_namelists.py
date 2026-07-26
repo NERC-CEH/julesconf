@@ -29,7 +29,12 @@ import tomli_w
 from pydantic import model_validator
 from pydantic.fields import FieldInfo
 
-from julesconf.schemas._base import NamelistModel, UnknownNamelistKeyWarning
+from julesconf.schemas._base import (
+    NamelistModel,
+    RepeatedNamelistGroupWarning,
+    UnknownNamelistKeyWarning,
+    _warn_repeated_groups,
+)
 from julesconf.schemas.ancillaries import AncillariesNamelist
 from julesconf.schemas.constraints import (
     SIBLING_DIMS,
@@ -278,7 +283,8 @@ class JulesNamelists(NamelistModel):
         unknown-key warning.
         """
         if isinstance(data, dict):
-            for key in sorted(set(data) - set(cls.model_fields)):
+            repeated = _warn_repeated_groups(cls, data)
+            for key in sorted(set(data) - set(cls.model_fields) - repeated):
                 if key in POSTPONED_NAMELISTS:
                     warnings.warn(
                         f"{key!r} is a JULES namelist that julesconf does not"
@@ -313,6 +319,7 @@ class JulesNamelists(NamelistModel):
         with warnings.catch_warnings():
             if strict:
                 warnings.simplefilter("error", UnknownNamelistKeyWarning)
+                warnings.simplefilter("error", RepeatedNamelistGroupWarning)
             if allow_grouped and is_grouped(data):
                 data = assemble(data)
             return cls.model_validate(data)
@@ -325,8 +332,9 @@ class JulesNamelists(NamelistModel):
 
         Args:
             directory: Path to a directory containing the 29 `.nml` files.
-            strict: If `True`, raise on any namelist member julesconf does not
-                model. Such members are dropped, so a read-then-write cycle
+            strict: If `True`, raise on anything julesconf cannot represent —
+                an unmodelled namelist member, or a namelist group that occurs
+                more than once. Both are dropped, so a read-then-write cycle
                 would lose them; use `strict` when the result is destined for
                 `to_namelists`.
 
@@ -335,6 +343,8 @@ class JulesNamelists(NamelistModel):
 
         Raises:
             UnknownNamelistKeyWarning: If `strict` and an unknown member is found.
+            RepeatedNamelistGroupWarning: If `strict` and a namelist group
+                occurs more than once.
         """
         from julesconf.config import NamelistConfig
 
@@ -354,13 +364,16 @@ class JulesNamelists(NamelistModel):
                 structure; or the grouped form, using `[[pft]]`,
                 `[[crop_pft]]` and `[[nvg]]` arrays of tables for the
                 surface-type parameters.
-            strict: If `True`, raise on any member julesconf does not model.
+            strict: If `True`, raise on any member julesconf does not model,
+                or any namelist group that occurs more than once.
 
         Returns:
             The validated configuration.
 
         Raises:
             UnknownNamelistKeyWarning: If `strict` and an unknown member is found.
+            RepeatedNamelistGroupWarning: If `strict` and a namelist group
+                occurs more than once.
             GroupedConfigError: If a grouped config mixes the two forms or
                 specifies a parameter on only some entries of a group.
         """

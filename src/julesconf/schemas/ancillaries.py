@@ -32,7 +32,7 @@ __all__ = [
 
 def _check_nvars_lists(obj: NamelistModel, nvars_val: int) -> None:
     """Raise ValueError if any provided list has wrong length vs nvars."""
-    for name in ("var", "use_file", "const_val", "var_name"):
+    for name in ("var", "use_file", "const_val", "var_name", "tpl_name"):
         val = getattr(obj, name, None)
         if val is not None and len(val) != nvars_val:
             raise ValueError(
@@ -49,6 +49,12 @@ class JulesFrac(NamelistModel):
     """The name of the file to read surface type fractional coverage data from."""
     read_from_dump: bool = False
     """Populate variables from dump file if TRUE, otherwise use other namelist members."""
+    frac_name: str = "frac"
+    """The name of the variable containing the surface type fractional coverage data.
+
+    Only used for NetCDF files; in an ASCII file the coverage data is expected
+    to be the first variable.
+    """
 
 
 class _NvarsModel(NamelistModel):
@@ -70,6 +76,13 @@ class _NvarsModel(NamelistModel):
     """Populate variables from dump file if TRUE, otherwise use other namelist members."""
     const_z: bool = False
     """Switch indicating if soil properties are uniform with depth."""
+    read_list: bool = False
+    """Read a list of file names, one per line for each of `nvars`.
+
+    Files named in the list cannot use variable name templating.
+    """
+    tpl_name: Annotated[list[str] | None, PerElementDefault("", "nvars")] = None
+    """For each JULES variable, the string to substitute into a templated file name."""
 
     @model_validator(mode="after")
     def _check_lists(self) -> "_NvarsModel":
@@ -89,6 +102,21 @@ class JulesAgric(NamelistModel):
     """`JULES_AGRIC` namelist members."""
 
     l_triffid_agric: bool = False
+    zero_agric: bool = True
+    """Set the agricultural fraction to zero at all points."""
+    zero_past: bool = True
+    """Set the pasture fraction to zero at all points.
+
+    Pasture fraction is only used when `JULES_VEGETATION::l_trif_crop` is TRUE.
+    """
+    frac_agr: float | None = None
+    """The agricultural fraction, for a single-location input grid."""
+    frac_past: float | None = None
+    """The pasture fraction, for a single-location input grid."""
+    file: str | None = None
+    """The file to read agricultural fraction data from."""
+    read_from_dump: bool = False
+    """Populate variables from dump file if TRUE, otherwise use other namelist members."""
 
 
 class JulesVegetationProps(_NvarsModel):
@@ -105,6 +133,15 @@ class JulesCropProps(_NvarsModel):
 
 class JulesIrrigProps(_NvarsModel):
     """`JULES_IRRIG_PROPS` namelist members."""
+
+    read_file: bool = True
+    """Read the irrigated fraction from `irrig_frac_file` rather than `const_frac_irr`."""
+    irrig_frac_file: str | None = None
+    """The file from which irrigation fractions are read, including path."""
+    const_frac_irr: float | None = None
+    """The constant irrigated fraction applied to all grid points."""
+    const_irrfrac_irrtiles: float | None = None
+    """The constant irrigated fraction applied to `JULES_IRRIG::irrigtiles`."""
 
 
 class JulesRiversProps(NamelistModel):
@@ -124,6 +161,8 @@ class JulesCo2(NamelistModel):
 
     co2_mmr: float = 5.241e-4
     """Concentration of atmospheric CO2 as mass mixing ratio."""
+    read_from_dump: bool = False
+    """Read the CO2 concentration from the dump file."""
 
 
 class JulesOverbankProps(NamelistModel):

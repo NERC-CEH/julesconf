@@ -139,6 +139,60 @@ class JulesPftparm(NamelistModel):
     z0hm_pft_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
     """Ratio of roughness length for heat to momentum."""
 
+    # --- BVOC emissions (JULES_VEGETATION::l_bvoc_emis) ---
+    ief_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Isoprene emission factor per PFT (µgC g⁻¹ h⁻¹)."""
+    tef_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """(Mono-)terpene emission factor per PFT (µgC g⁻¹ h⁻¹)."""
+    mef_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Methanol emission factor per PFT (µgC g⁻¹ h⁻¹)."""
+    aef_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Acetone emission factor per PFT (µgC g⁻¹ h⁻¹)."""
+    ci_st_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Leaf-internal CO₂ concentration at standard conditions (Pa)."""
+    gpp_st_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Gross primary production at standard conditions (kgC m⁻² s⁻¹)."""
+
+    # --- INFERNO interactive fire (JULES_VEGETATION::l_inferno) ---
+    avg_ba_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Average burnt area on the PFT per fire event (m²)."""
+    ccleaf_min_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
+    """Leaf minimum combustion completeness."""
+    ccleaf_max_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
+    """Leaf maximum combustion completeness."""
+    ccwood_min_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
+    """Wood minimum combustion completeness."""
+    ccwood_max_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
+    """Wood maximum combustion completeness."""
+    fef_co2_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Carbon dioxide (CO₂) emission factor from natural fires (g kg⁻¹)."""
+    fef_co_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Carbon monoxide (CO) emission factor from natural fires (g kg⁻¹)."""
+    fef_ch4_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Methane (CH₄) emission factor from natural fires (g kg⁻¹)."""
+    fef_nox_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Nitrogen oxides (NOx) emission factor from natural fires (g kg⁻¹)."""
+    fef_so2_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Sulphur dioxide (SO₂) emission factor from natural fires (g kg⁻¹)."""
+    fef_oc_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Organic carbon (OC) emission factor from natural fires (g kg⁻¹)."""
+    fef_bc_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Black carbon (BC) emission factor from natural fires (g kg⁻¹)."""
+    fef_c2h4_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Ethene (C₂H₄) emission factor from natural fires (g kg⁻¹)."""
+    fef_c2h6_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Ethane (C₂H₆) emission factor from natural fires (g kg⁻¹)."""
+    fef_c3h8_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Propane (C₃H₈) emission factor from natural fires (g kg⁻¹)."""
+    fef_hcho_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Formaldehyde (HCHO) emission factor from natural fires (g kg⁻¹)."""
+    fef_mecho_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Acetaldehyde (MeCHO) emission factor from natural fires (g kg⁻¹)."""
+    fef_nh3_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Ammonia (NH₃) emission factor from natural fires (g kg⁻¹)."""
+    fef_dms_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Dimethyl sulfide (DMS) emission factor from natural fires (g kg⁻¹)."""
+
 
 class PftParamsNamelist(NamelistModel):
     """Top-level schema for `pft_params.nml`."""

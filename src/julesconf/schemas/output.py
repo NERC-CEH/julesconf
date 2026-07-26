@@ -57,6 +57,10 @@ class JulesOutputProfile(NamelistModel):
     """List of variable names to output, as recognised by JULES."""
     output_type: Annotated[list[str] | None, PerElementDefault("S", "nvars")] = None
     """For each variable specified in var, this indicates the type of processing required."""
+    var_name: list[str] | None = None
+    """For each variable in `var`, the name to give it in the output files."""
+    sample_period: int | None = Field(default=None, ge=1)
+    """The sampling period, in seconds. Defaults to the model timestep."""
 
 
 class OutputNamelist(NamelistModel):

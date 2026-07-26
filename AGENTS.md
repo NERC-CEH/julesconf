@@ -53,12 +53,23 @@ Consequences to be aware of:
 - A config using these namelists is out of scope, and julesconf says so rather than appearing to support it: `PostponedNamelistWarning` is emitted when one is detected, both on reading a namelists directory and on validating a config dict (`_namelists.py`).
 - `POSTPONED_NAMELISTS` names namelist *files*; the rose metadata is keyed by *block*, and the two do not correspond (`red_params` is block `jules_red`, `cable_pfts` is `cable_pftparm`). `scripts/rose_meta_extract.py` keeps its own `POSTPONED_META_BLOCKS` for this reason.
 
+### Repeated namelist groups — a known modelling gap
+
+Fortran lets one namelist group appear several times in a file, and JULES relies on it: `jules_output_profile` occurs `JULES_OUTPUT::nprofiles` times, `jules_prescribed_dataset` occurs `JULES_PRESCRIBED::n_datasets` times, and `jules_deposition_species` occurs `ndry_dep_species` times. **julesconf models exactly one block of each.** `f90nml` renames the duplicates to `_grp_<group>_<n>`, so a real config's second and subsequent profiles are dropped and a read-then-write cycle loses them.
+
+Modelling these as lists of blocks is **deferred until after alpha**. Until then the loss must be loud, never silent:
+
+- `RepeatedNamelistGroupWarning` (`schemas/_base.py`) is emitted once per repeated group, naming the group and the number of copies. `_warn_repeated_groups` is shared by `NamelistModel._warn_unknown_keys` and the `JulesNamelists` override, so it fires for `from_namelists`, `from_toml` and a plain `model_validate`.
+- Keys matching `REPEATED_GROUP_RE` are excluded from `UnknownNamelistKeyWarning` — one repeated group must not also read as a typo.
+- `strict=True` escalates it to an error, exactly as it does `UnknownNamelistKeyWarning`.
+- Every app in `tests/data/rose_apps/` triggers it; `tests/rose/test_convert.py::REPEATED_GROUPS` pins which, and how many copies.
+
 ## Architecture
 
 - `NamelistFileHandler` converts `f90nml` OrderedDict → plain dict via json round-trip
 - `AsciiFileHandler` / `NetcdfFileHandler` use `@dirconf.filter` + `@dirconf.filter_missing` — require relative paths, handle missing files gracefully; `__module__` is patched manually after the decorator (dirconf bug)
 - Handlers registered via `register_handler("ascii", ...)` / `register_handler("netcdf", ...)` for extension-based dispatch
-- `NamelistModel` base uses `extra="ignore"` + `_warn_unknown_keys` — unknown keys produce `UnknownNamelistKeyWarning`, not errors (escalate with `warnings.simplefilter("error", ...)`)
+- `NamelistModel` base uses `extra="ignore"` + `_warn_unknown_keys` — unknown keys produce `UnknownNamelistKeyWarning`, not errors (escalate with `warnings.simplefilter("error", ...)`). Three warning classes coexist and are escalated independently: `UnknownNamelistKeyWarning` (unknown *member*), `PostponedNamelistWarning` (known-but-unsupported *file*), `RepeatedNamelistGroupWarning` (modelled group that occurs more than once)
 - `ListLen` metadata on fields enables cross-namelist dimension validation in `JulesNamelists._check_list_lengths`, which walks the whole model tree via `find_list_len`
 - `ListLen` must sit on the **outermost** `Annotated`: `Annotated[list[X] | None, ListLen("npft")]`. The other spelling hides it from `FieldInfo.metadata`; `test_cross_namelist.py::test_every_list_len_uses_canonical_spelling` enforces this
 - Enum fields accept int value OR string name via `name_or_value()` validator

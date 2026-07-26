@@ -20,7 +20,11 @@ silently ignores) without rejecting configs that contain members the
 schema does not yet cover.
 """
 
-from julesconf.schemas._base import NamelistModel, UnknownNamelistKeyWarning
+from julesconf.schemas._base import (
+    NamelistModel,
+    RepeatedNamelistGroupWarning,
+    UnknownNamelistKeyWarning,
+)
 from julesconf.schemas._grouped import (
     CropPft,
     GroupedConfigError,
@@ -82,6 +86,7 @@ __all__ = [
     "Pft",
     "PhotoModel",
     "PostponedNamelistWarning",
+    "RepeatedNamelistGroupWarning",
     "RiverRoutingAlgorithm",
     "SentinelOrFraction",
     "SoilBgcModel",

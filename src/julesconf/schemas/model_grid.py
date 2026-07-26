@@ -33,6 +33,10 @@ class JulesInputGrid(NamelistModel):
     ny: int = Field(default=1, ge=1)
     """The size of the y dimension."""
     dim_name: str = "land"
+    grid_dim_name: str = "land"
+    """The name of the single grid dimension. Only used when `grid_is_1d` = TRUE."""
+    npoints: int = Field(default=0, ge=0)
+    """The size of the single grid dimension. Only used when `grid_is_1d` = TRUE."""
     x_dim_name: str = "x"
     """The name of the x dimension."""
     y_dim_name: str = "y"
@@ -62,13 +66,17 @@ class JulesLatlon(NamelistModel):
     """For each JULES variable where use_file = TRUE, this is the name of the variable in the file."""
     file: str | None = None
     """The file to read ancillary properties from."""
+    tpl_name: Annotated[list[str] | None, PerElementDefault("", "nvars")] = None
+    """For each JULES variable, the string to substitute into a templated file name."""
+    read_from_dump: bool = False
+    """Populate variables from the dump file if TRUE, otherwise use the other members."""
 
     @model_validator(mode="after")
     def _check_lists(self) -> "JulesLatlon":
         if self.nvars > 0:
             if self.var is None:
                 raise ValueError("var is required when nvars > 0")
-            for name in ("var", "use_file", "const_val", "var_name"):
+            for name in ("var", "use_file", "const_val", "var_name", "tpl_name"):
                 val = getattr(self, name, None)
                 if val is not None and len(val) != self.nvars:
                     raise ValueError(
@@ -80,6 +88,11 @@ class JulesLatlon(NamelistModel):
 class JulesLandFrac(NamelistModel):
     """`JULES_LAND_FRAC` namelist members."""
 
+    file: str | None = None
+    """The file to read land fraction data from."""
+    land_frac_name: str | None = None
+    """The name of the variable containing the land fraction data."""
+
 
 class JulesModelGrid(NamelistModel):
     """`JULES_MODEL_GRID` namelist members."""
@@ -87,16 +100,29 @@ class JulesModelGrid(NamelistModel):
     force_1d_grid: bool = False
     """Force the model grid to be 1D, even if it would otherwise have been 2D."""
     l_land_area_only: bool = False
+    land_only: bool = True
+    """Model land points only, rather than all selected points."""
+    use_subgrid: bool = False
+    """The model grid is a subset of the full input grid, rather than all of it."""
 
 
 class JulesNlsizes(NamelistModel):
     """`JULES_NLSIZES` namelist members."""
+
+    bl_levels: int = Field(default=1, ge=1)
+    """Number of boundary layer levels.
+
+    Only used when `JULES_DEPOSITION::l_deposition` = TRUE, where it sets the
+    size of the input fields.
+    """
 
 
 class JulesSurfHgt(NamelistModel):
     """`JULES_SURF_HGT` namelist members."""
 
     l_tile_hgt: bool = False
+    zero_height: bool = True
+    """Set all surface tile elevations to zero. A very common configuration."""
 
 
 class JulesZLand(NamelistModel):

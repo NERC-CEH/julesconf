@@ -1,5 +1,6 @@
 """Shared base model for JULES namelist schemas."""
 
+import re
 import warnings
 from collections.abc import Iterator
 from functools import cache
@@ -8,7 +9,21 @@ from typing import Any, get_args, get_origin
 from pydantic import BaseModel, ConfigDict, model_validator
 from pydantic.fields import FieldInfo
 
-__all__ = ["NamelistModel", "UnknownNamelistKeyWarning", "iter_leaf_fields"]
+__all__ = [
+    "NamelistModel",
+    "RepeatedNamelistGroupWarning",
+    "UnknownNamelistKeyWarning",
+    "iter_leaf_fields",
+]
+
+REPEATED_GROUP_RE = re.compile(r"^_grp_(?P<name>.+)_(?P<index>\d+)$")
+"""Matches the key `f90nml` invents for a namelist group that occurs twice.
+
+Fortran permits the same group to appear several times in one file — JULES
+uses this for `jules_output_profile`, `jules_prescribed_dataset` and
+`jules_deposition_species`. `f90nml` cannot store them under one dict key, so
+it renames every occurrence to `_grp_<group>_<n>`, zero-indexed.
+"""
 
 
 def _is_list_annotation(annotation: Any) -> bool:
@@ -23,6 +38,65 @@ def _is_list_annotation(annotation: Any) -> bool:
 
 class UnknownNamelistKeyWarning(UserWarning):
     """A namelist dict contained keys that the schema does not know and ignored."""
+
+
+class RepeatedNamelistGroupWarning(UserWarning):
+    """A namelist group occurred more than once and julesconf models it once.
+
+    Fortran allows a namelist group to be repeated within one file, and JULES
+    relies on it: `jules_output_profile` occurs `nprofiles` times,
+    `jules_prescribed_dataset` occurs `n_datasets` times, and
+    `jules_deposition_species` occurs `ndry_dep_species` times. julesconf's
+    schemas model exactly one of each, so the repetitions cannot be
+    represented and are dropped — a read-then-write cycle silently loses every
+    profile but the one JULES would read first.
+
+    Distinct from `UnknownNamelistKeyWarning`, which concerns a member
+    julesconf has never heard of, and from `PostponedNamelistWarning`, which
+    concerns a whole namelist file julesconf deliberately excludes. This
+    concerns a group julesconf *does* model but can only hold one of, so it is
+    a modelling gap rather than a version gap, and is escalated separately:
+
+        import warnings
+
+        from julesconf.schemas import RepeatedNamelistGroupWarning
+
+        warnings.simplefilter("error", RepeatedNamelistGroupWarning)
+
+    Modelling these groups as lists of blocks is deferred; see `AGENTS.md`.
+    """
+
+
+def _warn_repeated_groups(cls: type, data: dict) -> set[str]:
+    """Warn once per repeated namelist group found in `data`.
+
+    Args:
+        cls: The model being validated, named in the warning message.
+        data: The candidate input dict.
+
+    Returns:
+        The keys that matched the repeated-group pattern, so the caller can
+        exclude them from the generic unknown-key warning.
+    """
+    matched: set[str] = set()
+    counts: dict[str, int] = {}
+    for key in data:
+        match = REPEATED_GROUP_RE.match(key)
+        if match is not None:
+            matched.add(key)
+            name = match["name"]
+            counts[name] = counts.get(name, 0) + 1
+
+    for name in sorted(counts):
+        warnings.warn(
+            f"{cls.__name__}: the namelist group {name!r} occurs"
+            f" {counts[name]} times; julesconf models a single {name!r} block,"
+            " so the repeated groups are dropped and would be lost by a"
+            " read-then-write cycle",
+            RepeatedNamelistGroupWarning,
+            stacklevel=3,
+        )
+    return matched
 
 
 class NamelistModel(BaseModel):
@@ -83,7 +157,8 @@ class NamelistModel(BaseModel):
     def _warn_unknown_keys(cls, data: Any) -> Any:
         """Emit a warning for each key not known to the schema."""
         if isinstance(data, dict):
-            for key in sorted(set(data) - set(cls.model_fields)):
+            repeated = _warn_repeated_groups(cls, data)
+            for key in sorted(set(data) - set(cls.model_fields) - repeated):
                 warnings.warn(
                     f"{cls.__name__}: ignoring unknown namelist member {key!r}",
                     UnknownNamelistKeyWarning,

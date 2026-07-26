@@ -10,7 +10,11 @@ from typing import Annotated
 from pydantic import Field
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas.constraints import name_or_value
+from julesconf.schemas.constraints import (
+    ListLen,
+    PerElementDefault,
+    name_or_value,
+)
 
 __all__ = [
     "CanModel",
@@ -94,6 +98,55 @@ class JulesVegetation(NamelistModel):
     """Switch that enables sequential cropping."""
     l_recon: bool = True
     """Switch for reconfiguring vegetation fractions."""
+    l_bvoc_emis: bool = False
+    """Switch to enable calculation of BVOC emission diagnostics."""
+    l_gleaf_fix: bool = True
+    """Switch for fixing a bug in the accumulation of `g_leaf_phen_acc`."""
+    l_ht_compete: bool = False
+    """Switch for height-based vegetation competition. Only used with TRIFFID."""
+    l_landuse: bool = False
+    """Switch for using land use change in conjunction with TRIFFID."""
+    l_leaf_n_resp_fix: bool = False
+    """Switch for the corrected canopy-average leaf nitrogen used in respiration.
+
+    Affects `can_rad_mod` 1, 4 and 5; 6 is already correct. Retained for
+    backwards compatibility with existing configurations.
+    """
+    l_limit_canhc: bool = False
+    """Switch for capping the vegetation canopy areal thermal heat capacity."""
+    l_o3_damage: bool = False
+    """Switch for ozone damage to vegetation. Not available to the UM."""
+    l_prescsow: bool = False
+    """Switch for prescribed crop sowing dates. Only used when `ncpft` > 0."""
+    l_red: bool = False
+    """Switch for the Robust Ecosystem Demography (RED). Not available to the UM."""
+    l_scale_resp_pm: bool = False
+    """Scale whole-plant maintenance respiration by the soil moisture stress factor.
+
+    When false, only leaf respiration is scaled.
+    """
+    l_spec_veg_z0: bool = False
+    """Switch for explicitly specified vegetation roughness lengths.
+
+    When false they are derived from the canopy height.
+    """
+    l_stem_resp_fix: bool = False
+    """Switch for using balanced LAI to derive respiring stem mass."""
+    l_sugar: bool = False
+    """Switch for using the SUGAR carbohydrate model to calculate respiration."""
+    l_trif_biocrop: bool = False
+    """Allow periodic harvesting of bioenergy crops. Requires `l_trif_crop`."""
+    l_trif_crop: bool = False
+    """Switch for using agricultural PFTs, as defined by `JULES_TRIFFID::crop_io`."""
+    l_use_pft_psi: bool = False
+    """Calculate the soil moisture stress function from `psi_close_io`/`psi_open_io`.
+
+    Not available to the UM.
+    """
+    l_vegdrag_pft: Annotated[
+        list[bool] | None, ListLen("npft"), PerElementDefault(False, "npft")
+    ] = None
+    """Switch for using the vegetation canopy drag scheme, per PFT."""
 
     can_model: Annotated[CanModel, name_or_value(CanModel)] = CanModel.no_canopy
     """Choice of canopy model: `no_canopy` (1), `radiative` (2), `radiative_heat_capacity` (3, deprecated), `radiative_snow` (4, preferred)."""
@@ -110,6 +163,14 @@ class JulesVegetation(NamelistModel):
 
     triffid_period: int | None = None
     """Period for calls to TRIFFID model in days."""
+    phenol_period: int | None = Field(default=None, ge=1)
+    """Period for calls to the phenology model in days. Only used with `l_phenol`."""
+    frac_min: float = 1.0e-6
+    """Minimum fraction a PFT is allowed to cover if TRIFFID is used."""
+    frac_seed: float = 0.01
+    """Seed fraction for TRIFFID."""
+    pow: float = 5.241e-4
+    """Power in the sigmoidal function used to get competition coefficients."""
     fsmc_shape: int = Field(default=0, ge=0, le=1)
     """Shape of soil moisture stress function on vegetation."""
     ignition_method: Annotated[IgnitionMethod, name_or_value(IgnitionMethod)] = (
