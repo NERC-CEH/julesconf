@@ -63,7 +63,10 @@ test = [
 [tool.pyright]
 venvPath = "."
 venv = ".venv"
-include = ["src/", "tests/"]
+include = ["src/", "tests/", "scripts/"]
+# Dev scripts are standalone modules, not a package; tests import them by
+# putting scripts/ on sys.path, so pyright needs the same search path.
+extraPaths = ["scripts"]
 
 [tool.ruff]
 line-length = 88

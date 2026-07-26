@@ -34,10 +34,14 @@ just
 | `tests/schemas/` | Schema tests grouped by concern (`test_bounds`, `test_enums`, `test_cross_namelist`, `test_constraints`, `test_extra_keys`, `test_namelists`, `test_grouped_models`) |
 | `tests/test_toml_grouped.py` | Phase 2 gates. The **only** cover for crop PFTs — Loobos has `ncpft = 0` |
 | `examples/loobos/` | Real Loobos config (29 `.nml` files + input data). Used by `examples/101.py`, **not** by the test suite |
+| `scripts/rose_meta_extract.py` | Dev CLI: `extract` normalises the upstream JULES rose metadata into JSON, `audit` compares it against the schemas |
+| `tests/data/rose_meta/vn7.9.json` | The committed extract (BSD-3-Clause, see the README beside it). Regenerate with `extract`; the test suite and audit never need `reference/jules` |
 
 ## Reference docs (ground truth)
 
 `reference/jules-lsm.github.io/user_guide/doc/source/namelists/` — official JULES v7.9 RST docs for every namelist. This is the authoritative source for schema field definitions, types, and bounds. `reference/.../input/` documents the ASCII/NetCDF input data format.
+
+`reference/jules/rose-meta/` — the machine-readable spec shipped with the model (a sparse clone of MetOffice/jules; `reference/` is gitignored, never commit it). `jules-standalone/vn7.9/rose-meta.conf` is **not** the whole spec: it opens with an `import=` list of ten `jules-shared/*/vn7.9` packages, and blocks such as `jules_nvegparm` live only in the shared tree. Merging is per *setting*, not per section, imports first. `scripts/rose_meta_extract.py` does all of this; use the committed extract rather than re-parsing. Where the metadata and the RST docs contradict each other (e.g. `jules_cropparm=cfrac_s_io`, `ncpft` vs `npft`) the schemas follow the RST docs.
 
 ### Postponed namelists
 
@@ -46,7 +50,8 @@ just
 Consequences to be aware of:
 
 - Coverage figures must be computed over the 29 schema'd namelists only. Counting members across all `*.nml.rst` includes the postponed ones and overstates the gap.
-- A config using these namelists is out of scope, and julesconf should say so rather than appear to support it. Intended behaviour: **emit a warning when a postponed namelist is detected** (not yet implemented — see `notes/toml_config.md`).
+- A config using these namelists is out of scope, and julesconf says so rather than appearing to support it: `PostponedNamelistWarning` is emitted when one is detected, both on reading a namelists directory and on validating a config dict (`_namelists.py`).
+- `POSTPONED_NAMELISTS` names namelist *files*; the rose metadata is keyed by *block*, and the two do not correspond (`red_params` is block `jules_red`, `cable_pfts` is `cable_pftparm`). `scripts/rose_meta_extract.py` keeps its own `POSTPONED_META_BLOCKS` for this reason.
 
 ## Architecture
 
