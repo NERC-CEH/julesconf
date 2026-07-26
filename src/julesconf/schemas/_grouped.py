@@ -218,7 +218,9 @@ def _build_specs() -> tuple[FieldSpec, ...]:
     specs = []
     for path, name, info in iter_leaf_fields(JulesNamelists):
         meta = find_list_len(info)
-        if meta is None:
+        if meta is None or meta.dim not in LIST_LEN_DIMS:
+            # `ListLen` also marks namelist-local lengths (`nvars`), which are
+            # not surface-type dimensions and have no place in a grouped entry.
             continue
         if len(path) != 2:
             # A ListLen field reached through anything other than

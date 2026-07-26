@@ -27,7 +27,7 @@ class JulesSnow(NamelistModel):
     """Switch for treatment of graupel in the snow scheme."""
 
     # Length nsmax (only used if nsmax > 0)
-    dzsnow: list[float] | None = None
+    dzsnow: Annotated[list[float] | None, ListLen("nsmax")] = None
     """Prescribed thickness of each snow layer (m)."""
 
     # Length npft (cross-namelist — validated in JulesNamelists)

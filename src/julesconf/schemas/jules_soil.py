@@ -10,7 +10,7 @@ from typing import Annotated
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas.constraints import name_or_value
+from julesconf.schemas.constraints import ListLen, name_or_value
 
 __all__ = ["JulesSoil", "JulesSoilNamelist", "SoilhcMethod"]
 
@@ -54,7 +54,7 @@ class JulesSoil(NamelistModel):
     """The depth for averaging soil temperature in wetland methane emissions calculation (m)."""
     confrac: float = Field(default=0.3, ge=0, le=1)
     """The fraction of the gridbox assumed to be covered by convective precipitation."""
-    dzsoil_io: list[float] | None = None
+    dzsoil_io: Annotated[list[float] | None, ListLen("sm_levels")] = None
     """The soil layer depths (m), starting with the uppermost layer."""
     dzsoil_elev: float | None = None
     """Depth of tiled solid-ice bedrock-type layer under individual ice tiles."""

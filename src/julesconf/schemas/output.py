@@ -9,7 +9,7 @@ from typing import Annotated, Literal
 from pydantic import Field
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas.constraints import PerElementDefault
+from julesconf.schemas.constraints import ListLen, PerElementDefault
 
 __all__ = ["JulesOutput", "JulesOutputProfile", "OutputNamelist"]
 
@@ -53,11 +53,13 @@ class JulesOutputProfile(NamelistModel):
 
     nvars: int = Field(default=0, ge=0)
     """The number of variables that the profile will provide output for."""
-    var: list[str] | None = None
+    var: Annotated[list[str] | None, ListLen("nvars")] = None
     """List of variable names to output, as recognised by JULES."""
-    output_type: Annotated[list[str] | None, PerElementDefault("S", "nvars")] = None
+    output_type: Annotated[
+        list[str] | None, ListLen("nvars"), PerElementDefault("S", "nvars")
+    ] = None
     """For each variable specified in var, this indicates the type of processing required."""
-    var_name: list[str] | None = None
+    var_name: Annotated[list[str] | None, ListLen("nvars")] = None
     """For each variable in `var`, the name to give it in the output files."""
     sample_period: int | None = Field(default=None, ge=1)
     """The sampling period, in seconds. Defaults to the model timestep."""

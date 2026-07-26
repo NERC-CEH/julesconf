@@ -9,7 +9,7 @@ from typing import Annotated
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas.constraints import PerElementDefault
+from julesconf.schemas.constraints import ListLen, PerElementDefault
 
 __all__ = [
     "AncillariesNamelist",
@@ -62,13 +62,17 @@ class _NvarsModel(NamelistModel):
 
     nvars: int = Field(default=0, ge=0)
     """The number of vegetation property variables that will be provided."""
-    var: list[str] | None = None
+    var: Annotated[list[str] | None, ListLen("nvars")] = None
     """List of vegetation variable names as recognised by JULES."""
-    use_file: Annotated[list[bool] | None, PerElementDefault(True, "nvars")] = None
+    use_file: Annotated[
+        list[bool] | None, ListLen("nvars"), PerElementDefault(True, "nvars")
+    ] = None
     """Indicates if variable should be read from file or set to constant value."""
-    const_val: list[float] | None = None
+    const_val: Annotated[list[float] | None, ListLen("nvars")] = None
     """Constant value that variable will be set to at every point."""
-    var_name: Annotated[list[str] | None, PerElementDefault("", "nvars")] = None
+    var_name: Annotated[
+        list[str] | None, ListLen("nvars"), PerElementDefault("", "nvars")
+    ] = None
     """The name of the variable in the file containing the data."""
     file: str | None = None
     """The name of the file to read surface type fractional coverage data from."""
@@ -81,7 +85,9 @@ class _NvarsModel(NamelistModel):
 
     Files named in the list cannot use variable name templating.
     """
-    tpl_name: Annotated[list[str] | None, PerElementDefault("", "nvars")] = None
+    tpl_name: Annotated[
+        list[str] | None, ListLen("nvars"), PerElementDefault("", "nvars")
+    ] = None
     """For each JULES variable, the string to substitute into a templated file name."""
 
     @model_validator(mode="after")
@@ -172,7 +178,9 @@ class JulesOverbankProps(NamelistModel):
 class JulesFlake(_NvarsModel):
     """`JULES_FLAKE` namelist members."""
 
-    const_val: Annotated[list[float] | None, PerElementDefault(5.0, "nvars")] = None
+    const_val: Annotated[
+        list[float] | None, ListLen("nvars"), PerElementDefault(5.0, "nvars")
+    ] = None
     """For each variable where use_file = FALSE, a constant value used everywhere.
 
     Unlike the other `nvars` blocks, `JULES_FLAKE` documents a default for this

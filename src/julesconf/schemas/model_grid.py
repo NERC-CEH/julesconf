@@ -9,7 +9,7 @@ from typing import Annotated
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas.constraints import PerElementDefault
+from julesconf.schemas.constraints import ListLen, PerElementDefault
 
 __all__ = [
     "JulesInputGrid",
@@ -56,17 +56,23 @@ class JulesLatlon(NamelistModel):
     """The coordinate system used for the model grid is latitude and longitude."""
     nvars: int = Field(default=0, ge=0)
     """The number of location variables that will be provided."""
-    var: list[str] | None = None
+    var: Annotated[list[str] | None, ListLen("nvars")] = None
     """List of location variable names as recognised by JULES."""
-    use_file: Annotated[list[bool] | None, PerElementDefault(True, "nvars")] = None
+    use_file: Annotated[
+        list[bool] | None, ListLen("nvars"), PerElementDefault(True, "nvars")
+    ] = None
     """For each JULES variable, indicates if it should be read from file or use a constant value."""
-    const_val: list[float] | None = None
+    const_val: Annotated[list[float] | None, ListLen("nvars")] = None
     """For each JULES variable where use_file = FALSE, a constant value set at every point."""
-    var_name: Annotated[list[str] | None, PerElementDefault("", "nvars")] = None
+    var_name: Annotated[
+        list[str] | None, ListLen("nvars"), PerElementDefault("", "nvars")
+    ] = None
     """For each JULES variable where use_file = TRUE, this is the name of the variable in the file."""
     file: str | None = None
     """The file to read ancillary properties from."""
-    tpl_name: Annotated[list[str] | None, PerElementDefault("", "nvars")] = None
+    tpl_name: Annotated[
+        list[str] | None, ListLen("nvars"), PerElementDefault("", "nvars")
+    ] = None
     """For each JULES variable, the string to substitute into a templated file name."""
     read_from_dump: bool = False
     """Populate variables from the dump file if TRUE, otherwise use the other members."""

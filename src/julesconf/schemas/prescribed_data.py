@@ -9,7 +9,7 @@ from typing import Annotated
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas.constraints import PerElementDefault
+from julesconf.schemas.constraints import ListLen, PerElementDefault
 
 __all__ = [
     "JulesPrescribed",
@@ -49,13 +49,17 @@ class JulesPrescribedDataset(NamelistModel):
     """The data file, file name template, or -- if `read_list` -- the list file."""
     nvars: int = Field(default=0, ge=0)
     """The number of variables the dataset provides."""
-    var: list[str] | None = None
+    var: Annotated[list[str] | None, ListLen("nvars")] = None
     """List of variable names as recognised by JULES."""
-    var_name: Annotated[list[str] | None, PerElementDefault("", "nvars")] = None
+    var_name: Annotated[
+        list[str] | None, ListLen("nvars"), PerElementDefault("", "nvars")
+    ] = None
     """For each variable in `var`, the name of the variable in the file."""
-    tpl_name: Annotated[list[str] | None, PerElementDefault("", "nvars")] = None
+    tpl_name: Annotated[
+        list[str] | None, ListLen("nvars"), PerElementDefault("", "nvars")
+    ] = None
     """For each variable in `var`, the string to substitute into a templated name."""
-    interp: list[str] | None = None
+    interp: Annotated[list[str] | None, ListLen("nvars")] = None
     """For each variable in `var`, the method of time interpolation."""
     prescribed_levels: list[int] | None = None
     """Indices of the levels to prescribe. Only implemented for `sthuf`."""

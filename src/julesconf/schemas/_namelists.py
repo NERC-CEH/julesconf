@@ -181,6 +181,33 @@ def _resolve_dims(surface_types: Any) -> dict[str, int]:
     }
 
 
+def _resolve_sibling_dims(
+    model: NamelistModel, meta: ListLen, dims: dict[str, int]
+) -> dict[str, int] | None:
+    """Return `dims` extended with any sibling dimension `meta` names.
+
+    Args:
+        model: The block carrying the field, and hence the sibling member.
+        meta: The field's `ListLen` metadata.
+        dims: Globally-resolved dimension sizes (`npft`, `nnvg`, …).
+
+    Returns:
+        A mapping resolving every name `meta` uses, or `None` if a sibling is
+        unset or zero, meaning the block is inactive and the check is skipped.
+    """
+    siblings = {d for d in (meta.dim, *meta.tolerates) if d in SIBLING_DIMS}
+    if not siblings:
+        return dims
+
+    local = dict(dims)
+    for dim in siblings:
+        length = getattr(model, dim, 0) or 0
+        if length <= 0:
+            return None
+        local[dim] = length
+    return local
+
+
 def _warn_postponed_files(directory: str | PathLike) -> None:
     """Emit a `PostponedNamelistWarning` for each postponed `.nml` in a directory."""
     for name in sorted(POSTPONED_NAMELISTS):
@@ -465,7 +492,13 @@ class JulesNamelists(NamelistModel):
     def _check_model_list_lengths(
         model: NamelistModel, path: str, dims: dict[str, int]
     ) -> None:
-        """Recursively validate `ListLen` fields on `model` and its submodels."""
+        """Recursively validate `ListLen` fields on `model` and its submodels.
+
+        Cross-namelist dimensions come from `dims`; a sibling dimension
+        (`nvars`) is read off `model` itself, so each block is checked against
+        its own value. A sibling that is unset or zero marks the block inactive
+        and skips the check — see `ListLen`.
+        """
         for field_name, field_info in type(model).model_fields.items():
             value = getattr(model, field_name)
             field_path = f"{path}.{field_name}" if path else field_name
@@ -478,10 +511,14 @@ class JulesNamelists(NamelistModel):
             if meta is None or not isinstance(value, list):
                 continue
 
-            accepted = meta.accepted_lengths(dims)
+            local = _resolve_sibling_dims(model, meta, dims)
+            if local is None:
+                continue
+
+            accepted = meta.accepted_lengths(local)
             if len(value) not in accepted:
                 expected = " or ".join(
-                    f"{d}={dims[d]}" for d in (meta.dim, *meta.tolerates)
+                    f"{d}={local[d]}" for d in (meta.dim, *meta.tolerates)
                 )
                 raise ValueError(
                     f"{field_path} has {len(value)} element(s), expected {expected}"

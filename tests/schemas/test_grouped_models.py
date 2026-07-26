@@ -81,11 +81,17 @@ def test_every_surface_type_member_is_classified():
 
 
 def test_io_stripping_is_collision_free():
-    """Q7: stripping `_io` must not merge two distinct parameters."""
+    """Q7: stripping `_io` must not merge two distinct parameters.
+
+    Restricted to the surface-type dimensions, since only those reach a
+    grouped entry. `ListLen` also marks namelist-local lengths (`nvars`,
+    `nsmax`, ...), whose `var` / `use_file` members legitimately repeat across
+    blocks and are excluded by `_grouped._build_specs`.
+    """
     names = [
         _strip_io(path.rsplit(".", 1)[1])
         for path, info in walk_fields(JulesNamelists)
-        if find_list_len(info) is not None
+        if (meta := find_list_len(info)) is not None and meta.dim in LIST_LEN_DIMS
     ]
     assert len(names) == len(set(names))
     assert "name" not in names
