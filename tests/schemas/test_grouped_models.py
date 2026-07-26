@@ -35,11 +35,19 @@ DIMS_FOR = {
 
 
 def expected_names(dims: set[str]) -> set[str]:
-    """Field names the given dimensions contribute, via an independent walk."""
+    """Field names the given dimensions contribute, via an independent walk.
+
+    Fields inside a *repeated* group are excluded, as `_grouped._build_specs`
+    excludes them: with N groups there are N independent arrays of such a
+    field, and one grouped entry has room for a single value. `walk_fields`
+    marks those paths `[]`, from its own traversal.
+    """
     return {
         _strip_io(path.rsplit(".", 1)[1])
         for path, info in walk_fields(JulesNamelists)
-        if (meta := find_list_len(info)) is not None and meta.dim in dims
+        if (meta := find_list_len(info)) is not None
+        and meta.dim in dims
+        and "[]" not in path
     }
 
 
@@ -57,9 +65,20 @@ def test_generated_model_covers_exactly_its_dims(model):
 def test_generated_models_are_not_empty():
     """Guard against a bug that empties both sides of the equality above."""
     assert len(Pft.model_fields) > 50
-    assert {"canht_ft", "lai", "neff", "g_area", "rsurf_std"} <= set(Pft.model_fields)
+    assert {"canht_ft", "lai", "neff", "g_area"} <= set(Pft.model_fields)
     assert {"t_bse", "canht_ft"} <= set(CropPft.model_fields)
-    assert {"albsnc_nvg", "rsurf_std"} <= set(Nvg.model_fields)
+    assert {"albsnc_nvg"} <= set(Nvg.model_fields)
+
+
+def test_fields_inside_a_repeated_group_are_not_pivoted():
+    """`rsurf_std_io` is `ntype`-long but lives in a group that repeats.
+
+    Each `JULES_DEPOSITION_SPECIES` carries its own surface-resistance array,
+    so there is no single value for a `[[pft]]` entry to hold. It stays in the
+    flat form, per species, and is length-checked there.
+    """
+    for model in (Pft, CropPft, Nvg):
+        assert "rsurf_std" not in model.model_fields
 
 
 def test_groups_exclude_parameters_that_do_not_apply():
@@ -91,7 +110,9 @@ def test_io_stripping_is_collision_free():
     names = [
         _strip_io(path.rsplit(".", 1)[1])
         for path, info in walk_fields(JulesNamelists)
-        if (meta := find_list_len(info)) is not None and meta.dim in LIST_LEN_DIMS
+        if (meta := find_list_len(info)) is not None
+        and meta.dim in LIST_LEN_DIMS
+        and "[]" not in path
     ]
     assert len(names) == len(set(names))
     assert "name" not in names

@@ -77,6 +77,8 @@ class ConfigError:
         namelist: The `.nml` file the failure is in, or `None` if the error
             came from a validator spanning the whole config.
         block: The namelist group, upper-cased as JULES writes it, or `None`.
+            A group that occurs more than once in its file carries its 1-based
+            occurrence number, as `JULES_OUTPUT_PROFILE[3]`.
         member: The namelist member, with any list index appended as
             `member[3]`, or `None` when the failing validator is attached to
             the block rather than to one member.
@@ -140,18 +142,32 @@ def _infer_member(error: Mapping[str, Any], message: str) -> str | None:
 def _split_loc(
     loc: Sequence[str | int], error: Mapping[str, Any], message: str
 ) -> tuple[str | None, str | None, str | None]:
-    """Split a pydantic location into namelist file, block and member."""
+    """Split a pydantic location into namelist file, block and member.
+
+    A *repeated* group (`jules_output_profile`, …) puts an integer straight
+    after the block name, since julesconf models it as a list of blocks. That
+    index belongs with the block, not the member, and is displayed **1-based**
+    — `JULES_OUTPUT_PROFILE[3]` is the third group in the file — to match how
+    JULES and rose number the occurrences (`[namelist:jules_output_profile(3)]`).
+    Indices *within* a member stay as pydantic reports them, 0-based, because
+    they index a Python list the user's TOML wrote directly.
+    """
     if not loc:
         return None, None, None
 
     namelist = f"{loc[0]}.nml" if isinstance(loc[0], str) else str(loc[0])
     block = str(loc[1]).upper() if len(loc) > 1 else None
 
-    if len(loc) <= 2:
+    rest = loc[2:]
+    if rest and isinstance(rest[0], int):
+        block = f"{block}[{rest[0] + 1}]"
+        rest = rest[1:]
+
+    if not rest:
         return namelist, block, _infer_member(error, message)
 
-    member = str(loc[2])
-    for index in loc[3:]:
+    member = str(rest[0])
+    for index in rest[1:]:
         member = f"{member}[{index}]"
     return namelist, block, member
 
@@ -237,9 +253,11 @@ class WarningKind:
 WARNING_KINDS: dict[str, WarningKind] = {
     "RepeatedNamelistGroupWarning": WarningKind(
         "data loss",
-        "JULES allows a namelist group to occur more than once and julesconf "
-        "models exactly one of each. Every occurrence is dropped, so the block "
-        "falls back to its defaults and writing the config back out loses them.",
+        "This group occurred more than once and julesconf models a single "
+        "block of it, so all but the first are dropped and writing the config "
+        "back out loses them. The groups JULES itself repeats -- output "
+        "profiles, prescribed datasets, deposition species -- are modelled as "
+        "lists and are not affected.",
         priority=0,
     ),
     "UnknownNamelistKeyWarning": WarningKind(

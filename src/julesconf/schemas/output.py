@@ -6,9 +6,10 @@ Reference: JULES user guide v7.9,
 
 from typing import Annotated, Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._conditional import check_group_count
 from julesconf.schemas.constraints import ListLen, PerElementDefault
 
 __all__ = ["JulesOutput", "JulesOutputProfile", "OutputNamelist"]
@@ -30,7 +31,13 @@ class JulesOutput(NamelistModel):
 
 
 class JulesOutputProfile(NamelistModel):
-    """`JULES_OUTPUT_PROFILE` namelist members."""
+    """`JULES_OUTPUT_PROFILE` namelist members.
+
+    JULES reads this group `JULES_OUTPUT::nprofiles` times, once per output
+    profile, so `OutputNamelist.jules_output_profile` holds a *list* of these
+    — one entry per occurrence, in file order. Each profile carries its own
+    `nvars`, and its `var` / `output_type` / `var_name` are checked against it.
+    """
 
     profile_name: str | None = None
     """The name of the output profile."""
@@ -69,4 +76,20 @@ class OutputNamelist(NamelistModel):
     """Top-level schema for `output.nml`."""
 
     jules_output: JulesOutput = JulesOutput()
-    jules_output_profile: JulesOutputProfile = JulesOutputProfile()
+    jules_output_profile: list[JulesOutputProfile] = Field(default_factory=list)
+    """One entry per `JULES_OUTPUT_PROFILE` group, in file order.
+
+    Defaults to empty, matching `JULES_OUTPUT::nprofiles = 0`: a config that
+    asks for no output profiles writes no profile groups.
+    """
+
+    @model_validator(mode="after")
+    def _check_profile_count(self) -> "OutputNamelist":
+        """Check the number of profile groups against `nprofiles`."""
+        check_group_count(
+            "jules_output_profile",
+            self.jules_output_profile,
+            self.jules_output.nprofiles,
+            count_member="JULES_OUTPUT::nprofiles",
+        )
+        return self

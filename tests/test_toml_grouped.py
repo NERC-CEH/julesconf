@@ -14,7 +14,10 @@ from hypothesis import strategies as st
 
 from julesconf.schemas import JulesNamelists, UnknownNamelistKeyWarning
 from julesconf.schemas._grouped import (
+    SPECS_BY_DIM,
     GroupedConfigError,
+    Nvg,
+    Pft,
     ToleratedLengthWarning,
     assemble,
     disassemble,
@@ -129,14 +132,31 @@ def test_multiple_violations_are_reported_together():
 # ---------------------------------------------------------------------------
 
 
-def test_ntype_fields_concatenate_pfts_then_non_veg():
+def test_ntype_contributes_no_fields_while_its_only_member_repeats():
+    """`rsurf_std_io` was the one `ntype` field, and it now repeats per species.
+
+    `JULES_DEPOSITION_SPECIES` is a repeated group, so each species carries its
+    own `ntype`-long surface-resistance array and there is no single value a
+    `[[pft]]` entry could hold. The dimension stays in `CONTRIBUTORS` -- the
+    machinery is unchanged and a future non-repeating `ntype` member would be
+    pivoted -- but today it contributes nothing, and the assembly order test
+    below is what would have to come back with it.
+    """
+    assert SPECS_BY_DIM["ntype"] == ()
+    assert "rsurf_std" not in set(Pft.model_fields) | set(Nvg.model_fields)
+
+
+def test_dimension_fields_concatenate_pfts_then_non_veg():
+    """Order across groups: natural PFTs, then crops, then non-vegetated."""
     data = minimal_grouped(n_pft=2, n_crop=1, n_nvg=2)
-    for i, entry in enumerate(data["pft"] + data["crop_pft"] + data["nvg"]):
-        entry["rsurf_std"] = float(i)
+    for i, entry in enumerate(data["pft"] + data["crop_pft"]):
+        entry["canht_ft"] = float(i)
+    for i, entry in enumerate(data["nvg"]):
+        entry["albsnc_nvg"] = float(i)
 
     config = JulesNamelists.model_validate(assemble(data))
-    species = config.jules_deposition.jules_deposition_species
-    assert species.rsurf_std_io == [0.0, 1.0, 2.0, 3.0, 4.0]
+    assert config.pft_params.jules_pftparm.canht_ft_io == [0.0, 1.0, 2.0]
+    assert config.nveg_params.jules_nvegparm.albsnc_nvg_io == [0.0, 1.0]
 
 
 # ---------------------------------------------------------------------------
@@ -296,15 +316,16 @@ def test_disassemble_inverts_assemble():
 def test_assemble_disassemble_is_a_round_trip(n_pft, n_crop, n_nvg, values):
     """Property: the grouped form survives a trip through the flat one.
 
-    `canht_ft` is set on every PFT contributor and `rsurf_std` on every surface
-    type, so both a `npft` and an `ntype` field are exercised at each shape.
+    `canht_ft` is set on every PFT contributor and `catch_nvg` on every
+    non-vegetated one, so both a `npft` and an `nnvg` field are exercised at
+    each shape.
     """
     data = minimal_grouped(n_pft=n_pft, n_crop=n_crop, n_nvg=n_nvg)
     pfts = data["pft"] + data.get("crop_pft", [])
     for i, entry in enumerate(pfts):
         entry["canht_ft"] = values[i % len(values)]
-    for i, entry in enumerate(pfts + data["nvg"]):
-        entry["rsurf_std"] = values[i % len(values)]
+    for i, entry in enumerate(data["nvg"]):
+        entry["catch_nvg"] = values[i % len(values)]
 
     original = {
         group: [dict(e) for e in data[group]]

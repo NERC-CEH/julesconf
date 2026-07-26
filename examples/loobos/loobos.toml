@@ -813,7 +813,7 @@ nprofiles = 1
 dump_period = 1
 dump_period_unit = "Y"
 
-[output.jules_output_profile]
+[[output.jules_output_profile]]
 profile_name = "test"
 file_period = 0
 output_spinup = false

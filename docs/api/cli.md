@@ -130,10 +130,10 @@ than printed one line at a time in arrival order:
 ```
 9 warnings:
 
-  RepeatedNamelistGroupWarning (1) -- data loss
-    JULES allows a namelist group to occur more than once and julesconf models
-    exactly one of each. ...
-    - OutputNamelist: the namelist group 'jules_output_profile' occurs 3 times
+  UnknownNamelistKeyWarning (4) -- data loss
+    These members are not in julesconf's schemas and are ignored, so writing
+    the config back out drops them.
+    - JulesSurface: ignoring unknown namelist member 'l_vary_z0m_soil'
       ...
 ```
 
@@ -143,8 +143,10 @@ Each category carries a **severity band**:
   dropped, so writing it back out would lose it.
   `RepeatedNamelistGroupWarning`, `UnknownNamelistKeyWarning` and
   `PostponedNamelistWarning` are all in this band, and
-  `RepeatedNamelistGroupWarning` is listed first because it is a known
-  modelling gap rather than something you can fix in your config.
+  `RepeatedNamelistGroupWarning` is listed first because it is a modelling gap
+  rather than something you can fix in your config. It is rare: the groups
+  JULES actually repeats — output profiles, prescribed datasets, deposition
+  species — are modelled as lists of blocks and do not warn.
 - **advisory** — the configuration is representable, but something in it is
   probably not doing what its author intended.
   `InactiveNamelistKeyWarning` sets a member JULES will not read given the

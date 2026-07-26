@@ -89,19 +89,48 @@ def walk_fields(model, path=()):
     Deliberately a second implementation of `julesconf.schemas._base.
     iter_leaf_fields`. The grouped models are generated from that traversal, so
     a test that reused it could not detect a bug in it.
+
+    A repeated group -- a field holding a list of blocks, such as
+    `jules_output_profile` -- is descended into, and its path element is
+    suffixed `[]` so callers can tell that what is below it is not addressable
+    as `namelist.block.member`.
     """
+    import typing
+
     from julesconf.schemas._base import NamelistModel
+
+    def block_model(annotation):
+        """Return the element model if `annotation` is a list of blocks."""
+        candidates = [annotation, *typing.get_args(annotation)]
+        for candidate in candidates:
+            if typing.get_origin(candidate) is not list:
+                continue
+            args = typing.get_args(candidate)
+            if (
+                args
+                and isinstance(args[0], type)
+                and issubclass(args[0], NamelistModel)
+            ):
+                return args[0]
+        return None
 
     for name, info in model.model_fields.items():
         annotation = info.annotation
         if isinstance(annotation, type) and issubclass(annotation, NamelistModel):
             yield from walk_fields(annotation, (*path, name))
+        elif (block := block_model(annotation)) is not None:
+            yield from walk_fields(block, (*path, name + "[]"))
         else:
             yield ".".join((*path, name)), info
 
 
 def flatten(data: dict) -> dict:
     """Flatten a `{namelist: {block: {member: value}}}` dict to dotted keys.
+
+    A repeated group holds a *list* of blocks, and each occurrence is flattened
+    under its own 1-based key: `output.jules_output_profile(2).var`. Numbering
+    matches JULES and rose, and keeping the occurrences separate is what lets
+    `assert_superset` notice a profile going missing.
 
     Args:
         data: A nested namelist dict.
@@ -115,6 +144,10 @@ def flatten(data: dict) -> dict:
             if isinstance(members, dict):
                 for key, value in members.items():
                     out[f"{filename}.{block}.{key}"] = value
+            elif isinstance(members, list):
+                for index, occurrence in enumerate(members, start=1):
+                    for key, value in occurrence.items():
+                        out[f"{filename}.{block}({index}).{key}"] = value
     return out
 
 

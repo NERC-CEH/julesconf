@@ -35,6 +35,7 @@ from julesconf.schemas._grouped import (
 )
 from julesconf.schemas._namelists import (
     POSTPONED_NAMELISTS,
+    REPEATABLE_GROUPS,
     JulesNamelists,
     PostponedNamelistWarning,
 )
@@ -68,6 +69,7 @@ __all__ = [
     "JULES_VERSION",
     "LIST_LEN_DIMS",
     "POSTPONED_NAMELISTS",
+    "REPEATABLE_GROUPS",
     "CanModel",
     "CanRadMod",
     "Ch4Substrate",

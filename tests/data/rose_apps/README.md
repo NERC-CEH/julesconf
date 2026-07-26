@@ -21,9 +21,17 @@ not.
 |---|---|
 | `loobos_trif` | TRIFFID dynamic vegetation, likewise unexercised by the Loobos example |
 | `gswp2_gl7` | gridded rather than single-site: `tpl_name`, file-driven ancillaries |
-| `loobos_jules_es_1p0_deposition` | indexed `namelist:jules_deposition_species(N)` sections |
+| `loobos_jules_es_1p0_deposition` | the heaviest user of repeated groups: 7 `jules_output_profile` sections and 3 `jules_prescribed_dataset` |
 | `loobos_fire` | the fire module |
 | `loobos_irrig` | irrigation, including `jules_irrig_props` |
+
+This app was originally vendored for its indexed
+`namelist:jules_deposition_species(N)` sections. That was a misreading: those
+sections are `[!!namelist:jules_deposition_species(1)]`, i.e. `!!`-ignored, as is
+`ndry_dep_species`, so no deposition-species group is ever emitted and the corpus
+does not exercise that group at all. Its cover is synthetic, in
+`tests/schemas/test_repeated_groups.py`. The app earns its place for the repeated
+groups it *does* emit, which is more than any other app in the corpus.
 
 Every one of them declares `meta=jules-standalone/vn8.2` while julesconf's
 schemas are pinned to vn7.9, so they also serve as a rolling record of the

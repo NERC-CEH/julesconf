@@ -202,6 +202,49 @@ class TestErrorFormatter:
         assert located
         assert all(error.member is None for error in located)
 
+    def test_repeated_group_index_is_shown_on_the_block_one_based(self):
+        """A failure in the third profile must say which profile it was.
+
+        Pydantic locates it `('output', 'jules_output_profile', 2, ...)`; the
+        index belongs to the group, and is displayed the way JULES and rose
+        number the occurrences -- from 1.
+        """
+        data = minimal_valid()
+        data["output"] = {
+            "jules_output": {"nprofiles": 3},
+            "jules_output_profile": [{}, {}, {"file_period": 5}],
+        }
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            with pytest.raises(ValidationError) as excinfo:
+                JulesNamelists.model_validate(data)
+
+        (error,) = iter_config_errors(excinfo.value)
+        assert error.namelist == "output.nml"
+        assert error.block == "JULES_OUTPUT_PROFILE[3]"
+        assert error.member == "file_period"
+        assert error.location == "output.nml  JULES_OUTPUT_PROFILE[3]  file_period"
+
+    def test_a_whole_config_check_names_the_occurrence_in_its_message(self):
+        """The `ListLen` walk runs on `JulesNamelists`, so the path is the message.
+
+        It still has to say *which* profile, and it numbers them from 1, as the
+        block index does.
+        """
+        data = minimal_valid()
+        data["output"] = {
+            "jules_output": {"nprofiles": 2},
+            "jules_output_profile": [{}, {"nvars": 1, "var": ["a", "b"]}],
+        }
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            with pytest.raises(ValidationError) as excinfo:
+                JulesNamelists.model_validate(data)
+
+        (error,) = iter_config_errors(excinfo.value)
+        assert error.location == "<cross-namelist>"
+        assert error.message.startswith("output.jules_output_profile(2).var has 2")
+
     def test_str_of_a_config_error(self):
         error = ConfigError("a.nml", "A", "b", "boom")
         assert str(error) == "a.nml  A  b\n  boom"
@@ -303,9 +346,14 @@ class TestValidate:
 
     def test_warnings_are_grouped_and_labelled(self, namelists):
         result = runner.invoke(app, ["validate", str(namelists)])
-        assert "RepeatedNamelistGroupWarning" in result.output
+        assert "UnknownNamelistKeyWarning" in result.output
         assert "data loss" in result.output
         assert "PostponedNamelistWarning" in result.output
+
+    def test_a_corpus_app_no_longer_reports_repeated_groups(self, namelists):
+        """`loobos_fire` has three output profiles, and all three are modelled."""
+        result = runner.invoke(app, ["validate", str(namelists)])
+        assert "RepeatedNamelistGroupWarning" not in result.output
 
     def test_invalid_config_exits_one_and_locates_each_error(self, cwd, namelists):
         break_namelist(cwd / namelists)

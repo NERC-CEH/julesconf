@@ -52,7 +52,11 @@ def test_correct_lengths_validate():
         }
     }
     data["jules_snow"] = {"jules_snow": {"cansnowpft": [True, False, True]}}
-    data["jules_deposition"] = {"jules_deposition_species": {"rsurf_std_io": [1.0] * 5}}
+    # A repeated group: always a list, and its count member must agree.
+    data["jules_deposition"] = {
+        "jules_deposition": {"ndry_dep_species": 1},
+        "jules_deposition_species": [{"rsurf_std_io": [1.0] * 5}],
+    }
     JulesNamelists.model_validate(data)
 
 
@@ -113,10 +117,13 @@ def test_snow_npft_wrong():
 
 def test_deposition_ntype_wrong():
     data = _minimal_valid()
-    data["jules_deposition"] = {"jules_deposition_species": {"rsurf_std_io": [1.0] * 8}}
+    data["jules_deposition"] = {
+        "jules_deposition": {"ndry_dep_species": 1},
+        "jules_deposition_species": [{"rsurf_std_io": [1.0] * 8}],
+    }
     with pytest.raises(
         ValidationError,
-        match=r"jules_deposition\.jules_deposition_species\.rsurf_std_io",
+        match=r"jules_deposition\.jules_deposition_species\(1\)\.rsurf_std_io",
     ):
         JulesNamelists.model_validate(data)
 

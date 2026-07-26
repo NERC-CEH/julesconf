@@ -86,10 +86,32 @@ labelled with whether they are advisory or mean something is dropped. Two are
 worth knowing about up front.
 
 **Repeated namelist groups.** JULES lets a namelist group appear more than once
-in one file — `jules_output_profile` occurs once per output profile. julesconf
-models exactly one of each, so the repetitions cannot be represented and the
-block falls back to its defaults. This is a known modelling gap, not something
-you can fix by editing the app; see
+in one file — `jules_output_profile` occurs once per output profile,
+`jules_prescribed_dataset` once per prescribed dataset,
+`jules_deposition_species` once per species. julesconf models each as a list of
+blocks, so every occurrence is converted and written back out. In TOML they are
+arrays of tables:
+
+```toml
+[[output.jules_output_profile]]
+profile_name = "daily"
+nvars = 2
+var = ["gpp", "smcl"]
+
+[[output.jules_output_profile]]
+profile_name = "monthly"
+nvars = 1
+var = ["gpp"]
+```
+
+Each profile carries its own `nvars`, and each is validated against it. The
+count member — `nprofiles` here — has to match: fewer groups than it asks for
+is an error, and more is allowed but reported, since JULES reads the leading
+`nprofiles` and ignores the rest. Rose apps often carry spare profiles that
+way.
+
+A group julesconf models a *single* block of that nonetheless appears twice
+still warns (`RepeatedNamelistGroupWarning`) — that one really is dropped; see
 [what julesconf covers](../concepts/coverage.md).
 
 **Postponed namelists.** Rose apps describe the `cable_*`, `oasis_rivers` and

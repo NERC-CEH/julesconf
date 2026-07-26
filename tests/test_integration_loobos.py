@@ -7,6 +7,13 @@ against a synthetic minimal config, which has no `nvars` blocks, no populated
 lists and no enum values. Loobos exercises 6 `nvars` blocks, all 29 files and
 `npft=5` / `nnvg=4`.
 
+Loobos has exactly **one** of each repeated group (one output profile, and an
+empty placeholder dataset and species block), so it is the cover for the
+single-occurrence normalisation: `NamelistFileHandler` must return a one-entry
+list for a group written once, and write it back as one Fortran group. Configs
+with several of a group are covered by the rose corpus and by
+`tests/schemas/test_repeated_groups.py`.
+
 Loobos does **not** exercise crops or TRIFFID: `crop_params.nml` and
 `triffid_params.nml` are both empty and `ncpft` is unset, so `nnpft == npft`
 and the `[[crop_pft]]` half of the grouped form never runs here. That cover
@@ -198,4 +205,4 @@ def test_per_element_defaults_fill_real_nvars_blocks(loobos):
 def test_explicit_values_in_real_config_are_preserved(loobos):
     """Loobos sets output_type via Fortran repeat syntax; it must not be replaced."""
     written = flatten(loobos.to_namelist_dict())
-    assert written["output.jules_output_profile.output_type"] == ["M"] * 22
+    assert written["output.jules_output_profile(1).output_type"] == ["M"] * 22

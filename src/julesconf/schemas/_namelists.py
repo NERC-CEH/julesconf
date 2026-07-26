@@ -34,6 +34,7 @@ from julesconf.schemas._base import (
     RepeatedNamelistGroupWarning,
     UnknownNamelistKeyWarning,
     _warn_repeated_groups,
+    repeated_group_model,
 )
 from julesconf.schemas._conditional import fail_if, warn_inactive
 from julesconf.schemas.ancillaries import AncillariesNamelist
@@ -71,7 +72,12 @@ from julesconf.schemas.timesteps import TimestepsNamelist
 from julesconf.schemas.triffid_params import TriffidParamsNamelist
 from julesconf.schemas.urban import UrbanNamelist
 
-__all__ = ["POSTPONED_NAMELISTS", "JulesNamelists", "PostponedNamelistWarning"]
+__all__ = [
+    "POSTPONED_NAMELISTS",
+    "REPEATABLE_GROUPS",
+    "JulesNamelists",
+    "PostponedNamelistWarning",
+]
 
 POSTPONED_NAMELISTS = frozenset(
     {
@@ -209,6 +215,19 @@ def _resolve_sibling_dims(
     return local
 
 
+def _repeatable_groups() -> frozenset[str]:
+    """Collect the namelist groups julesconf models as lists of blocks."""
+    names = set()
+    for namelist in JulesNamelists.model_fields.values():
+        model = namelist.annotation
+        if not (isinstance(model, type) and issubclass(model, NamelistModel)):
+            continue
+        for block, info in model.model_fields.items():
+            if repeated_group_model(info.annotation) is not None:
+                names.add(block)
+    return frozenset(names)
+
+
 def _warn_postponed_files(directory: str | PathLike) -> None:
     """Emit a `PostponedNamelistWarning` for each postponed `.nml` in a directory."""
     for name in sorted(POSTPONED_NAMELISTS):
@@ -244,6 +263,17 @@ def _expand_per_element_defaults(
             sub = data.get(field_name)
             if isinstance(sub, dict):
                 _expand_per_element_defaults(value, sub, dims)
+            continue
+
+        if repeated_group_model(field_info.annotation) is not None:
+            # A repeated group (`jules_output_profile`, …) is a list of blocks,
+            # each with its own sibling dimensions. Expand each one against
+            # its own `nvars` rather than the first one's.
+            blocks = data.get(field_name)
+            if isinstance(blocks, list):
+                for block, dumped in zip(value, blocks, strict=True):
+                    if isinstance(dumped, dict):
+                        _expand_per_element_defaults(block, dumped, dims)
             continue
 
         meta = find_per_element_default(field_info)
@@ -704,6 +734,11 @@ class JulesNamelists(NamelistModel):
         (`nvars`) is read off `model` itself, so each block is checked against
         its own value. A sibling that is unset or zero marks the block inactive
         and skips the check — see `ListLen`.
+
+        A repeated group is descended into per element, so each output profile
+        is checked against *its own* `nvars` rather than the first profile's.
+        The index appears in the path 1-based, as JULES and rose number the
+        groups: `output.jules_output_profile(2).var`.
         """
         for field_name, field_info in type(model).model_fields.items():
             value = getattr(model, field_name)
@@ -711,6 +746,13 @@ class JulesNamelists(NamelistModel):
 
             if isinstance(value, NamelistModel):
                 JulesNamelists._check_model_list_lengths(value, field_path, dims)
+                continue
+
+            if repeated_group_model(field_info.annotation) is not None:
+                for index, block in enumerate(value or [], start=1):
+                    JulesNamelists._check_model_list_lengths(
+                        block, f"{field_path}({index})", dims
+                    )
                 continue
 
             meta = find_list_len(field_info)
@@ -729,3 +771,18 @@ class JulesNamelists(NamelistModel):
                 raise ValueError(
                     f"{field_path} has {len(value)} element(s), expected {expected}"
                 )
+
+
+REPEATABLE_GROUPS: frozenset[str] = _repeatable_groups()
+"""Namelist groups julesconf models as a list of blocks, one per occurrence.
+
+Derived from the schemas — every field annotated `list[<block model>]` — so
+declaring a new repeatable group is a one-line change to that block's
+namelist model and nothing else.
+
+`julesconf.config.NamelistFileHandler` reads these into a `list[dict]` however
+many times they occur, including once, and writes one Fortran group per entry.
+Normalising here rather than in the schemas keeps the one-vs-many ambiguity
+where it comes from: `f90nml` returns a bare block for a single occurrence and
+a `Cogroup` for several, and nothing downstream should have to know that.
+"""

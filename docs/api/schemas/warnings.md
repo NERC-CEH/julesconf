@@ -25,10 +25,27 @@ exists so the exclusion is visible rather than looking like support.
 
 ::: julesconf.schemas.PostponedNamelistWarning
 
+### `RepeatedNamelistGroupWarning`
+
+A namelist group that appeared more than once in one file, where julesconf models a
+single block of it. All but the first are dropped, so re-emitting the config loses
+them.
+
+The three groups JULES itself repeats — `jules_output_profile`,
+`jules_prescribed_dataset` and `jules_deposition_species` — are modelled as **lists
+of blocks**, one entry per occurrence, and do not raise this. In TOML they are
+arrays of tables (`[[output.jules_output_profile]]`), and each block is validated
+against its own `nvars`. So this warning now means something narrower: a group
+julesconf does not know can repeat, most likely one a JULES version newer than v7.9
+made repeatable.
+
+::: julesconf.schemas.RepeatedNamelistGroupWarning
+
 ### `InactiveNamelistKeyWarning`
 
 A member that holds a non-default value JULES will never read, because a switch
-elsewhere in the config selects a different scheme — `kaps` under the 4-pool soil
+elsewhere in the config selects a different scheme, or a repeated group beyond the
+number the config asks JULES to read — `kaps` under the 4-pool soil
 carbon model, the RFM river parameters under TRIP, the bedrock parameters with
 `l_bedrock = FALSE`. These come from the `trigger` rules in the JULES rose
 metadata, which rose greys out in its config editor and JULES simply ignores.

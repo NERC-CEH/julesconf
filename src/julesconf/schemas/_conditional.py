@@ -29,7 +29,13 @@ from typing import Any
 
 from julesconf.schemas._base import NamelistModel
 
-__all__ = ["InactiveNamelistKeyWarning", "fail_if", "is_specified", "warn_inactive"]
+__all__ = [
+    "InactiveNamelistKeyWarning",
+    "check_group_count",
+    "fail_if",
+    "is_specified",
+    "warn_inactive",
+]
 
 
 class InactiveNamelistKeyWarning(UserWarning):
@@ -111,6 +117,68 @@ def warn_inactive(
                 InactiveNamelistKeyWarning,
                 stacklevel=3,
             )
+
+
+def check_group_count(
+    group: str, blocks: list[Any], count: int | None, *, count_member: str
+) -> None:
+    """Check a repeated namelist group against the member that counts it.
+
+    JULES reads a repeated group a fixed number of times, given by a member of
+    a sibling block: `nprofiles` groups of `JULES_OUTPUT_PROFILE`, `n_datasets`
+    of `JULES_PRESCRIBED_DATASET`, `ndry_dep_species` of
+    `JULES_DEPOSITION_SPECIES`. The two must agree, and the asymmetry is
+    JULES's own:
+
+    - **Too few blocks is fatal.** JULES reads until it has the number it was
+      promised and hits the end of the file, so this raises.
+    - **Too many is legal and common.** JULES reads the leading `count` groups
+      and never looks at the rest. Real rose apps keep spare profiles this way
+      — `loobos_jules_es_1p0_deposition` ships seven and sets `nprofiles = 2`.
+      The extras are preserved verbatim, and an `InactiveNamelistKeyWarning`
+      makes their inertness visible when they actually say something. A surplus
+      group that sets nothing — the empty `&jules_prescribed_dataset /`
+      placeholder most JULES configs carry — is silent, following the same rule
+      as `warn_inactive`: julesconf reports what the author wrote, not what a
+      default happens to be.
+
+    This rule is julesconf's own: rose expresses repetition with a
+    `duplicate=true` section property rather than in its `fail-if` language, so
+    there is no upstream rule to transcribe.
+
+    Args:
+        group: The namelist group name, for the messages.
+        blocks: The list of blocks read for that group.
+        count: The value of the counting member, or `None` if it is unset.
+        count_member: `BLOCK::member` naming where the count comes from.
+
+    Raises:
+        ValueError: If there are fewer blocks than the count calls for.
+    """
+    expected = 0 if count is None else count
+    unset = " (unset, so taken as 0)" if count is None else ""
+    if len(blocks) < expected:
+        raise ValueError(
+            f"{group} occurs {len(blocks)} time(s) but {count_member} is"
+            f" {expected}{unset}; JULES reads {expected} {group} group(s) and"
+            " would run out of input. Add the missing group(s), or lower"
+            f" {count_member}"
+        )
+    surplus = [
+        block
+        for block in blocks[expected:]
+        if isinstance(block, NamelistModel)
+        and block.model_dump(exclude_defaults=True, exclude_none=True)
+    ]
+    if surplus:
+        warnings.warn(
+            f"{group} occurs {len(blocks)} time(s) but {count_member} is"
+            f" {expected}{unset}, so JULES will read only the first"
+            f" {expected} and ignore the remaining {len(blocks) - expected}."
+            " They are kept as written",
+            InactiveNamelistKeyWarning,
+            stacklevel=3,
+        )
 
 
 def fail_if(condition: Any, reason: str) -> None:

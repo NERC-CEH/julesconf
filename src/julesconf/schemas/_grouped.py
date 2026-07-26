@@ -39,6 +39,7 @@ from pydantic import create_model, model_validator
 from pydantic.fields import FieldInfo
 
 from julesconf.schemas._base import (
+    REPEATED_GROUP_MARK,
     NamelistModel,
     UnknownNamelistKeyWarning,
     iter_leaf_fields,
@@ -222,12 +223,18 @@ def _build_specs() -> tuple[FieldSpec, ...]:
             # `ListLen` also marks namelist-local lengths (`nvars`), which are
             # not surface-type dimensions and have no place in a grouped entry.
             continue
+        if any(part.endswith(REPEATED_GROUP_MARK) for part in path):
+            # A field inside a repeated group cannot be pivoted onto a surface
+            # type: with N groups there are N independent arrays of it, and a
+            # single [[pft]] entry has room for one value. JULES_DEPOSITION_
+            # SPECIES::rsurf_std_io is the only case — one ntype-length surface
+            # resistance array *per species*. It stays in the flat form, where
+            # each species keeps its own, and is still length-checked per
+            # species by JulesNamelists._check_model_list_lengths.
+            continue
         if len(path) != 2:
-            # A ListLen field reached through anything other than
-            # namelist -> block would break the flat-dict indexing in
-            # assemble/disassemble. JULES_DEPOSITION_SPECIES is the live risk:
-            # JULES repeats it per species, and if the schema is ever fixed to
-            # model that, this must be revisited rather than silently skewed.
+            # A ListLen field reached through anything else would break the
+            # flat-dict indexing in assemble/disassemble.
             raise GroupedConfigError(
                 f"{'.'.join((*path, name))} carries ListLen but is not a "
                 "namelist.block.member field; the grouped form cannot index it"

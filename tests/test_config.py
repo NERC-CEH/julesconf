@@ -145,13 +145,17 @@ netcdf_data_strategy = st.builds(
 @pytest.fixture
 def sample_namelist_dict() -> dict:
     return {
-        "jules_output_profile": {
-            "profile_name": "test",
-            "output_period": 1800,
-            "nvars": 22,
-            "output_main_run": True,
-            "var": ["pstar", "tl1", "tstar"],
-        },
+        # A repeated group, so the handler reads and writes it as a list of
+        # blocks -- here a single occurrence, the normalisation that matters.
+        "jules_output_profile": [
+            {
+                "profile_name": "test",
+                "output_period": 1800,
+                "nvars": 22,
+                "output_main_run": True,
+                "var": ["pstar", "tl1", "tstar"],
+            }
+        ],
         "jules_time": {
             "timestep_len": 1800,
             "main_run_start": "1996-12-31 23:00:00",
@@ -197,8 +201,9 @@ def namelist_dir(tmp_path: Path, sample_namelist_dict: dict) -> Path:
     nml_dir = tmp_path / "namelists"
     nml_dir.mkdir()
     config = NamelistConfig()
+    handler = NamelistFileHandler()
     for node in config.nodes():
-        f90nml.write(sample_namelist_dict, nml_dir / node.path)
+        handler.write(nml_dir / node.path, sample_namelist_dict)
     return nml_dir
 
 
@@ -1062,12 +1067,12 @@ class TestJulesConfig:
             },
         )
         data = config.read(config_dir)
-        data["namelists"]["output"]["jules_output_profile"]["output_period"] = 3600
+        data["namelists"]["output"]["jules_output_profile"][0]["output_period"] = 3600
         out_dir = tmp_path / "jules_output"
         config.write(out_dir, data, overwrite_ok=True)
         reread = config.read(out_dir)
         assert (
-            reread["namelists"]["output"]["jules_output_profile"]["output_period"]
+            reread["namelists"]["output"]["jules_output_profile"][0]["output_period"]
             == 3600
         )
 
@@ -1088,6 +1093,7 @@ class TestModuleExports:
             "NamelistConfig",
             "NamelistFileHandler",
             "NetcdfFileHandler",
+            "namelist_to_dict",
         }
         assert set(config.__all__) == expected
 

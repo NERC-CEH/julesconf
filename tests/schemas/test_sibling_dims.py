@@ -14,6 +14,7 @@ from conftest import minimal_valid, walk_fields
 from pydantic import ValidationError
 
 from julesconf.schemas import JulesNamelists
+from julesconf.schemas._base import repeated_group_model
 from julesconf.schemas._grouped import CropPft, Nvg, Pft
 from julesconf.schemas._namelists import find_list_len, find_per_element_default
 from julesconf.schemas.constraints import (
@@ -24,10 +25,19 @@ from julesconf.schemas.constraints import (
 )
 
 
-def _with_profile(**profile) -> dict:
-    """A minimal config carrying one `jules_output_profile` block."""
+def _with_profile(*profiles, **profile) -> dict:
+    """A minimal config carrying one or more `jules_output_profile` blocks.
+
+    `jules_output_profile` is a repeated group, so it is always a list, even
+    for a single profile. `nprofiles` is set to match, since the two have to
+    agree.
+    """
+    blocks = list(profiles) or [profile]
     data = minimal_valid()
-    data["output"] = {"jules_output_profile": profile}
+    data["output"] = {
+        "jules_output": {"nprofiles": len(blocks)},
+        "jules_output_profile": blocks,
+    }
     return data
 
 
@@ -45,7 +55,7 @@ def test_matching_length_validates():
 def test_mismatched_length_raises_naming_the_sibling_dim():
     with pytest.raises(
         ValidationError,
-        match=r"output\.jules_output_profile\.var has 3 element\(s\),"
+        match=r"output\.jules_output_profile\(1\)\.var has 3 element\(s\),"
         r" expected nvars=2",
     ):
         JulesNamelists.model_validate(
@@ -99,7 +109,7 @@ def test_unset_list_skips_the_check():
 
 def test_both_markers_are_found_on_one_field():
     info = type(
-        JulesNamelists.model_validate(minimal_valid()).output.jules_output_profile
+        JulesNamelists.model_validate(_with_profile()).output.jules_output_profile[0]
     ).model_fields["output_type"]
     assert find_list_len(info) == ListLen("nvars")
     assert find_per_element_default(info) == PerElementDefault("S", "nvars")
@@ -110,7 +120,7 @@ def test_marked_field_still_expands_on_write():
         _with_profile(nvars=3, var=["smcl", "t_soil", "gpp"])
     )
     written = config.to_namelist_dict()["output"]["jules_output_profile"]
-    assert written["output_type"] == ["S", "S", "S"]
+    assert written[0]["output_type"] == ["S", "S", "S"]
 
 
 def test_expanded_value_satisfies_its_own_list_len():
@@ -152,7 +162,8 @@ def test_every_sibling_dim_names_a_real_member():
             continue
         block: Any = JulesNamelists
         for part in path.split(".")[:-1]:
-            block = block.model_fields[part].annotation
+            info = block.model_fields[part.removesuffix("[]")]
+            block = repeated_group_model(info.annotation) or info.annotation
         assert meta.dim in block.model_fields, path
 
 

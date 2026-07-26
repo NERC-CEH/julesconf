@@ -13,7 +13,6 @@ version gap.
 """
 
 import contextlib
-import json
 import re
 import textwrap
 import warnings
@@ -22,6 +21,7 @@ from pathlib import Path
 import f90nml
 import pytest
 
+from julesconf.config import namelist_to_dict
 from julesconf.rose import (
     RoseApp,
     RoseConfig,
@@ -31,6 +31,7 @@ from julesconf.rose import (
     rose_to_namelists,
 )
 from julesconf.schemas import (
+    InactiveNamelistKeyWarning,
     JulesNamelists,
     RepeatedNamelistGroupWarning,
     UnknownNamelistKeyWarning,
@@ -363,55 +364,64 @@ when the corpus was first vendored; see `notes/schema_gap_inventory.md` for
 the classification of the rest of the vn7.9 gap.
 
 Repeated namelist groups used to appear here as `_grp_*` pseudo-members. They
-are now reported as `RepeatedNamelistGroupWarning` instead — see
+are now read as lists of blocks, one entry per occurrence — see
 `REPEATED_GROUPS`.
 """
 
 _WARNING_RE = re.compile(r"^(\w+): ignoring unknown namelist member '(\w+)'")
-_REPEATED_RE = re.compile(r"^(\w+): the namelist group '(\w+)' occurs (\d+) times")
 
 REPEATED_GROUPS = {
-    "gswp2_gl7": {"OutputNamelist.jules_output_profile": 2},
-    "loobos_crops": {"OutputNamelist.jules_output_profile": 3},
-    "loobos_fire": {"OutputNamelist.jules_output_profile": 3},
-    "loobos_irrig": {"OutputNamelist.jules_output_profile": 3},
+    "gswp2_gl7": {"output.jules_output_profile": 2},
+    "loobos_crops": {"output.jules_output_profile": 3},
+    "loobos_fire": {"output.jules_output_profile": 3},
+    "loobos_irrig": {"output.jules_output_profile": 3},
     "loobos_jules_es_1p0_deposition": {
-        "OutputNamelist.jules_output_profile": 7,
-        "PrescribedDataNamelist.jules_prescribed_dataset": 3,
+        "output.jules_output_profile": 7,
+        "prescribed_data.jules_prescribed_dataset": 3,
     },
-    "loobos_trif": {"OutputNamelist.jules_output_profile": 2},
+    "loobos_trif": {"output.jules_output_profile": 2},
 }
 """Namelist groups each app repeats, and how many times.
 
 JULES emits one `jules_output_profile` group per output profile and one
-`jules_prescribed_dataset` per prescribed dataset. julesconf models a single
-block of each, so every app in the corpus loses data on a read-then-write
-cycle and must say so loudly. See `RepeatedNamelistGroupWarning`.
+`jules_prescribed_dataset` per prescribed dataset. Every app in the corpus
+repeats at least one group, so this is the corpus's cover for the repeated-group
+machinery: the counts must survive reading, validation and both TOML forms.
+
+`jules_deposition_species` is deliberately absent. It repeats in no app in the
+corpus -- `loobos_jules_es_1p0_deposition` has its species sections `!!`-ignored
+-- so its cover is synthetic; see `tests/schemas/test_repeated_groups.py`.
 """
 
 
-def repeated_groups(data: dict) -> dict[str, int]:
-    """Validate a config dict and collect the repeated namelist groups.
+def group_counts(data: dict) -> dict[str, int]:
+    """Count the occurrences of every repeated group in a parsed config.
 
     Args:
-        data: A `{namelist: {block: {member: value}}}` dict.
+        data: A `{namelist: {block: ...}}` dict, as `read_back` returns.
 
     Returns:
-        A `{Model.group: occurrences}` mapping.
+        A `{namelist.group: occurrences}` mapping, listing only the groups
+        that occur more than once.
     """
-    with warnings.catch_warnings(record=True) as record:
-        warnings.simplefilter("always")
-        with contextlib.suppress(ValueError):
-            JulesNamelists.model_validate(data)
+    return {
+        f"{namelist}.{group}": len(blocks)
+        for namelist, file_data in data.items()
+        for group, blocks in file_data.items()
+        if isinstance(blocks, list) and len(blocks) > 1
+    }
 
-    found = {}
-    for entry in record:
-        if not issubclass(entry.category, RepeatedNamelistGroupWarning):
-            continue
-        match = _REPEATED_RE.match(str(entry.message))
-        assert match is not None, entry.message
-        found[f"{match[1]}.{match[2]}"] = int(match[3])
-    return found
+
+def validated_group_counts(config: JulesNamelists) -> dict[str, int]:
+    """Count the blocks of every repeated group on a validated config."""
+    counts = {}
+    for namelist in type(config).model_fields:
+        file_model = getattr(config, namelist)
+        for group in type(file_model).model_fields:
+            blocks = getattr(file_model, group)
+            if isinstance(blocks, list) and len(blocks) > 1:
+                counts[f"{namelist}.{group}"] = len(blocks)
+    return counts
 
 
 def unknown_members(data: dict) -> set[str]:
@@ -468,11 +478,10 @@ def read_back(files: dict[str, str]) -> dict:
         A `{namelist: {block: {member: value}}}` dict of plain JSON types,
         keyed without the `.nml` suffix, ready for `model_validate`.
     """
-    data = {
-        name.removesuffix(".nml"): f90nml.reads(text).todict()
+    return {
+        name.removesuffix(".nml"): namelist_to_dict(f90nml.reads(text))
         for name, text in files.items()
     }
-    return json.loads(json.dumps(data))
 
 
 @pytest.fixture(scope="module")
@@ -511,7 +520,7 @@ class TestCorpus:
     def test_validates_against_the_schemas(self, parsed):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UnknownNamelistKeyWarning)
-            warnings.simplefilter("ignore", RepeatedNamelistGroupWarning)
+            warnings.simplefilter("ignore", InactiveNamelistKeyWarning)
             JulesNamelists.model_validate(parsed)
 
     def test_unknown_members_are_the_known_set(self, app_name, parsed):
@@ -527,11 +536,46 @@ class TestCorpus:
             seen |= unknown_members(read_back(files))
         assert seen == set(KNOWN_UNKNOWN_MEMBERS)
 
-    def test_repeated_groups_are_reported(self, app_name, parsed):
-        assert repeated_groups(parsed) == REPEATED_GROUPS[app_name]
+    def test_repeated_groups_are_read_as_lists(self, app_name, parsed):
+        """Every occurrence reaches the config dict, in file order."""
+        assert group_counts(parsed) == REPEATED_GROUPS[app_name]
 
-    def test_repeated_groups_do_not_also_look_like_unknown_members(self, parsed):
-        assert not any("_grp_" in member for member in unknown_members(parsed))
+    def test_no_group_is_left_mangled(self, parsed):
+        """`_grp_` keys are `f90nml`'s; none should survive the handler."""
+        assert not any(
+            "_grp_" in group for blocks in parsed.values() for group in blocks
+        )
+
+    def test_repeated_groups_survive_validation(self, app_name, parsed):
+        """The counts read off disk are the counts the validated model holds."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            config = JulesNamelists.model_validate(parsed)
+        assert validated_group_counts(config) == REPEATED_GROUPS[app_name]
+
+    def test_repeated_groups_survive_both_toml_forms(self, app_name, parsed, tmp_path):
+        """A repeated group round-trips through grouped and flat TOML alike."""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            config = JulesNamelists.model_validate(parsed)
+            for grouped in (True, False):
+                path = tmp_path / f"{app_name}-{grouped}.toml"
+                config.to_toml(path, grouped=grouped)
+                back = JulesNamelists.from_toml(path)
+        assert back.output.jules_output_profile == config.output.jules_output_profile
+        assert validated_group_counts(back) == REPEATED_GROUPS[app_name]
+
+    def test_no_repeated_group_warning_for_the_modelled_groups(self, parsed):
+        """The three groups JULES repeats are modelled, so they must not warn."""
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            with contextlib.suppress(ValueError):
+                JulesNamelists.model_validate(parsed)
+        assert not [
+            entry
+            for entry in record
+            if issubclass(entry.category, RepeatedNamelistGroupWarning)
+        ]
 
     def test_round_trips_through_a_directory(self, app_name, tmp_path):
         out = tmp_path / app_name

@@ -9,6 +9,7 @@ from typing import Annotated
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._conditional import check_group_count
 from julesconf.schemas.constraints import ListLen, PerElementDefault
 
 __all__ = [
@@ -28,9 +29,10 @@ class JulesPrescribed(NamelistModel):
 class JulesPrescribedDataset(NamelistModel):
     """`JULES_PRESCRIBED_DATASET` namelist members.
 
-    JULES reads this namelist `JULES_PRESCRIBED::n_datasets` times, once per
-    dataset. julesconf models a single instance; see
-    `julesconf.schemas.RepeatedNamelistGroupWarning`.
+    JULES reads this group `JULES_PRESCRIBED::n_datasets` times, once per
+    dataset, so `PrescribedDataNamelist.jules_prescribed_dataset` holds a
+    *list* of these — one entry per occurrence, in file order. Each dataset
+    carries its own `nvars`.
     """
 
     data_start: str | None = None
@@ -82,4 +84,19 @@ class PrescribedDataNamelist(NamelistModel):
     """Top-level schema for `prescribed_data.nml`."""
 
     jules_prescribed: JulesPrescribed = JulesPrescribed()
-    jules_prescribed_dataset: JulesPrescribedDataset = JulesPrescribedDataset()
+    jules_prescribed_dataset: list[JulesPrescribedDataset] = Field(default_factory=list)
+    """One entry per `JULES_PRESCRIBED_DATASET` group, in file order.
+
+    Defaults to empty, matching `JULES_PRESCRIBED::n_datasets = 0`.
+    """
+
+    @model_validator(mode="after")
+    def _check_dataset_count(self) -> "PrescribedDataNamelist":
+        """Check the number of dataset groups against `n_datasets`."""
+        check_group_count(
+            "jules_prescribed_dataset",
+            self.jules_prescribed_dataset,
+            self.jules_prescribed.n_datasets,
+            count_member="JULES_PRESCRIBED::n_datasets",
+        )
+        return self

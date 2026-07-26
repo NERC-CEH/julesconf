@@ -40,7 +40,7 @@ import dataclasses
 import json
 from os import PathLike
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import dirconf
 import f90nml
@@ -57,7 +57,54 @@ __all__ = [
     "NamelistConfig",
     "NamelistFileHandler",
     "NetcdfFileHandler",
+    "namelist_to_dict",
 ]
+
+
+def namelist_to_dict(data: f90nml.Namelist) -> dict:
+    """Normalise a parsed `f90nml` namelist into julesconf's dict form.
+
+    This is the boundary at which the one-vs-many ambiguity of a repeated
+    Fortran group is resolved. `f90nml` returns a bare `Namelist` for a group
+    that occurs once, a `Cogroup` for one that occurs more than once, and
+    `_grp_<group>_<n>` keys once `Namelist.todict()` flattens either. Every
+    group in `julesconf.schemas.REPEATABLE_GROUPS` is returned here as a
+    `list[dict]` instead, of length one when the file had one occurrence, so
+    nothing downstream has to know how `f90nml` chose to represent it.
+
+    Args:
+        data: A namelist as returned by `f90nml.read` or `f90nml.reads`.
+
+    Returns:
+        A `{block: {member: value}}` dict of plain JSON types, in which a
+        repeatable group maps to a list of block dicts, one per occurrence.
+    """
+    from julesconf.schemas import REPEATABLE_GROUPS
+
+    plain: dict[str, Any] = {}
+    # `Namelist.items()` yields a repeated group once per occurrence, and its
+    # keys are `NmlKey`s that index straight back to that one occurrence.
+    # Plain `str` keys are what return the whole `Cogroup`, so de-duplicate
+    # into those, in first-seen order.
+    for group in dict.fromkeys(str(key) for key in data):
+        value = data[group]
+        # A Cogroup is a list subclass, so this catches both the two-or-more
+        # case and the single-occurrence one.
+        blocks = list(value) if isinstance(value, list) else [value]
+        if group in REPEATABLE_GROUPS:
+            plain[group] = [dict(block) for block in blocks]
+        elif len(blocks) == 1:
+            plain[group] = dict(blocks[0])
+        else:
+            # A group julesconf models as a single block, repeated anyway.
+            # Keep `f90nml`'s `_grp_` naming rather than quietly picking one:
+            # the schemas recognise it and raise `RepeatedNamelistGroupWarning`,
+            # which is the whole point of not choosing here.
+            for index, block in enumerate(blocks):
+                plain[f"_grp_{group}_{index}"] = dict(block)
+    # The json round-trip flattens f90nml's OrderedDicts and numpy scalars
+    # into plain Python types.
+    return json.loads(json.dumps(plain))
 
 
 class NamelistFileHandler:
@@ -70,6 +117,22 @@ class NamelistFileHandler:
     This handler converts namelist contents to standard Python dicts (rather
     than `OrderedDict`) for cleaner pretty-printing, since Python 3.7+ dicts
     guarantee insertion order.
+
+    ## Repeated groups
+
+    Fortran lets one group appear several times in a file, and JULES relies on
+    it: `jules_output_profile` occurs `nprofiles` times, and so on for the rest
+    of `julesconf.schemas.REPEATABLE_GROUPS`. `f90nml` represents this
+    inconsistently — a bare `Namelist` for a single occurrence, a `Cogroup` for
+    several, and `_grp_<name>_<n>` keys once `todict()` flattens it — so this
+    handler normalises it away at the boundary:
+
+    - `read` returns a `list[dict]` for every repeatable group, of length one
+      when the file had one occurrence, and never emits a `_grp_` key;
+    - `write` emits one Fortran group per list entry, via `add_cogroup`.
+
+    Downstream, a repeated group is simply a list of blocks, in both the
+    schemas and the TOML forms, and the empty list means no groups at all.
     """
 
     def read(self, path: str | PathLike) -> dict:
@@ -80,10 +143,10 @@ class NamelistFileHandler:
 
         Returns:
             A nested dict containing all namelist blocks and their key-value
-            pairs. Top-level keys correspond to namelist block names.
+            pairs. Top-level keys correspond to namelist block names; a
+            repeatable group maps to a list of block dicts, one per occurrence.
         """
-        data = f90nml.read(path)
-        return json.loads(json.dumps(data.todict()))
+        return namelist_to_dict(f90nml.read(path))
 
     def write(
         self, path: str | PathLike, data: dict, *, overwrite_ok: bool = False
@@ -93,12 +156,21 @@ class NamelistFileHandler:
         Args:
             path: Path to the `.nml` file to write.
             data: A nested dict containing namelist blocks and their key-value
-                pairs. Top-level keys become namelist block names.
+                pairs. Top-level keys become namelist block names. A value that
+                is a list of dicts is written as that many repetitions of the
+                group, so an empty list writes no group at all.
             overwrite_ok: If `True`, overwrite an existing file at `path`.
                 If `False` (default), `f90nml` will raise an error if the
                 file already exists.
         """
-        f90nml.write(data, path, force=overwrite_ok)
+        namelist = f90nml.Namelist()
+        for group, value in data.items():
+            if isinstance(value, list):
+                for block in value:
+                    namelist.add_cogroup(group, block)
+            else:
+                namelist[group] = value
+        f90nml.write(namelist, path, force=overwrite_ok)
 
 
 @dataclasses.dataclass
