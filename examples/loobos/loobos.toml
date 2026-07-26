@@ -1,0 +1,916 @@
+[[pft]]
+type = "brd_leaf"
+canht_ft = 19.01
+lai = 5.0
+c3 = 1
+orient = 0
+can_struct_a = 1.0
+a_wl = 0.65
+a_ws = 10.0
+albsnc_max = 0.25
+albsnc_min = 0.3
+albsnf_max = 0.143
+alnir = 0.45
+alpar = 0.1
+alpha = 0.08
+b_wl = 1.667
+catch0 = 0.5
+dcatch_dlai = 0.05
+dgl_dm = 0.0
+dgl_dt = 9.0
+dqcrit = 0.09
+dz0v_dh = 0.05
+emis_pft = 0.98
+eta_sl = 0.01
+f0 = 0.875
+fd = 0.015
+fsmc_mod = 0.0
+fsmc_of = 0.0
+fsmc_p0 = 0.0
+g_leaf_0 = 0.25
+glmin = 1e-06
+gsoil_f = 1.0
+hw_sw = 0.5
+infil_f = 4.0
+kext = 0.5
+kn = 0.78
+knl = 0.2
+kpar = 0.5
+lai_alb_lim = 0.005
+lma = 0.0824
+neff = 0.0008
+nl0 = 0.04
+nmass = 0.021
+nr = 0.01726
+nr_nl = 1.0
+ns_nl = 0.1
+nsw = 0.0072
+omega = 0.15
+omnir = 0.7
+q10_leaf = 2.0
+r_grow = 0.25
+rootd_ft = 3.0
+sigl = 0.0375
+tleaf_of = 273.15
+tlow = 0.0
+tupp = 36.0
+vint = 5.73
+vsl = 29.81
+z0hm_classic_pft = 0.1
+z0hm_pft = 1.65
+
+[[pft]]
+type = "ndl_leaf"
+canht_ft = 16.38
+lai = 4.0
+c3 = 1
+orient = 0
+can_struct_a = 1.0
+a_wl = 0.65
+a_ws = 10.0
+albsnc_max = 0.25
+albsnc_min = 0.3
+albsnf_max = 0.088
+alnir = 0.35
+alpar = 0.07
+alpha = 0.08
+b_wl = 1.667
+catch0 = 0.5
+dcatch_dlai = 0.05
+dgl_dm = 0.0
+dgl_dt = 9.0
+dqcrit = 0.06
+dz0v_dh = 0.05
+emis_pft = 0.99
+eta_sl = 0.01
+f0 = 0.875
+fd = 0.015
+fsmc_mod = 0.0
+fsmc_of = 0.0
+fsmc_p0 = 0.0
+g_leaf_0 = 0.25
+glmin = 1e-06
+gsoil_f = 1.0
+hw_sw = 0.5
+infil_f = 4.0
+kext = 0.5
+kn = 0.78
+knl = 0.2
+kpar = 0.5
+lai_alb_lim = 0.005
+lma = 0.2263
+neff = 0.0008
+nl0 = 0.03
+nmass = 0.0115
+nr = 0.00784
+nr_nl = 1.0
+ns_nl = 0.1
+nsw = 0.0083
+omega = 0.15
+omnir = 0.45
+q10_leaf = 2.0
+r_grow = 0.25
+rootd_ft = 1.0
+sigl = 0.1
+tleaf_of = 243.15
+tlow = -5.0
+tupp = 31.0
+vint = 6.32
+vsl = 18.15
+z0hm_classic_pft = 0.1
+z0hm_pft = 1.65
+
+[[pft]]
+type = "c3_grass"
+canht_ft = 0.79
+lai = 2.0
+c3 = 1
+orient = 0
+can_struct_a = 1.0
+a_wl = 0.005
+a_ws = 1.0
+albsnc_max = 0.6
+albsnc_min = 0.8
+albsnf_max = 0.192
+alnir = 0.58
+alpar = 0.1
+alpha = 0.08
+b_wl = 1.667
+catch0 = 0.5
+dcatch_dlai = 0.05
+dgl_dm = 0.0
+dgl_dt = 0.0
+dqcrit = 0.1
+dz0v_dh = 0.1
+emis_pft = 0.98
+eta_sl = 0.01
+f0 = 0.9
+fd = 0.015
+fsmc_mod = 0.0
+fsmc_of = 0.0
+fsmc_p0 = 0.0
+g_leaf_0 = 0.25
+glmin = 1e-06
+gsoil_f = 1.0
+hw_sw = 0.5
+infil_f = 2.0
+kext = 0.5
+kn = 0.78
+knl = 0.2
+kpar = 0.5
+lai_alb_lim = 0.005
+lma = 0.0498
+neff = 0.0008
+nl0 = 0.06
+nmass = 0.0219
+nr = 0.0162
+nr_nl = 1.0
+ns_nl = 1.0
+nsw = 0.01604
+omega = 0.15
+omnir = 0.83
+q10_leaf = 2.0
+r_grow = 0.25
+rootd_ft = 0.5
+sigl = 0.025
+tleaf_of = 258.15
+tlow = 0.0
+tupp = 36.0
+vint = 6.42
+vsl = 40.96
+z0hm_classic_pft = 0.1
+z0hm_pft = 0.1
+
+[[pft]]
+type = "c4_grass"
+canht_ft = 1.26
+lai = 4.0
+c3 = 0
+orient = 0
+can_struct_a = 1.0
+a_wl = 0.005
+a_ws = 1.0
+albsnc_max = 0.6
+albsnc_min = 0.8
+albsnf_max = 0.159
+alnir = 0.58
+alpar = 0.1
+alpha = 0.04
+b_wl = 1.667
+catch0 = 0.5
+dcatch_dlai = 0.05
+dgl_dm = 0.0
+dgl_dt = 0.0
+dqcrit = 0.075
+dz0v_dh = 0.1
+emis_pft = 0.98
+eta_sl = 0.01
+f0 = 0.8
+fd = 0.025
+fsmc_mod = 0.0
+fsmc_of = 0.0
+fsmc_p0 = 0.0
+g_leaf_0 = 0.25
+glmin = 1e-06
+gsoil_f = 1.0
+hw_sw = 0.5
+infil_f = 2.0
+kext = 0.5
+kn = 0.78
+knl = 0.2
+kpar = 0.5
+lai_alb_lim = 0.005
+lma = 0.137
+neff = 0.0004
+nl0 = 0.03
+nmass = 0.0131
+nr = 0.0084
+nr_nl = 1.0
+ns_nl = 1.0
+nsw = 0.0202
+omega = 0.17
+omnir = 0.83
+q10_leaf = 2.0
+r_grow = 0.25
+rootd_ft = 0.5
+sigl = 0.05
+tleaf_of = 258.15
+tlow = 13.0
+tupp = 45.0
+vint = 0.0
+vsl = 10.24
+z0hm_classic_pft = 0.1
+z0hm_pft = 0.1
+
+[[pft]]
+type = "shrub"
+canht_ft = 1.0
+lai = 1.0
+c3 = 1
+orient = 0
+can_struct_a = 1.0
+a_wl = 0.1
+a_ws = 10.0
+albsnc_max = 0.4
+albsnc_min = 0.8
+albsnf_max = 0.115
+alnir = 0.58
+alpar = 0.1
+alpha = 0.08
+b_wl = 1.667
+catch0 = 0.5
+dcatch_dlai = 0.05
+dgl_dm = 0.0
+dgl_dt = 9.0
+dqcrit = 0.1
+dz0v_dh = 0.1
+emis_pft = 0.98
+eta_sl = 0.01
+f0 = 0.9
+fd = 0.015
+fsmc_mod = 0.0
+fsmc_of = 0.0
+fsmc_p0 = 0.0
+g_leaf_0 = 0.25
+glmin = 1e-06
+gsoil_f = 1.0
+hw_sw = 0.5
+infil_f = 2.0
+kext = 0.5
+kn = 0.78
+knl = 0.2
+kpar = 0.5
+lai_alb_lim = 0.005
+lma = 0.0695
+neff = 0.0008
+nl0 = 0.03
+nmass = 0.0219
+nr = 0.01726
+nr_nl = 1.0
+ns_nl = 0.1
+nsw = 0.0072
+omega = 0.15
+omnir = 0.83
+q10_leaf = 2.0
+r_grow = 0.25
+rootd_ft = 0.5
+sigl = 0.05
+tleaf_of = 243.15
+tlow = 0.0
+tupp = 36.0
+vint = 14.71
+vsl = 23.15
+z0hm_classic_pft = 0.1
+z0hm_pft = 0.1
+
+[[nvg]]
+type = "urban"
+albsnc_nvg = 0.4
+albsnf_nvg = 0.18
+catch_nvg = 0.5
+gs_nvg = 0.0
+infil_nvg = 0.1
+z0_nvg = 1.0
+ch_nvg = 280000.0
+vf_nvg = 1.0
+emis_nvg = 0.97
+z0hm_nvg = 1e-07
+z0hm_classic_nvg = 0.1
+
+[[nvg]]
+type = "lake"
+albsnc_nvg = 0.8
+albsnf_nvg = 0.012
+catch_nvg = 0.0
+gs_nvg = 0.0
+infil_nvg = 0.0
+z0_nvg = 0.0001
+ch_nvg = 0.0
+vf_nvg = 0.0
+emis_nvg = 0.985
+z0hm_nvg = 0.25
+z0hm_classic_nvg = 0.1
+
+[[nvg]]
+type = "soil"
+albsnc_nvg = 0.8
+albsnf_nvg = -1.0
+catch_nvg = 0.0
+gs_nvg = 0.01
+infil_nvg = 0.5
+z0_nvg = 0.001
+ch_nvg = 0.0
+vf_nvg = 0.0
+emis_nvg = 0.9
+z0hm_nvg = 0.02
+z0hm_classic_nvg = 0.1
+
+[[nvg]]
+type = "ice"
+albsnc_nvg = 0.8
+albsnf_nvg = 0.75
+catch_nvg = 0.0
+gs_nvg = 1000000.0
+infil_nvg = 0.0
+z0_nvg = 0.0005
+ch_nvg = 0.0
+vf_nvg = 0.0
+emis_nvg = 0.99
+z0hm_nvg = 0.2
+z0hm_classic_nvg = 0.1
+
+[ancillaries.jules_frac]
+file = "inputs/tile_fractions.dat"
+read_from_dump = false
+
+[ancillaries.jules_vegetation_props]
+nvars = 0
+read_from_dump = false
+const_z = false
+
+[ancillaries.jules_soil_props]
+nvars = 9
+var = [
+    "b",
+    "sathh",
+    "satcon",
+    "sm_sat",
+    "sm_crit",
+    "sm_wilt",
+    "hcap",
+    "hcon",
+    "albsoil",
+]
+use_file = [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+]
+const_val = [
+    6.63,
+    0.04946,
+    0.004715,
+    0.45815,
+    0.242433,
+    0.136328,
+    1185676.0,
+    0.226873,
+    0.11,
+]
+read_from_dump = false
+const_z = true
+
+[ancillaries.jules_top]
+nvars = 3
+var = [
+    "fexp",
+    "ti_mean",
+    "ti_sig",
+]
+use_file = [
+    false,
+    false,
+    false,
+]
+const_val = [
+    1.0,
+    6.0,
+    2.0,
+]
+read_from_dump = false
+const_z = false
+
+[ancillaries.jules_pdm]
+nvars = 0
+read_from_dump = false
+const_z = false
+
+[ancillaries.jules_agric]
+l_triffid_agric = false
+
+[ancillaries.jules_crop_props]
+nvars = 0
+read_from_dump = false
+const_z = false
+
+[ancillaries.jules_irrig_props]
+nvars = 0
+read_from_dump = false
+const_z = false
+
+[ancillaries.jules_water_resources_props]
+nvars = 0
+read_from_dump = false
+const_z = false
+
+[ancillaries.urban_properties]
+nvars = 0
+read_from_dump = false
+const_z = false
+
+[ancillaries.jules_co2]
+co2_mmr = 0.0005941
+
+[ancillaries.jules_flake]
+nvars = 0
+read_from_dump = false
+const_z = false
+
+[drive.jules_drive]
+file = "inputs/Loobos_1997.dat"
+data_start = "1996-12-31 23:00:00"
+data_end = "1997-12-31 23:00:00"
+data_period = 1800
+read_list = false
+nfiles = 0
+nvars = 8
+var = [
+    "sw_down",
+    "lw_down",
+    "tot_rain",
+    "tot_snow",
+    "t",
+    "wind",
+    "pstar",
+    "q",
+]
+interp = [
+    "nf",
+    "nf",
+    "nf",
+    "nf",
+    "nf",
+    "nf",
+    "nf",
+    "nf",
+]
+t_for_con_rain = 293.15
+diff_frac_const = 0.4
+z1_uv_in = 10.0
+z1_tq_in = 10.0
+z1_tq_vary = false
+z1_tq_var_name = "z1_tq_in"
+bl_height = 1000.0
+l_daily_disagg = false
+l_disagg_const_rh = false
+l_perturb_driving = false
+
+[fire.fire_switches]
+l_fire = false
+
+[imogen.imogen_onoff_switch]
+l_imogen = false
+
+[initial_conditions.jules_initial]
+dump_file = false
+total_snow = true
+l_broadcast_soilt = false
+file = "inputs/initial_conditions_bb219.dat"
+nvars = 9
+var = [
+    "canopy",
+    "tstar_tile",
+    "cs",
+    "gs",
+    "sthzw",
+    "zw",
+    "sthuf",
+    "t_soil",
+    "snow_tile",
+]
+use_file = [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    true,
+    true,
+    true,
+]
+const_val = [
+    0.0,
+    276.78,
+    12.1,
+    0.0,
+    50.0,
+    0.759,
+    3.0,
+    0.0,
+    0.0,
+]
+
+[jules_deposition.jules_deposition]
+l_deposition = false
+
+[jules_hydrology.jules_hydrology]
+l_hydrology = true
+l_var_rainfrac = true
+l_top = true
+l_pdm = false
+l_limit_gsoil = false
+zw_max = 6.0
+ti_max = 10.0
+ti_wetl = 1.5
+nfita = 20
+l_wetland_unfrozen = false
+l_spdmvar = false
+
+[jules_irrig.jules_irrig]
+l_irrig_dmd = false
+l_irrig_limit = false
+irr_crop = "year_round"
+frac_irrig_all_tiles = true
+set_irrfrac_on_irrtiles = false
+
+[jules_prnt_control.jules_prnt_control]
+print_step = 1
+
+[jules_radiation.jules_radiation]
+l_cosz = true
+l_spec_albedo = false
+l_spec_alb_bs = false
+l_niso_direct = false
+l_snow_albedo = false
+l_embedded_snow = false
+l_mask_snow_orog = true
+l_albedo_obs = false
+l_spec_sea_alb = false
+l_hapke_soil = false
+l_partition_albsoil = false
+i_sea_alb_method = 1
+wght_alb = [
+    0.0,
+    0.5,
+    0.0,
+    0.5,
+]
+
+[jules_rivers.jules_rivers]
+l_rivers = false
+lake_water_conserve_method = 1
+trip_globe_shape = 2
+
+[jules_rivers.jules_overbank]
+l_riv_overbank = false
+
+[jules_snow.jules_snow]
+nsmax = 0
+l_snowdep_surf = false
+frac_snow_subl_melt = 0
+graupel_options = 0
+r0 = 50.0
+rmax = 2000.0
+snow_ggr = [
+    0.6,
+    0.06,
+    230000.0,
+]
+amax = [
+    0.98,
+    0.7,
+]
+aicemax = [
+    0.78,
+    0.36,
+]
+maskd = 50.0
+dtland = 2.0
+kland_numerator = 0.3
+rho_snow_const = 250.0
+rho_snow_fresh = 100.0
+rho_firn_albedo = 550.0
+snow_hcon = 0.265
+snow_hcap = 630000.0
+snowliqcap = 0.05
+snowinterceptfact = 0.7
+snowloadlai = 4.4
+snowunloadfact = 0.4
+l_et_metamorph = false
+l_snow_infilt = false
+l_snow_nocan_hc = false
+i_grain_growth_opt = 0
+i_relayer_opt = 0
+i_basal_melting_opt = 0
+
+[jules_soil.jules_soil]
+sm_levels = 4
+l_vg_soil = false
+l_dpsids_dsdz = true
+l_soil_sat_down = true
+l_holdwater = true
+l_bedrock = false
+l_tile_soil = false
+l_broadcast_ancils = false
+soilhc_method = "peters_lidard"
+cs_min = 1e-06
+zsmc = 1.0
+zst = 1.0
+confrac = 0.3
+dzsoil_io = [
+    0.1,
+    0.25,
+    0.65,
+    2.0,
+]
+ns_deep = 100
+hcapdeep = 2100000.0
+hcondeep = 8.6
+dzdeep = 0.5
+
+[jules_soil_biogeochem.jules_soil_biogeochem]
+soil_bgc_model = "single_pool"
+q10_soil = 2.0
+kaps = 5e-09
+l_q10 = true
+l_soil_resp_lev2 = false
+l_layeredc = false
+l_label_frac_cs = false
+kaps_4pool = [
+    3.22e-07,
+    9.65e-09,
+    2.12e-08,
+    6.43e-10,
+]
+bio_hum_cn = 10.0
+sorp = 10.0
+n_inorg_turnover = 1.0
+tau_resp = 2.0
+diff_n_pft = 5.0
+z_burn_max = 0.2
+tau_lit = 5.0
+l_ch4_tlayered = false
+l_ch4_interactive = false
+l_ch4_microbe = false
+ch4_substrate = "soil_carbon"
+t0_ch4 = 273.15
+const_ch4_cs = 7.41e-12
+q10_ch4_cs = 3.7
+const_ch4_npp = 0.00999
+q10_ch4_npp = 1.5
+const_ch4_resps = 0.00436
+q10_ch4_resps = 1.5
+ch4_cpow = 1.0
+tau_ch4 = 6.5
+k2_ch4 = 0.01
+kd_ch4 = 0.0003
+rho_ch4 = 47.0
+q10_mic_ch4 = 4.3
+cue_ch4 = 0.03
+mu_ch4 = 0.00042
+frz_ch4 = 0.5
+alpha_ch4 = 0.001
+ev_ch4 = 5.0
+q10_ev_ch4 = 2.2
+
+[jules_surface.jules_surface]
+all_tiles = 0
+cor_mo_iter = 3
+i_aggregate_opt = 0
+iscrntdiag = 0
+anthrop_heat_option = 0
+l_aggregate = false
+l_anthrop_heat_src = false
+l_elev_land_ice = false
+l_elev_lw_down = false
+l_epot_corr = true
+l_flake_model = false
+l_land_ice_imp = false
+l_mo_buoyancy_calc = false
+l_point_data = false
+l_urban2t = false
+hleaf = 57000.0
+hwood = 11000.0
+beta1 = 0.83
+beta2 = 0.93
+fwe_c3 = 0.5
+fwe_c4 = 20000.0
+anthrop_heat_mean = 20.0
+
+[jules_vegetation.jules_vegetation]
+l_trait_phys = false
+l_phenol = false
+l_triffid = false
+l_veg_compete = true
+l_trif_eq = false
+l_trif_fire = false
+l_inferno = false
+l_nitrogen = false
+l_vegcan_soilfx = true
+l_croprotate = false
+l_recon = true
+can_model = "radiative"
+can_rad_mod = "two_stream_sunfleck"
+ilayers = 10
+photo_model = "collatz"
+stomata_model = "jacobs"
+fsmc_shape = 0
+ignition_method = "constant"
+
+[jules_water_resources.jules_water_resources]
+l_water_resources = false
+l_water_domestic = false
+l_water_environment = false
+l_water_industry = false
+l_water_irrigation = false
+l_water_livestock = false
+l_water_transfers = false
+l_prioritise = false
+
+[model_environment.jules_model_environment]
+l_jules_parent = "standalone"
+lsm_id = "jules"
+
+[model_grid.jules_input_grid]
+grid_is_1d = false
+nx = 1
+ny = 1
+dim_name = "land"
+x_dim_name = "x"
+y_dim_name = "y"
+time_dim_name = "time"
+land_frac_name = "land_frac"
+lat_name = "latitude"
+lon_name = "longitude"
+
+[model_grid.jules_latlon]
+l_coord_latlon = true
+nvars = 2
+var = [
+    "latitude",
+    "longitude",
+]
+use_file = [
+    false,
+    false,
+]
+const_val = [
+    52.168,
+    5.744,
+]
+
+[model_grid.jules_model_grid]
+force_1d_grid = false
+l_land_area_only = false
+
+[model_grid.jules_surf_hgt]
+l_tile_hgt = false
+
+[model_grid.jules_z_land]
+l_z_land = false
+
+[output.jules_output]
+output_dir = "outputs"
+run_id = "loobos"
+nprofiles = 1
+dump_period = 1
+dump_period_unit = "Y"
+
+[output.jules_output_profile]
+profile_name = "test"
+file_period = 0
+output_spinup = false
+output_main_run = true
+output_initial = true
+output_period = 1800
+l_land_frac = false
+nvars = 22
+var = [
+    "pstar",
+    "tl1",
+    "tstar",
+    "tstar_gb",
+    "qw1",
+    "wind",
+    "lw_down",
+    "sw_down",
+    "sw_net",
+    "rad_net",
+    "precip",
+    "frac",
+    "lai",
+    "runoff",
+    "fwetl",
+    "fch4_wetl",
+    "esoil_gb",
+    "ecan_gb",
+    "fsmc_gb",
+    "fsat",
+    "gpp_gb",
+    "npp_gb",
+]
+output_type = [
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+    "M",
+]
+
+[prescribed_data.jules_prescribed]
+n_datasets = 0
+
+[science_fixes.jules_temp_fixes]
+ctile_orog_fix = 2
+l_accurate_rho = true
+l_dtcanfix = true
+l_fix_alb_ice_thick = true
+l_fix_albsnow_ts = true
+l_fix_drydep_so2_water = true
+l_fix_improve_drydep = true
+l_fix_lake_ice_temperatures = true
+l_fix_moruses_roof_rad_coupling = true
+l_fix_neg_snow = true
+l_fix_osa_chloro = true
+l_fix_snow_frac = true
+l_fix_ukca_h2dd_x = true
+l_fix_ustar_dust = true
+l_fix_wind_snow = true
+
+[timesteps.jules_time]
+l_360 = false
+l_leap = true
+l_local_solar_time = false
+timestep_len = 1800
+main_run_start = "1996-12-31 23:00:00"
+main_run_end = "1997-12-31 23:00:00"
+print_step = 1
+
+[timesteps.jules_spinup]
+max_spinup_cycles = 0
+terminate_on_spinup_fail = false
+nvars = 0
+
+[urban.jules_urban]
+anthrop_heat_scale = 1.0
+l_moruses_albedo = false
+l_moruses_emissivity = false
+l_moruses_rough = false
+l_moruses_storage = false
+l_moruses_storage_thin = false
+l_moruses_macdonald = false
+l_urban_empirical = false

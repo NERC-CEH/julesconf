@@ -65,9 +65,12 @@ since those are declared in `jules_surface_types.nml`.
 | [`triffid_params.nml`](triffid_params.md) | `TriffidParamsNamelist` | Parameters for the TRIFFID dynamic vegetation model |
 | [`urban.nml`](urban.md) | `UrbanNamelist` | The two-tile urban scheme |
 
-The `cable_*` namelists, `jules_soil_ecosse.nml`, `oasis_rivers.nml` and
-`red_params.nml` documented in the user guide do **not** yet have schemas. See
-[field constraints](constraints.md) for the vocabulary to write one.
+Some user-guide namelists are not schema'd, and the two reasons differ.
+`cable_*`, `oasis_rivers.nml` and `red_params.nml` are **deliberately out of
+scope** — see [what julesconf covers](../../concepts/coverage.md). Others, such as
+`jules_soil_ecosse.nml`, are simply **not yet written**; see
+[field constraints](constraints.md) for the vocabulary, and
+[add a schema for a new namelist](../../how-to/add-a-schema.md) for the steps.
 
 ## Behaviour notes
 

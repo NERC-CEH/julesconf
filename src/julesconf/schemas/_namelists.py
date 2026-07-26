@@ -2,21 +2,40 @@
 
 Usage:
 
-    from julesconf.config import NamelistConfig
     from julesconf.schemas import JulesNamelists
 
-    data = NamelistConfig().read("/path/to/jules/namelists")
-    JulesNamelists.model_validate(data)
+    config = JulesNamelists.from_toml("config.toml")
+    config.to_namelists("/path/to/jules/namelists")
+
+A JULES run is configured by 29 Fortran namelist files. This module also
+provides a TOML front-end to them: `from_toml` / `to_toml` for the readable
+single-file form, and `from_namelists` / `to_namelists` for the form JULES
+itself consumes.
+
+Writing namelists is deliberately *not* the inverse of reading them: every
+field julesconf holds a default for is written explicitly, so the namelists
+fully determine the run rather than relying on JULES's internal defaults.
+See `notes/toml_config.md`.
 """
 
+import tomllib
+import warnings
+from enum import IntEnum
+from os import PathLike
+from pathlib import Path
 from typing import Any, get_args
 
+import tomli_w
 from pydantic import model_validator
 from pydantic.fields import FieldInfo
 
-from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._base import NamelistModel, UnknownNamelistKeyWarning
 from julesconf.schemas.ancillaries import AncillariesNamelist
-from julesconf.schemas.constraints import ListLen
+from julesconf.schemas.constraints import (
+    SIBLING_DIMS,
+    ListLen,
+    PerElementDefault,
+)
 from julesconf.schemas.crop_params import CropParamsNamelist
 from julesconf.schemas.drive import DriveNamelist
 from julesconf.schemas.fire import FireNamelist
@@ -46,7 +65,38 @@ from julesconf.schemas.timesteps import TimestepsNamelist
 from julesconf.schemas.triffid_params import TriffidParamsNamelist
 from julesconf.schemas.urban import UrbanNamelist
 
-__all__ = ["JulesNamelists"]
+__all__ = ["POSTPONED_NAMELISTS", "JulesNamelists", "PostponedNamelistWarning"]
+
+POSTPONED_NAMELISTS = frozenset(
+    {
+        "cable_pfts",
+        "cable_prognostics",
+        "cable_soil",
+        "cable_soilparm",
+        "cable_surface_types",
+        "oasis_rivers",
+        "red_params",
+    }
+)
+"""Namelists JULES supports but julesconf deliberately does not.
+
+These configure rarely-used extensions (the CABLE land surface scheme, OASIS
+river coupling, the RED demography model) that are out of scope. A config
+using them is not an error, but julesconf silently ignoring them would look
+like support, so `PostponedNamelistWarning` is emitted instead. See
+`AGENTS.md`.
+"""
+
+
+class PostponedNamelistWarning(UserWarning):
+    """A config referenced a namelist julesconf deliberately does not support.
+
+    Distinct from `UnknownNamelistKeyWarning`, which concerns unknown *members*
+    within a namelist julesconf does model. This concerns a known-but-unsupported
+    *file*, so the two can be escalated independently:
+
+        warnings.simplefilter("error", PostponedNamelistWarning)
+    """
 
 
 def find_list_len(field_info: FieldInfo) -> ListLen | None:
@@ -79,6 +129,105 @@ def _find_in_annotation(annotation: Any) -> ListLen | None:
         if found is not None:
             return found
     return None
+
+
+def find_per_element_default(field_info: FieldInfo) -> PerElementDefault | None:
+    """Return the `PerElementDefault` metadata for a field, if it has any.
+
+    Args:
+        field_info: The Pydantic field to inspect.
+
+    Returns:
+        The first `PerElementDefault` found, or `None` if the field has none.
+    """
+    for meta in field_info.metadata:
+        if isinstance(meta, PerElementDefault):
+            return meta
+    return None
+
+
+def _to_enum_names(value: Any) -> Any:
+    """Recursively replace `IntEnum` members with their names, for TOML output."""
+    if isinstance(value, IntEnum):
+        return value.name
+    if isinstance(value, dict):
+        return {k: _to_enum_names(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_to_enum_names(v) for v in value]
+    return value
+
+
+def _resolve_dims(surface_types: Any) -> dict[str, int]:
+    """Resolve the cross-namelist dimension names against `jules_surface_types`.
+
+    Args:
+        surface_types: The validated `JULES_SURFACE_TYPES` block.
+
+    Returns:
+        A mapping of every name in `LIST_LEN_DIMS` to its size.
+    """
+    npft, nnvg, ncpft = surface_types.npft, surface_types.nnvg, surface_types.ncpft
+    return {
+        "npft": npft,
+        "nnpft": npft - ncpft,
+        "nnvg": nnvg,
+        "ncpft": ncpft,
+        "ntype": npft + nnvg,
+    }
+
+
+def _warn_postponed_files(directory: str | PathLike) -> None:
+    """Emit a `PostponedNamelistWarning` for each postponed `.nml` in a directory."""
+    for name in sorted(POSTPONED_NAMELISTS):
+        if (Path(directory) / f"{name}.nml").is_file():
+            warnings.warn(
+                f"{name}.nml is a JULES namelist that julesconf does not"
+                " support; it will be ignored and omitted from any namelists"
+                " written",
+                PostponedNamelistWarning,
+                stacklevel=3,
+            )
+
+
+def _expand_per_element_defaults(
+    model: NamelistModel, data: dict[str, Any], dims: dict[str, int]
+) -> None:
+    """Fill in `PerElementDefault` fields, in place, on a dumped config.
+
+    Walks the model tree alongside the dumped dict. A marked field that the
+    user left unset is written as its scalar default repeated to the full
+    length of its dimension, because Fortran namelist input does not broadcast
+    a scalar across an array.
+
+    Args:
+        model: The model whose fields to inspect.
+        data: The corresponding dumped dict, modified in place.
+        dims: Globally-resolved dimension sizes (`npft`, `nnvg`, …).
+    """
+    for field_name, field_info in type(model).model_fields.items():
+        value = getattr(model, field_name)
+
+        if isinstance(value, NamelistModel):
+            sub = data.get(field_name)
+            if isinstance(sub, dict):
+                _expand_per_element_defaults(value, sub, dims)
+            continue
+
+        meta = find_per_element_default(field_info)
+        if meta is None or value is not None:
+            # Either not a per-element field, or the user supplied a value:
+            # in both cases leave the dumped output alone.
+            continue
+
+        if meta.dim in SIBLING_DIMS:
+            length = getattr(model, meta.dim, 0) or 0
+        else:
+            length = dims[meta.dim]
+
+        # A zero-length dimension means the block is inactive. Writing an empty
+        # assignment would be invalid namelist syntax, so omit the member.
+        if length > 0:
+            data[field_name] = [meta.value] * length
 
 
 class JulesNamelists(NamelistModel):
@@ -119,6 +268,175 @@ class JulesNamelists(NamelistModel):
     triffid_params: TriffidParamsNamelist = TriffidParamsNamelist()
     urban: UrbanNamelist = UrbanNamelist()
 
+    @model_validator(mode="before")
+    @classmethod
+    def _warn_unknown_keys(cls, data: Any) -> Any:
+        """Warn about unknown top-level keys, distinguishing postponed namelists.
+
+        Overrides `NamelistModel._warn_unknown_keys` so that a postponed
+        namelist produces `PostponedNamelistWarning` rather than the generic
+        unknown-key warning.
+        """
+        if isinstance(data, dict):
+            for key in sorted(set(data) - set(cls.model_fields)):
+                if key in POSTPONED_NAMELISTS:
+                    warnings.warn(
+                        f"{key!r} is a JULES namelist that julesconf does not"
+                        " support; it will be ignored and omitted from any"
+                        " namelists written",
+                        PostponedNamelistWarning,
+                        stacklevel=2,
+                    )
+                else:
+                    warnings.warn(
+                        f"{cls.__name__}: ignoring unknown namelist member {key!r}",
+                        UnknownNamelistKeyWarning,
+                        stacklevel=2,
+                    )
+        return data
+
+    # ------------------------------------------------------------------
+    # Reading
+    # ------------------------------------------------------------------
+
+    @classmethod
+    def _validate(
+        cls, data: dict, *, strict: bool, allow_grouped: bool = False
+    ) -> "JulesNamelists":
+        """Validate a config dict, optionally rejecting unknown members.
+
+        Assembly of the grouped form happens *inside* the warning filter, so
+        `strict` catches a mistyped parameter on a `[[pft]]` entry too.
+        """
+        from julesconf.schemas._grouped import assemble, is_grouped
+
+        with warnings.catch_warnings():
+            if strict:
+                warnings.simplefilter("error", UnknownNamelistKeyWarning)
+            if allow_grouped and is_grouped(data):
+                data = assemble(data)
+            return cls.model_validate(data)
+
+    @classmethod
+    def from_namelists(
+        cls, directory: str | PathLike, *, strict: bool = False
+    ) -> "JulesNamelists":
+        """Read and validate a JULES namelists directory.
+
+        Args:
+            directory: Path to a directory containing the 29 `.nml` files.
+            strict: If `True`, raise on any namelist member julesconf does not
+                model. Such members are dropped, so a read-then-write cycle
+                would lose them; use `strict` when the result is destined for
+                `to_namelists`.
+
+        Returns:
+            The validated configuration.
+
+        Raises:
+            UnknownNamelistKeyWarning: If `strict` and an unknown member is found.
+        """
+        from julesconf.config import NamelistConfig
+
+        _warn_postponed_files(directory)
+        return cls._validate(NamelistConfig().read(directory), strict=strict)
+
+    @classmethod
+    def from_toml(
+        cls, path: str | PathLike, *, strict: bool = False
+    ) -> "JulesNamelists":
+        """Read and validate a TOML configuration file.
+
+        Args:
+            path: Path to a `.toml` file. Either form is accepted and
+                detected automatically: the flat form, laid out as
+                `[<namelist>.<block>]` tables mirroring the namelist
+                structure; or the grouped form, using `[[pft]]`,
+                `[[crop_pft]]` and `[[nvg]]` arrays of tables for the
+                surface-type parameters.
+            strict: If `True`, raise on any member julesconf does not model.
+
+        Returns:
+            The validated configuration.
+
+        Raises:
+            UnknownNamelistKeyWarning: If `strict` and an unknown member is found.
+            GroupedConfigError: If a grouped config mixes the two forms or
+                specifies a parameter on only some entries of a group.
+        """
+        with open(path, "rb") as f:
+            return cls._validate(tomllib.load(f), strict=strict, allow_grouped=True)
+
+    # ------------------------------------------------------------------
+    # Writing
+    # ------------------------------------------------------------------
+
+    def to_namelist_dict(self) -> dict[str, Any]:
+        """Return the config as a dict ready for `NamelistConfig.write`.
+
+        Every field julesconf holds a default for is included, and
+        `PerElementDefault` fields are expanded to their full length, so the
+        result fully determines the run. Fields julesconf has no value for are
+        omitted.
+
+        Returns:
+            A `{namelist: {block: {member: value}}}` dict of plain JSON types.
+        """
+        data = self.model_dump(mode="json", exclude_none=True)
+        surface_types = self.jules_surface_types.jules_surface_types
+        _expand_per_element_defaults(self, data, _resolve_dims(surface_types))
+        return data
+
+    def to_namelists(
+        self, directory: str | PathLike, *, overwrite_ok: bool = False
+    ) -> None:
+        """Write the config to a JULES namelists directory.
+
+        Args:
+            directory: Destination directory; created if it does not exist.
+            overwrite_ok: If `True`, overwrite existing `.nml` files.
+        """
+        from julesconf.config import NamelistConfig
+
+        NamelistConfig().write(
+            directory, self.to_namelist_dict(), overwrite_ok=overwrite_ok
+        )
+
+    def to_toml_dict(self, *, grouped: bool = True) -> dict[str, Any]:
+        """Return the config as a dict ready for TOML serialisation.
+
+        Unlike `to_namelist_dict`, `PerElementDefault` fields are *not*
+        expanded — a TOML config stays terse — and enum fields are written as
+        member names rather than integers.
+
+        Args:
+            grouped: If `True`, pivot the surface-type parameters into `pft`,
+                `crop_pft` and `nvg` arrays of tables. If `False`, emit the
+                flat form that mirrors the namelists one-to-one.
+
+        Returns:
+            A config dict, in the requested form.
+        """
+        from julesconf.schemas._grouped import disassemble
+
+        data = _to_enum_names(self.model_dump(exclude_none=True))
+        return disassemble(data) if grouped else data
+
+    def to_toml(self, path: str | PathLike, *, grouped: bool = True) -> None:
+        """Write the config to a TOML file.
+
+        Args:
+            path: Destination `.toml` file.
+            grouped: If `True` (the default), write the grouped form, in which
+                each surface type is one `[[pft]]` / `[[crop_pft]]` / `[[nvg]]`
+                table rather than a position in 113 parallel arrays. Pass
+                `False` for the flat form, which mirrors the namelists exactly
+                and is the more faithful choice when migrating a config whose
+                arrays are longer than JULES reads.
+        """
+        with open(path, "wb") as f:
+            tomli_w.dump(self.to_toml_dict(grouped=grouped), f)
+
     @model_validator(mode="after")
     def _check_list_lengths(self) -> "JulesNamelists":
         """Check every `ListLen`-marked list against its dimension.
@@ -127,13 +445,7 @@ class JulesNamelists(NamelistModel):
         `ListLen` field added anywhere is checked automatically.
         """
         surface_types = self.jules_surface_types.jules_surface_types
-        dims = {
-            "npft": surface_types.npft,
-            "nnvg": surface_types.nnvg,
-            "ncpft": surface_types.ncpft,
-            "ntype": surface_types.npft + surface_types.nnvg,
-        }
-        self._check_model_list_lengths(self, "", dims)
+        self._check_model_list_lengths(self, "", _resolve_dims(surface_types))
         return self
 
     @staticmethod
@@ -150,12 +462,14 @@ class JulesNamelists(NamelistModel):
                 continue
 
             meta = find_list_len(field_info)
-            if (
-                meta is not None
-                and isinstance(value, list)
-                and len(value) != dims[meta.dim]
-            ):
+            if meta is None or not isinstance(value, list):
+                continue
+
+            accepted = meta.accepted_lengths(dims)
+            if len(value) not in accepted:
+                expected = " or ".join(
+                    f"{d}={dims[d]}" for d in (meta.dim, *meta.tolerates)
+                )
                 raise ValueError(
-                    f"{field_path} has {len(value)} element(s),"
-                    f" expected {meta.dim}={dims[meta.dim]}"
+                    f"{field_path} has {len(value)} element(s), expected {expected}"
                 )

@@ -9,7 +9,7 @@ from typing import Annotated
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas.constraints import ListLen
+from julesconf.schemas.constraints import ListLen, PerElementDefault
 
 __all__ = ["JulesSnow", "JulesSnowNamelist"]
 
@@ -31,7 +31,9 @@ class JulesSnow(NamelistModel):
     """Prescribed thickness of each snow layer (m)."""
 
     # Length npft (cross-namelist — validated in JulesNamelists)
-    cansnowpft: Annotated[list[bool] | None, ListLen("npft")] = None
+    cansnowpft: Annotated[
+        list[bool] | None, ListLen("npft"), PerElementDefault(False, "npft")
+    ] = None
     """Flag indicating whether snow can be held under the canopy of each PFT."""
 
     # Radiation parameters
@@ -39,11 +41,17 @@ class JulesSnow(NamelistModel):
     """Grain size for fresh snow (μm)."""
     rmax: float = 2000.0
     """Maximum snow grain size (μm)."""
-    snow_ggr: Annotated[list[float], Field(min_length=3, max_length=3)] | None = None
+    snow_ggr: Annotated[list[float], Field(min_length=3, max_length=3)] | None = Field(
+        default=[0.6, 0.06, 0.23e6]
+    )
     """Snow grain area growth rates (μm² s⁻¹)."""
-    amax: Annotated[list[float], Field(min_length=2, max_length=2)] | None = None
+    amax: Annotated[list[float], Field(min_length=2, max_length=2)] | None = Field(
+        default=[0.98, 0.7]
+    )
     """Maximum albedo for fresh snow."""
-    aicemax: Annotated[list[float], Field(min_length=2, max_length=2)] | None = None
+    aicemax: Annotated[list[float], Field(min_length=2, max_length=2)] | None = Field(
+        default=[0.78, 0.36]
+    )
     """Maximum albedo for bare ice."""
     maskd: float = 50.0
     """Weighting factor for snow in overall surface albedo calculation based on e-folding depth."""

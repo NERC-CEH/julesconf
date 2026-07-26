@@ -4,11 +4,12 @@ Reference: JULES user guide v7.9,
 `jules-lsm.github.io/user_guide/doc/source/namelists/output.nml.rst`
 """
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas.constraints import PerElementDefault
 
 __all__ = ["JulesOutput", "JulesOutputProfile", "OutputNamelist"]
 
@@ -54,7 +55,7 @@ class JulesOutputProfile(NamelistModel):
     """The number of variables that the profile will provide output for."""
     var: list[str] | None = None
     """List of variable names to output, as recognised by JULES."""
-    output_type: list[str] | None = None
+    output_type: Annotated[list[str] | None, PerElementDefault("S", "nvars")] = None
     """For each variable specified in var, this indicates the type of processing required."""
 
 

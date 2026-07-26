@@ -1,11 +1,24 @@
 """Shared base model for JULES namelist schemas."""
 
 import warnings
-from typing import Any
+from collections.abc import Iterator
+from functools import cache
+from typing import Any, get_args, get_origin
 
 from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic.fields import FieldInfo
 
-__all__ = ["NamelistModel", "UnknownNamelistKeyWarning"]
+__all__ = ["NamelistModel", "UnknownNamelistKeyWarning", "iter_leaf_fields"]
+
+
+def _is_list_annotation(annotation: Any) -> bool:
+    """Return whether an annotation admits a list, looking through unions.
+
+    Handles `list[X]`, `list[X] | None` and `Annotated[list[X] | None, ...]`.
+    """
+    if get_origin(annotation) is list:
+        return True
+    return any(_is_list_annotation(arg) for arg in get_args(annotation))
 
 
 class UnknownNamelistKeyWarning(UserWarning):
@@ -31,7 +44,39 @@ class NamelistModel(BaseModel):
         warnings.simplefilter("error", UnknownNamelistKeyWarning)
     """
 
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(extra="ignore", use_attribute_docstrings=True)
+
+    @classmethod
+    @cache
+    def _list_field_names(cls) -> frozenset[str]:
+        """Names of fields that accept a list, cached per class."""
+        return frozenset(
+            name
+            for name, info in cls.model_fields.items()
+            if _is_list_annotation(info.annotation)
+        )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_scalars_to_lists(cls, data: Any) -> Any:
+        """Wrap a scalar in a list where the schema expects a list.
+
+        Fortran writes a one-element array indistinguishably from a scalar
+        (`canht_ft_io = 19.01`), and `f90nml` reads it back as a scalar. Without
+        this, a legal single-PFT JULES config fails validation, and any config
+        whose lists happen to have one element cannot be round-tripped.
+        """
+        if not isinstance(data, dict):
+            return data
+
+        scalars = {
+            name
+            for name in cls._list_field_names() & set(data)
+            if data[name] is not None and not isinstance(data[name], (list, tuple))
+        }
+        if not scalars:
+            return data
+        return {k: [v] if k in scalars else v for k, v in data.items()}
 
     @model_validator(mode="before")
     @classmethod
@@ -45,3 +90,27 @@ class NamelistModel(BaseModel):
                     stacklevel=2,
                 )
         return data
+
+
+def iter_leaf_fields(
+    model: type[NamelistModel], path: tuple[str, ...] = ()
+) -> Iterator[tuple[tuple[str, ...], str, FieldInfo]]:
+    """Walk a model tree, yielding every field that is not itself a submodel.
+
+    Several pieces of machinery are driven by field metadata and need the same
+    traversal: the `ListLen` length check, `PerElementDefault` expansion, and
+    the generated grouped-config models.
+
+    Args:
+        model: The model class to walk.
+        path: Field names of the enclosing blocks, used internally.
+
+    Yields:
+        `(block_path, field_name, field_info)` for each leaf field.
+    """
+    for name, info in model.model_fields.items():
+        annotation = info.annotation
+        if isinstance(annotation, type) and issubclass(annotation, NamelistModel):
+            yield from iter_leaf_fields(annotation, (*path, name))
+        else:
+            yield path, name, info
