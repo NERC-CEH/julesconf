@@ -334,14 +334,14 @@ That is six more than the 29 julesconf models: the postponed `cable_*`,
 """
 
 UNKNOWN_MEMBER_COUNTS = {
-    "eraint_rfm_2ddata": 10,
+    "eraint_rfm_2ddata": 4,
     "gswp2_gl7": 4,
     "gswp2_ukv": 4,
-    "imogen_layeredc": 8,
+    "imogen_layeredc": 4,
     "loobos_crops": 4,
     "loobos_fire": 4,
     "loobos_irrig": 3,
-    "loobos_jules_es_1p0_biocrop_agexpand": 17,
+    "loobos_jules_es_1p0_biocrop_agexpand": 5,
     "loobos_jules_es_1p0_deposition": 4,
     "loobos_trif": 4,
 }
@@ -360,44 +360,10 @@ KNOWN_UNKNOWN_MEMBERS = [
     "JulesIrrig.irrig_option",
     "JulesSoilBiogeochem.cs_decomp_soil_moist_func",
     "JulesSoilBiogeochem.l_bgc_heat",
-    # --- a whole vn7.9 namelist file julesconf does not model yet; adding it
-    #     means a new schema module *and* a new file in NamelistConfig, so it
-    #     is tracked separately from the per-member gap ---
+    # --- a whole vn7.9 namelist file julesconf deliberately does not model;
+    #     ECOSSE is documented as not fully functional and users are told not
+    #     to use it, so this is a scoping decision, not a gap. See AGENTS.md ---
     "JulesNamelists.jules_soil_ecosse",
-    # --- vn7.9 members deferred in Phase 4 for want of corpus traffic, and
-    #     newly evidenced by the four apps vendored in Phase 9. Reclassified
-    #     from `defer` to `add` in notes/schema_gap_inventory.md; adding them
-    #     is a separate piece of work ---
-    # river routing (`eraint_rfm_2ddata`) — `jules_rivers_props` is now
-    # populated; `l_riv_overbank` belongs to the sibling `jules_rivers` block
-    # and is a separate piece of work
-    "JulesRivers.l_riv_overbank",
-    # IMOGEN (`imogen_layeredc`) — `imogen_run_list` and
-    # `imogen_anlg_vals_list` are now populated; this switch is on the third
-    # IMOGEN block and is a separate piece of work
-    "ImogenOnoffSwitch.l_daily_metdata_climatol",
-    # biocrop and agricultural expansion
-    # (`loobos_jules_es_1p0_biocrop_agexpand`)
-    "JulesAgric.biocrop_name",
-    "JulesAgric.file_biocrop",
-    "JulesAgric.file_harvest_doy",
-    "JulesAgric.frac_biocrop",
-    "JulesAgric.harvest_doy_name",
-    "JulesAgric.read_harvest_doy_from_dump",
-    "JulesAgric.zero_biocrop",
-    "JulesTriffid.ag_expand_io",
-    "JulesTriffid.harvest_freq_io",
-    "JulesTriffid.harvest_ht_io",
-    "JulesTriffid.harvest_type_io",
-    "JulesVegetation.l_ag_expand",
-    # gridded configuration (`gswp2_ukv`, `eraint_rfm_2ddata`)
-    "JulesInputGrid.tile_dim_name",
-    "JulesInputGrid.type_dim_name",
-    "JulesModelGrid.l_bounds",
-    "JulesModelGrid.npoints",
-    "JulesModelGrid.points_file",
-    "JulesModelGrid.x_bounds",
-    "JulesModelGrid.y_bounds",
 ]
 """Every member of the corpus that julesconf does not model, corpus-wide.
 
@@ -414,8 +380,12 @@ Phase 4 deferred purely for want of corpus traffic, and these apps supply the
 traffic.
 
 Phase 10 populated all three blocks completely (59 members), taking the
-tracker to 27. The one `jules_rivers_props` member left is `is_climatology`,
-which the vn7.9 rose metadata omits from this block; see its note above.
+tracker to 27.
+
+Phase 11 closed the rest of the vn7.9 member gap — all 116 remaining metadata
+members across 15 blocks — taking it to 5. What is left is the four post-vn7.9
+members and the one deliberately unmodelled namelist file, so every entry is
+now a scoping decision rather than a backlog item.
 
 Repeated namelist groups used to appear here as `_grp_*` pseudo-members. They
 are now read as lists of blocks, one entry per occurrence — see

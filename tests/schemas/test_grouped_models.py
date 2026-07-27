@@ -16,6 +16,7 @@ from julesconf.schemas import JulesNamelists
 from julesconf.schemas._grouped import (
     CONTRIBUTORS,
     NVG_TYPE_IDS,
+    PIVOTED_SURFACE_MEMBERS,
     SHARED_TYPE_IDS,
     VEG_TYPE_IDS,
     CropPft,
@@ -94,9 +95,15 @@ def test_every_list_len_dim_belongs_to_a_group():
 
 
 def test_every_surface_type_member_is_classified():
-    """A new `jules_surface_types` member must be classified veg / non-veg."""
-    classified = VEG_TYPE_IDS | NVG_TYPE_IDS | SHARED_TYPE_IDS
+    """A new `jules_surface_types` member must be classified veg / non-veg.
+
+    `PIVOTED_SURFACE_MEMBERS` is the third category: an ordinary `ListLen`
+    parameter array that happens to live in this block (`tile_map_ids`) is
+    pivoted onto the entries like any other, not read as a type identifier.
+    """
+    classified = VEG_TYPE_IDS | NVG_TYPE_IDS | SHARED_TYPE_IDS | PIVOTED_SURFACE_MEMBERS
     assert classified | {"npft", "nnvg", "ncpft"} == set(JulesSurfaceTypes.model_fields)
+    assert {"tile_map_ids"} == PIVOTED_SURFACE_MEMBERS
 
 
 def test_io_stripping_is_collision_free():

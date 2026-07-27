@@ -202,6 +202,141 @@ class JulesPftparm(NamelistModel):
     """Ammonia (NH₃) emission factor from natural fires (g kg⁻¹)."""
     fef_dms_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
     """Dimethyl sulfide (DMS) emission factor from natural fires (g kg⁻¹)."""
+    fire_mort_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
+    """Scaling factor for vegetation mortality caused by fire, from INFERNO burned area.
+
+    `0.0` is no mortality and `1.0` is 100% mortality.
+    """
+
+    # --- Scaled albedo limits (JULES_RADIATION::l_albedo_obs) ---
+    alnirl_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
+    """Lower limit on `alnir_io`, the leaf reflection coefficient for NIR."""
+    alniru_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
+    """Upper limit on `alnir_io`, the leaf reflection coefficient for NIR."""
+    alparl_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Lower limit on `alpar_io`, the leaf reflection coefficient for VIS.
+
+    Unbounded, unlike its three siblings: the vn7.9 rose metadata gives
+    `alnirl_io`, `alniru_io` and `alparu_io` `range=0:1` and gives this member no
+    `range` at all, and the user guide states no permitted range for any of the
+    four. See `UPSTREAM.md` §1.4.
+    """
+    alparu_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
+    """Upper limit on `alpar_io`, the leaf reflection coefficient for VIS."""
+    omegal_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
+    """Lower limit on `omega_io`, the leaf scattering coefficient for PAR."""
+    omegau_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
+    """Upper limit on `omega_io`, the leaf scattering coefficient for PAR."""
+    omnirl_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
+    """Lower limit on `omnir_io`, the leaf scattering coefficient for NIR."""
+    omniru_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
+    """Upper limit on `omnir_io`, the leaf scattering coefficient for NIR."""
+
+    # --- Farquhar photosynthesis (JULES_VEGETATION::photo_model = 2) ---
+    act_jmax_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Activation energy for the temperature response of Jmax (J mol⁻¹).
+
+    Used when `JULES_VEGETATION::photo_act_model` = 1; `JULES_VEGETATION::act_j_coef`
+    replaces it when that switch is 2.
+    """
+    act_vcmax_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Activation energy for the temperature response of Vcmax (J mol⁻¹).
+
+    Used when `JULES_VEGETATION::photo_act_model` = 1; `JULES_VEGETATION::act_v_coef`
+    replaces it when that switch is 2.
+    """
+    deact_jmax_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Deactivation energy for the temperature response of Jmax (J mol⁻¹).
+
+    Describes the rate of decrease above the optimum temperature.
+    """
+    deact_vcmax_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Deactivation energy for the temperature response of Vcmax (J mol⁻¹).
+
+    Describes the rate of decrease above the optimum temperature.
+    """
+    alpha_elec_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Quantum yield of electron transport (mol electrons per mol PAR photons)."""
+    jv25_ratio_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Ratio of Jmax to Vcmax at 25 °C (mol electrons per mol CO₂).
+
+    `JULES_VEGETATION::jv25_coef` replaces it under thermal
+    adaptation/acclimation; with `JULES_VEGETATION::photo_jv_model` = 2 it is
+    combined with `n_alloc_jmax` and `n_alloc_vcmax` instead.
+    """
+    ds_jmax_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Entropy factor for the temperature response of Jmax (J mol⁻¹ K⁻¹).
+
+    Only used when acclimation is off (`JULES_VEGETATION::photo_acclim_model` = 0);
+    `JULES_VEGETATION::dsj_coef` replaces it otherwise.
+    """
+    ds_vcmax_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Entropy factor for the temperature response of Vcmax (J mol⁻¹ K⁻¹).
+
+    Only used when acclimation is off (`JULES_VEGETATION::photo_acclim_model` = 0);
+    `JULES_VEGETATION::dsv_coef` replaces it otherwise.
+    """
+
+    # --- Stomatal conductance (JULES_VEGETATION::stomata_model) ---
+    g1_stomata_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Parameter g1 of the Medlyn et al. (2011) stomatal conductance model (kPa^0.5).
+
+    Only used with `JULES_VEGETATION::stomata_model` = 2.
+    """
+    sox_a_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Shape parameter in the xylem vulnerability curve.
+
+    Only used with the SOX model (`JULES_VEGETATION::stomata_model` = 3).
+    """
+    sox_p50_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Xylem water potential at which xylem hydraulic conductance is halved (MPa).
+
+    Only used with the SOX model (`JULES_VEGETATION::stomata_model` = 3).
+    """
+    sox_rp_min_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Plant minimum hydraulic resistance (m² s MPa mol⁻¹).
+
+    Only used with the SOX model (`JULES_VEGETATION::stomata_model` = 3).
+    """
+
+    # --- SUGAR carbohydrate model (JULES_VEGETATION::l_sugar) ---
+    sug_g0_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Specific structural carbon production rate (kg C m⁻² s⁻¹)."""
+    sug_grec_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Specific structural carbon recycling rate (kg C m⁻² s⁻¹)."""
+    sug_yg_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Growth yield for the SUGAR model."""
+
+    # --- Ozone damage (JULES_VEGETATION::l_o3_damage) ---
+    fl_o3_ct_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Critical flux of O₃ to vegetation (nmol m⁻² s⁻¹)."""
+    dfp_dcuo_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Plant-type-specific O₃ sensitivity parameter (nmol⁻¹ m² s)."""
+
+    # --- Soil moisture stress from soil potential ---
+    psi_open_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Soil potential above which the soil moisture stress factor is one (Pa).
+
+    Only used with `JULES_VEGETATION::l_use_pft_psi` = T. Unbounded: the user
+    guide says "must be negative", but the vn7.9 rose metadata gives no `range`
+    and shipped configurations set it to `0`. See `UPSTREAM.md` §1.5.
+    """
+    psi_close_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Soil potential below which the soil moisture stress factor is zero (Pa).
+
+    Only used with `JULES_VEGETATION::l_use_pft_psi` = T. Unbounded for the same
+    reason as `psi_open_io`.
+    """
+
+    # --- Miscellaneous ---
+    z0v_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Specified vegetation roughness length for momentum (m).
+
+    Used when `JULES_VEGETATION::l_spec_veg_z0` = T; `dz0v_dh_io` is used
+    instead when it is F.
+    """
+    dust_veg_scj_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
+    """Dust emissions scaling factor per PFT. Not applicable to JULES standalone."""
 
 
 class PftParamsNamelist(NamelistModel):

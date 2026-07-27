@@ -16,6 +16,7 @@ from hypothesis import strategies as st
 from julesconf.schemas import JulesNamelists, UnknownNamelistKeyWarning
 from julesconf.schemas._grouped import (
     SPECS_BY_DIM,
+    CropPft,
     GroupedConfigError,
     Nvg,
     Pft,
@@ -133,18 +134,34 @@ def test_multiple_violations_are_reported_together():
 # ---------------------------------------------------------------------------
 
 
-def test_ntype_contributes_no_fields_while_its_only_member_repeats():
-    """`rsurf_std_io` was the one `ntype` field, and it now repeats per species.
+def test_ntype_pivots_tile_map_ids_but_not_the_repeated_rsurf_std():
+    """`ntype` has exactly one pivotable member, and it is not `rsurf_std_io`.
 
     `JULES_DEPOSITION_SPECIES` is a repeated group, so each species carries its
     own `ntype`-long surface-resistance array and there is no single value a
-    `[[pft]]` entry could hold. The dimension stays in `CONTRIBUTORS` -- the
-    machinery is unchanged and a future non-repeating `ntype` member would be
-    pivoted -- but today it contributes nothing, and the assembly order test
-    below is what would have to come back with it.
+    `[[pft]]` entry could hold; it stays in the flat form. `tile_map_ids` is an
+    ordinary `ntype` array and does pivot, onto every group in turn.
     """
-    assert SPECS_BY_DIM["ntype"] == ()
+    assert {spec.member for spec in SPECS_BY_DIM["ntype"]} == {"tile_map_ids"}
     assert "rsurf_std" not in set(Pft.model_fields) | set(Nvg.model_fields)
+    for model in (Pft, CropPft, Nvg):
+        assert "tile_map_ids" in model.model_fields
+
+
+def test_ntype_member_concatenates_across_all_three_groups():
+    """An `ntype` field spans natural PFTs, then crops, then non-vegetated."""
+    data = minimal_grouped(n_pft=2, n_crop=1, n_nvg=2)
+    for i, entry in enumerate(data["pft"] + data["crop_pft"] + data["nvg"]):
+        entry["tile_map_ids"] = i + 1
+
+    config = JulesNamelists.model_validate(assemble(data))
+    assert config.jules_surface_types.jules_surface_types.tile_map_ids == [
+        1,
+        2,
+        3,
+        4,
+        5,
+    ]
 
 
 def test_dimension_fields_concatenate_pfts_then_non_veg():

@@ -4,12 +4,62 @@ Reference: JULES user guide v7.9,
 `jules-lsm.github.io/user_guide/doc/source/namelists/jules_surface.nml.rst`
 """
 
+from enum import IntEnum
+from typing import Annotated
+
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
 from julesconf.schemas._conditional import warn_inactive
+from julesconf.schemas.constraints import name_or_value
 
-__all__ = ["JulesSurface", "JulesSurfaceNamelist"]
+__all__ = [
+    "FdHillOption",
+    "FdStabilityDep",
+    "FormDrag",
+    "IModiscOpt",
+    "JulesSurface",
+    "JulesSurfaceNamelist",
+    "SrfExCnvGust",
+]
+
+
+class FormDrag(IntEnum):
+    """Orographic form drag option (`formdrag`)."""
+
+    no_orographic_stress = 0
+    effective_roughness = 1
+    distributed_drag = 2
+
+
+class FdHillOption(IntEnum):
+    """Orographic form drag formulation (`fd_hill_option`)."""
+
+    steep_hill = 0
+    low_hill = 1
+    capped_low_hill = 2
+
+
+class FdStabilityDep(IntEnum):
+    """Stability dependence option for orographic form drag (`fd_stability_dep`)."""
+
+    off = 0
+    surface_ri = 1
+    bulk_ri = 2
+
+
+class IModiscOpt(IntEnum):
+    """Method of discretisation in the surface layer (`i_modiscopt`)."""
+
+    off = 0
+    on = 1
+
+
+class SrfExCnvGust(IntEnum):
+    """Effect of convective downdraughts on surface exchange (`srf_ex_cnv_gust`)."""
+
+    off = 0
+    on = 1
 
 
 class JulesSurface(NamelistModel):
@@ -60,11 +110,48 @@ class JulesSurface(NamelistModel):
     beta_cnv_bl: float | None = None
     """Dimensionless coefficient scaling boundary layer convective gustiness contribution."""
 
+    # --- Options with no effect in JULES standalone ---
+    # Each of these is documented "NOT AVAILABLE TO STANDALONE" and carries a
+    # rose `fail-if` requiring a non-standalone parent; they are modelled so a
+    # UM-derived configuration round-trips, and default to the inactive value.
+    formdrag: Annotated[FormDrag, name_or_value(FormDrag)] = (
+        FormDrag.no_orographic_stress
+    )
+    """Orographic form drag option: `no_orographic_stress` (0), `effective_roughness` (1), `distributed_drag` (2)."""
+    fd_hill_option: Annotated[FdHillOption, name_or_value(FdHillOption)] = (
+        FdHillOption.steep_hill
+    )
+    """Orographic form drag formulation: `steep_hill` (0), `low_hill` (1), `capped_low_hill` (2). Only used with `formdrag` = `distributed_drag`."""
+    fd_stability_dep: Annotated[FdStabilityDep, name_or_value(FdStabilityDep)] = (
+        FdStabilityDep.off
+    )
+    """Stability dependence of the orographic form drag: `off` (0), `surface_ri` (1), `bulk_ri` (2)."""
+    orog_drag_param: float | None = Field(default=None, ge=0.01, le=10.0)
+    """Drag coefficient for orographic form drag. Only used when `formdrag` is not `no_orographic_stress`."""
+    i_modiscopt: Annotated[IModiscOpt, name_or_value(IModiscOpt)] = IModiscOpt.off
+    """Method of discretisation in the surface layer: `off` (0), `on` (1)."""
+    srf_ex_cnv_gust: Annotated[SrfExCnvGust, name_or_value(SrfExCnvGust)] = (
+        SrfExCnvGust.off
+    )
+    """Include the effect of convective downdraughts on surface exchange: `off` (0), `on` (1)."""
+    l_vary_z0m_soil: bool = False
+    """Set the soil roughness from an ancillary file."""
+
     @model_validator(mode="after")
     def _warn_inactive_members(self) -> "JulesSurface":
         """`i_aggregate_opt` is only read when tiles are aggregated."""
         if not self.l_aggregate:
             warn_inactive(self, ("i_aggregate_opt",), because="l_aggregate is false")
+        if self.formdrag == FormDrag.no_orographic_stress:
+            warn_inactive(
+                self,
+                ("orog_drag_param", "fd_stability_dep", "fd_hill_option"),
+                because="formdrag is no_orographic_stress",
+            )
+        elif self.formdrag != FormDrag.distributed_drag:
+            warn_inactive(
+                self, ("fd_hill_option",), because="formdrag is not distributed_drag"
+            )
         return self
 
 

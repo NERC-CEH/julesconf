@@ -320,8 +320,9 @@ def test_audit_counts_blocks_and_members(audit):
     assert counts["blocks_in_metadata"] == counts["blocks_shared"] + len(
         audit.metadata_only_blocks
     )
-    assert counts["members_missing"] > 0
-    assert counts["members_in_metadata"] > counts["members_in_schemas"]
+    # Phase 11 closed the member gap: every vn7.9 metadata member is modelled.
+    assert counts["members_missing"] == 0
+    assert counts["members_in_schemas"] > counts["members_in_metadata"]
 
 
 def test_audit_excludes_postponed_namelists(audit):

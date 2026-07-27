@@ -60,6 +60,16 @@ class JulesRivers(NamelistModel):
     """Effective river velocity (m s⁻¹); used by TRIP. Suggested: 0.4-0.5."""
     rivers_meander: float | None = Field(default=None, gt=0)
     """Ratio of actual to calculated (straight-line) river lengths; used by TRIP. Suggested: 1.4."""
+    l_inland: bool = False
+    """Re-route inland basin water back into soil moisture."""
+    l_riv_overbank: bool = False
+    """Switch for enabling river overbank inundation.
+
+    Only used with `l_rivers` = TRUE; when FALSE the optional `JULES_OVERBANK`
+    namelist is not required. The user guide documents this member under both
+    `JULES_RIVERS` and `JULES_OVERBANK`; the rose metadata and every shipped
+    configuration put it on `JULES_RIVERS`. See `UPSTREAM.md` §1.8.
+    """
     lake_water_conserve_method: Literal[1, 2] = 1
     """Selects the field used for lake evaporation conservation: 1 = fqw_lk, 2 = surf_roff."""
     trip_globe_shape: Literal[1, 2] = 2
@@ -97,7 +107,13 @@ class JulesRivers(NamelistModel):
         if not self.l_rivers:
             warn_inactive(
                 self,
-                ("i_river_vn", "nstep_rivers", *self._ROUTING_ONLY),
+                (
+                    "i_river_vn",
+                    "nstep_rivers",
+                    "l_inland",
+                    "l_riv_overbank",
+                    *self._ROUTING_ONLY,
+                ),
                 because="l_rivers is false",
             )
             return self
@@ -117,8 +133,6 @@ class JulesRivers(NamelistModel):
 class JulesOverbank(NamelistModel):
     """`JULES_OVERBANK` namelist members."""
 
-    l_riv_overbank: bool = False
-    """Switch for enabling river overbank inundation."""
     overbank_model: Literal[1, 2, 3] | None = None
     """Choice of overbank inundation model: 1 = simple, 2 = LISFLOOD, 3 = probability."""
     riv_c: float | None = Field(default=None, ge=0)
@@ -145,9 +159,11 @@ class JulesRiversNamelist(NamelistModel):
 
     @model_validator(mode="after")
     def _warn_inactive_overbank(self) -> "JulesRiversNamelist":
-        """Overbank inundation is a river routing option, so it needs `l_rivers`."""
-        if not self.jules_rivers.l_rivers:
+        """`JULES_OVERBANK` is only read when the switch on `JULES_RIVERS` is set."""
+        if not self.jules_rivers.l_riv_overbank:
             warn_inactive(
-                self.jules_overbank, ("l_riv_overbank",), because="l_rivers is false"
+                self.jules_overbank,
+                ("overbank_model",),
+                because="jules_rivers l_riv_overbank is false",
             )
         return self

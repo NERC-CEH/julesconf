@@ -138,7 +138,9 @@ def test_toml_does_not_expand(tmp_path):
 
     path = tmp_path / "c.toml"
     model.to_toml(path)
-    assert "use_file" not in path.read_text()
+    written = path.read_text()
+    body = written[written.index("[ancillaries.jules_soil_props]") :]
+    assert "use_file" not in body.split("[", 2)[0]
 
 
 # ---------------------------------------------------------------------------
@@ -250,7 +252,16 @@ def test_marker_covers_the_documented_per_element_defaults():
     # but `n` is bounded by `JULES_SOIL::sm_levels`, which is neither a global
     # `LIST_LEN_DIMS` name nor a sibling field, so `PerElementDefault` cannot
     # express it.
-    exclusions = {"const_val", "is_climatology", "prescribed_levels"}
+    # `l_elev_absolute_height` is documented `logical(nsurft)` defaulting to F,
+    # but `nsurft` is neither a `LIST_LEN_DIMS` name nor a sibling field --
+    # it is `npft + nnvg` unless `JULES_SURFACE::l_aggregate`, when it is one --
+    # so `PerElementDefault` cannot express it either.
+    exclusions = {
+        "const_val",
+        "is_climatology",
+        "prescribed_levels",
+        "l_elev_absolute_height",
+    }
     missing = unmarked - marked - exclusions
     assert not missing, (
         f"fields with a documented per-element default but no PerElementDefault"

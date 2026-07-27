@@ -9,7 +9,7 @@ from typing import Annotated
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas._conditional import fail_if
+from julesconf.schemas._conditional import fail_if, warn_inactive
 from julesconf.schemas.constraints import ListLen, PerElementDefault
 
 __all__ = [
@@ -124,6 +124,53 @@ class JulesAgric(NamelistModel):
     """The file to read agricultural fraction data from."""
     read_from_dump: bool = False
     """Populate variables from dump file if TRUE, otherwise use other namelist members."""
+    agric_name: str | None = None
+    """Name in `file` of the variable holding the agricultural fraction data."""
+    file_past: str | None = None
+    """The file to read pasture fraction data from."""
+    past_name: str | None = None
+    """Name in `file_past` of the variable holding the pasture fraction data."""
+    zero_biocrop: bool = True
+    """Set the biocrop fraction to zero at all points.
+
+    When FALSE the fraction comes from `frac_biocrop`, or from `biocrop_name`
+    in `file_biocrop`.
+    """
+    frac_biocrop: float | None = None
+    """The biocrop fraction, for a single-location input grid."""
+    file_biocrop: str | None = None
+    """The file to read biocrop fraction data from."""
+    biocrop_name: str | None = None
+    """Name in `file_biocrop` of the variable holding the biocrop fraction data."""
+    read_harvest_doy_from_dump: bool = False
+    """Read the biocrop harvest day-of-year from the dump file."""
+    file_harvest_doy: str | None = None
+    """The file to read the biocrop harvest day-of-year from."""
+    harvest_doy_name: str | None = None
+    """Name in `file_harvest_doy` of the variable holding the harvest day-of-year."""
+
+    @model_validator(mode="after")
+    def _warn_inactive_fractions(self) -> "JulesAgric":
+        """Warn about the fraction members the three `zero_*` switches deactivate."""
+        if self.zero_agric:
+            warn_inactive(
+                self,
+                ("frac_agr", "file", "agric_name"),
+                because="zero_agric is true",
+            )
+        if self.zero_past:
+            warn_inactive(
+                self,
+                ("frac_past", "file_past", "past_name"),
+                because="zero_past is true",
+            )
+        if self.zero_biocrop:
+            warn_inactive(
+                self,
+                ("frac_biocrop", "file_biocrop", "biocrop_name"),
+                because="zero_biocrop is true",
+            )
+        return self
 
 
 class JulesVegetationProps(_NvarsModel):

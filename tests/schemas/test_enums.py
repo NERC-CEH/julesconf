@@ -4,6 +4,11 @@ import pytest
 from pydantic import ValidationError
 
 from julesconf.schemas.imogen import ChangeMetdataMethod, ImogenRunList
+from julesconf.schemas.jules_deposition import (
+    DepH2SoilScheme,
+    DryDepModel,
+    JulesDeposition,
+)
 from julesconf.schemas.jules_irrig import IrrCrop, JulesIrrig
 from julesconf.schemas.jules_rivers import JulesRivers, RiverRoutingAlgorithm
 from julesconf.schemas.jules_soil import JulesSoil, SoilhcMethod
@@ -12,7 +17,21 @@ from julesconf.schemas.jules_soil_biogeochem import (
     JulesSoilBiogeochem,
     SoilBgcModel,
 )
-from julesconf.schemas.jules_vegetation import CanModel, JulesVegetation
+from julesconf.schemas.jules_surface import (
+    FdHillOption,
+    FdStabilityDep,
+    FormDrag,
+    IModiscOpt,
+    JulesSurface,
+    SrfExCnvGust,
+)
+from julesconf.schemas.jules_vegetation import (
+    CanModel,
+    JulesVegetation,
+    PhotoAcclimModel,
+    PhotoActModel,
+    PhotoJvModel,
+)
 from julesconf.schemas.model_environment import (
     JulesModelEnvironment,
     JulesParent,
@@ -50,6 +69,26 @@ from julesconf.schemas.model_environment import (
             "change_metdata_method",
             ChangeMetdataMethod,
             [1, "analogue_patterns"],
+        ),
+        (
+            JulesVegetation,
+            "photo_acclim_model",
+            PhotoAcclimModel,
+            [0, "no_acclimation"],
+        ),
+        (JulesVegetation, "photo_act_model", PhotoActModel, [1, "vary_by_pft"]),
+        (JulesVegetation, "photo_jv_model", PhotoJvModel, [1, "jmax_only"]),
+        (JulesSurface, "formdrag", FormDrag, [0, "no_orographic_stress"]),
+        (JulesSurface, "fd_hill_option", FdHillOption, [0, "steep_hill"]),
+        (JulesSurface, "fd_stability_dep", FdStabilityDep, [0, "off"]),
+        (JulesSurface, "i_modiscopt", IModiscOpt, [0, "off"]),
+        (JulesSurface, "srf_ex_cnv_gust", SrfExCnvGust, [0, "off"]),
+        (JulesDeposition, "dry_dep_model", DryDepModel, [1, "restricted_ukca"]),
+        (
+            JulesDeposition,
+            "dep_h2_soil_scheme",
+            DepH2SoilScheme,
+            [1, "conrad_seiler"],
         ),
     ],
 )

@@ -35,6 +35,11 @@ class ImogenOnoffSwitch(NamelistModel):
 
     l_imogen: bool = False
     """Switch for IMOGEN."""
+    l_daily_metdata_climatol: bool = False
+    """The driving climatology is supplied as daily data on a 360-day calendar.
+
+    When FALSE it is supplied as monthly data.
+    """
 
 
 class ImogenRunList(NamelistModel):

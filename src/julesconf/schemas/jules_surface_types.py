@@ -4,12 +4,13 @@ Reference: JULES user guide v7.9,
 `jules-lsm.github.io/user_guide/doc/source/namelists/jules_surface_types.nml.rst`
 """
 
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
 from julesconf.schemas._conditional import fail_if
+from julesconf.schemas.constraints import ListLen
 
 __all__ = ["JulesSurfaceTypes", "JulesSurfaceTypesNamelist"]
 
@@ -48,6 +49,15 @@ class JulesSurfaceTypes(NamelistModel):
     configuration may define any number of user types, each of which may be
     either vegetated or non-vegetated, so the permitted range is the whole
     of `1:ntype`.
+    """
+
+    tile_map_ids: Annotated[
+        list[Annotated[int, Field(ge=1)]] | None, ListLen("ntype")
+    ] = None
+    """Mapping from the input dump's surface type configuration to this one.
+
+    One entry per surface type. Not available to JULES standalone; documented
+    only in the rose metadata.
     """
 
     # Vegetated surface type indices

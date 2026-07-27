@@ -14,6 +14,7 @@ from julesconf.schemas.constraints import (
     ListLen,
     NonNegFloat,
     PerElementDefault,
+    ZeroOne,
 )
 
 __all__ = ["JulesTriffid", "TriffidParamsNamelist"]
@@ -91,6 +92,46 @@ class JulesTriffid(NamelistModel):
 
     Present in the rose metadata (which carries no description for it) but not
     documented in the v7.9 user guide.
+    """
+
+    # --- Agricultural expansion and biocrop harvesting ---
+    ag_expand_io: Annotated[
+        list[ZeroOne] | None,
+        ListLen("nnpft", tolerates=("npft",)),
+        PerElementDefault(0, "nnpft"),
+    ] = None
+    """How the PFT responds when the agricultural area grows.
+
+    `0` is no automatic expansion, `1` plants out the new crop area with this
+    PFT. Only used with `JULES_VEGETATION::l_ag_expand` = TRUE.
+    """
+    harvest_type_io: Annotated[
+        list[Annotated[int, Field(ge=0, le=2)]] | None,
+        ListLen("nnpft", tolerates=("npft",)),
+        PerElementDefault(0, "nnpft"),
+    ] = None
+    """Kind of harvesting for this PFT.
+
+    `0` is no harvest, `1` is continuous harvest from litter, `2` is periodic
+    harvesting at `harvest_freq_io`. Must be `0` for natural PFTs (`crop_io` =
+    0). Only used with `JULES_VEGETATION::l_trif_biocrop` = TRUE.
+    """
+    harvest_freq_io: Annotated[
+        list[Annotated[int, Field(ge=0)]] | None,
+        ListLen("nnpft", tolerates=("npft",)),
+    ] = None
+    """Harvest frequency in years. Only used where `harvest_type_io` = 2."""
+    harvest_ht_io: Annotated[
+        list[float] | None, ListLen("nnpft", tolerates=("npft",))
+    ] = None
+    """Height (m) to which the PFT is reduced at each harvest cycle.
+
+    Only used where `harvest_type_io` = 2; a placeholder is required for every
+    other PFT. `lai_min_io` must be small enough that the PFT height at
+    `lai_min_io` does not exceed this, or JULES will not start.
+
+    Unbounded: the user guide's `> 0` cannot be applied to the placeholder
+    values the other PFTs must carry, and the rose metadata states no range.
     """
 
 

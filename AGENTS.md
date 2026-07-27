@@ -64,6 +64,28 @@ Consequences to be aware of:
 - A config using these namelists is out of scope, and julesconf says so rather than appearing to support it: `PostponedNamelistWarning` is emitted when one is detected, both on reading a namelists directory and on validating a config dict (`_namelists.py`).
 - `POSTPONED_NAMELISTS` names namelist *files*; the rose metadata is keyed by *block*, and the two do not correspond (`red_params` is block `jules_red`, `cable_pfts` is `cable_pftparm`). `scripts/rose_meta_extract.py` keeps its own `POSTPONED_META_BLOCKS` for this reason.
 
+### `jules_soil_ecosse` — deliberately not modelled
+
+`JULES_SOIL_ECOSSE` (40 members) is a vn7.9 namelist block with full rose metadata and a
+user-guide page, and every corpus app emits a `jules_soil_ecosse.nml`. It is **still not
+modelled, on purpose.** The user guide opens the page with an explicit warning:
+
+> The ECOSSE model in JULES is still in development and is not fully functional in this
+> version… Users should not try to use ECOSSE.
+
+Modelling it would advertise support for a scheme its own authors tell users not to run,
+and would commit julesconf to a 40-field surface that upstream expects to change. It is
+therefore a **scoping decision like `cable_*`, not a backlog item** — do not add it
+without discussing it first, and do not read its appearance in the coverage audit
+("blocks in metadata but not in schemas") or its entry in `KNOWN_UNKNOWN_MEMBERS` as a
+gap to close. It is not in `POSTPONED_META_BLOCKS`, so both of those lines are expected
+and should stay.
+
+`jules_deposition_species_specific` is the other metadata-only block. That one *is* a
+backlog item rather than a scoping decision — it is deferred only because nothing in the
+corpus or the RST examples emits it, and three of its members carry the malformed
+`fail-if` rules recorded in `UPSTREAM.md` §3.
+
 ### Repeated namelist groups
 
 Fortran lets one namelist group appear several times in a file, and JULES relies on it: `jules_output_profile` occurs `JULES_OUTPUT::nprofiles` times, `jules_prescribed_dataset` occurs `JULES_PRESCRIBED::n_datasets` times, and `jules_deposition_species` occurs `JULES_DEPOSITION::ndry_dep_species` times. **These three are modelled as lists of blocks** — `list[JulesOutputProfile]` and friends — one entry per occurrence, in file order. `REPEATABLE_GROUPS` (`schemas/_namelists.py`) is derived from the annotations, so declaring a new one is a one-line change.

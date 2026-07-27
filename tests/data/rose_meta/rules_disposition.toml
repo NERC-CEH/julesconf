@@ -659,48 +659,48 @@ reason = "not yet implemented"
 hash = "d12254f9d6eb9b91"
 
 ["namelist:jules_agric=zero_agric#trigger#1"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "ancillaries.JulesAgric._warn_inactive_fractions"
 hash = "9ff372d21462c9be"
 
 ["namelist:jules_agric=zero_agric#trigger#2"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "ancillaries.JulesAgric._warn_inactive_fractions"
 hash = "cbb3c4042455105a"
 
 ["namelist:jules_agric=zero_agric#trigger#3"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "ancillaries.JulesAgric._warn_inactive_fractions"
 hash = "ebe2d173f05bd638"
 
 ["namelist:jules_agric=zero_biocrop#trigger#1"]
-status = "todo"
-reason = "julesconf does not model jules_agric=zero_biocrop"
+status = "implemented"
+where = "ancillaries.JulesAgric._warn_inactive_fractions"
 hash = "df2ebf7cca601d4c"
 
 ["namelist:jules_agric=zero_biocrop#trigger#2"]
-status = "todo"
-reason = "julesconf does not model jules_agric=zero_biocrop"
+status = "implemented"
+where = "ancillaries.JulesAgric._warn_inactive_fractions"
 hash = "2048b4e8f42502b7"
 
 ["namelist:jules_agric=zero_biocrop#trigger#3"]
-status = "todo"
-reason = "julesconf does not model jules_agric=zero_biocrop"
+status = "implemented"
+where = "ancillaries.JulesAgric._warn_inactive_fractions"
 hash = "468848f91ae21cec"
 
 ["namelist:jules_agric=zero_past#trigger#1"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "ancillaries.JulesAgric._warn_inactive_fractions"
 hash = "2a8ccd46e435a42c"
 
 ["namelist:jules_agric=zero_past#trigger#2"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "ancillaries.JulesAgric._warn_inactive_fractions"
 hash = "a2455142e9543b7f"
 
 ["namelist:jules_agric=zero_past#trigger#3"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "ancillaries.JulesAgric._warn_inactive_fractions"
 hash = "117f773fd2532abf"
 
 ["namelist:jules_crop_props=const_val#fail-if#1"]
@@ -999,18 +999,18 @@ where = "_namelists.JulesNamelists._check_deposition_consistency"
 hash = "d3ce89506b8e90c9"
 
 ["namelist:jules_deposition=l_deposition#trigger#1"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "jules_deposition.JulesDeposition._warn_inactive_members"
 hash = "a7b4239ea6e859e9"
 
 ["namelist:jules_deposition=l_deposition#trigger#10"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "jules_deposition.JulesDeposition._warn_inactive_members"
 hash = "1543bb7cbde24086"
 
 ["namelist:jules_deposition=l_deposition#trigger#11"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "jules_deposition.JulesDeposition._warn_inactive_members"
 hash = "6761014f23ab0895"
 
 ["namelist:jules_deposition=l_deposition#trigger#12"]
@@ -1039,43 +1039,43 @@ reason = "not yet implemented"
 hash = "8902575e8c64a872"
 
 ["namelist:jules_deposition=l_deposition#trigger#2"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "jules_deposition.JulesDeposition._warn_inactive_members"
 hash = "aed84acabee87d6e"
 
 ["namelist:jules_deposition=l_deposition#trigger#3"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "jules_deposition.JulesDeposition._warn_inactive_members"
 hash = "73bfa5a5c079d5eb"
 
 ["namelist:jules_deposition=l_deposition#trigger#4"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "jules_deposition.JulesDeposition._warn_inactive_members"
 hash = "93f099c6b5b4d658"
 
 ["namelist:jules_deposition=l_deposition#trigger#5"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "jules_deposition.JulesDeposition._warn_inactive_members"
 hash = "8ab8a01566daf4aa"
 
 ["namelist:jules_deposition=l_deposition#trigger#6"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "jules_deposition.JulesDeposition._warn_inactive_members"
 hash = "8b6de13f6177f727"
 
 ["namelist:jules_deposition=l_deposition#trigger#7"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "jules_deposition.JulesDeposition._warn_inactive_members"
 hash = "6c891f57d676220c"
 
 ["namelist:jules_deposition=l_deposition#trigger#8"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "jules_deposition.JulesDeposition._warn_inactive_members"
 hash = "b251929dc03b0a63"
 
 ["namelist:jules_deposition=l_deposition#trigger#9"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "jules_deposition.JulesDeposition._warn_inactive_members"
 hash = "0fe14515f01fa7b5"
 
 ["namelist:jules_deposition=l_deposition_from_ukca#fail-if#1"]
@@ -1634,8 +1634,8 @@ reason = "not yet implemented"
 hash = "7ab12f457a5c145f"
 
 ["namelist:jules_initial=tpl_name#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_initial=tpl_name"
+status = "covered-by-listlen"
+where = "ListLen('nvars')"
 hash = "5eb0c92227498339"
 
 ["namelist:jules_initial=use_file#fail-if#1"]
@@ -3324,38 +3324,38 @@ reason = "not yet implemented"
 hash = "3e7599ddc085c90a"
 
 ["namelist:jules_model_grid=l_bounds#trigger#1"]
-status = "todo"
-reason = "julesconf does not model jules_model_grid=l_bounds"
+status = "implemented"
+where = "model_grid.JulesModelGrid._warn_inactive_subgrid_members"
 hash = "66ecd8c6522c13db"
 
 ["namelist:jules_model_grid=l_bounds#trigger#2"]
-status = "todo"
-reason = "julesconf does not model jules_model_grid=l_bounds"
+status = "implemented"
+where = "model_grid.JulesModelGrid._warn_inactive_subgrid_members"
 hash = "2456b153f8d80d53"
 
 ["namelist:jules_model_grid=l_bounds#trigger#3"]
-status = "todo"
-reason = "julesconf does not model jules_model_grid=l_bounds"
+status = "implemented"
+where = "model_grid.JulesModelGrid._warn_inactive_subgrid_members"
 hash = "42bb73e0a3f58fdc"
 
 ["namelist:jules_model_grid=l_bounds#trigger#4"]
-status = "todo"
-reason = "julesconf does not model jules_model_grid=l_bounds"
+status = "implemented"
+where = "model_grid.JulesModelGrid._warn_inactive_subgrid_members"
 hash = "68771262506cef20"
 
 ["namelist:jules_model_grid=use_subgrid#trigger#1"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "model_grid.JulesModelGrid._warn_inactive_subgrid_members"
 hash = "6aee6086f379c616"
 
 ["namelist:jules_model_grid=x_bounds#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_model_grid=x_bounds"
+status = "implemented"
+where = "model_grid.JulesModelGrid._check_bounds_ordered"
 hash = "74f26ba805422402"
 
 ["namelist:jules_model_grid=y_bounds#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_model_grid=y_bounds"
+status = "implemented"
+where = "model_grid.JulesModelGrid._check_bounds_ordered"
 hash = "74f26ba805422402"
 
 ["namelist:jules_nvegparm=albsnc_nvg_io#fail-if#1"]
@@ -3559,13 +3559,13 @@ where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=act_jmax_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=act_jmax_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=act_vcmax_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=act_vcmax_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=aef_io#fail-if#1"]
@@ -3604,13 +3604,13 @@ where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=alnirl_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=alnirl_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=alniru_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=alniru_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=alpar_io#fail-if#1"]
@@ -3619,18 +3619,18 @@ where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=alparl_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=alparl_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=alparu_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=alparu_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=alpha_elec_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=alpha_elec_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=alpha_io#fail-if#1"]
@@ -3699,18 +3699,18 @@ where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=deact_jmax_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=deact_jmax_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=deact_vcmax_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=deact_vcmax_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=dfp_dcuo_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=dfp_dcuo_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=dgl_dm_io#fail-if#1"]
@@ -3729,18 +3729,18 @@ where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=ds_jmax_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=ds_jmax_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=ds_vcmax_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=ds_vcmax_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=dust_veg_scj_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=dust_veg_scj_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=dz0v_dh_io#fail-if#1"]
@@ -3839,13 +3839,13 @@ where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=fire_mort_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=fire_mort_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=fl_o3_ct_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=fl_o3_ct_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=fsmc_mod_io#fail-if#1"]
@@ -3869,8 +3869,8 @@ where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=g1_stomata_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=g1_stomata_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=g_leaf_0_io#fail-if#1"]
@@ -3909,8 +3909,8 @@ where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=jv25_ratio_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=jv25_ratio_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=kext_io#fail-if#1"]
@@ -3994,13 +3994,13 @@ where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=omegal_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=omegal_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=omegau_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=omegau_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=omnir_io#fail-if#1"]
@@ -4009,13 +4009,13 @@ where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=omnirl_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=omnirl_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=omniru_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=omniru_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=orient_io#fail-if#1"]
@@ -4024,13 +4024,13 @@ where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=psi_close_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=psi_close_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=psi_open_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=psi_open_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=q10_leaf_io#fail-if#1"]
@@ -4054,33 +4054,33 @@ where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=sox_a_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=sox_a_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=sox_p50_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=sox_p50_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=sox_rp_min_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=sox_rp_min_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=sug_g0_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=sug_g0_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=sug_grec_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=sug_grec_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=sug_yg_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=sug_yg_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=tef_io#fail-if#1"]
@@ -4124,8 +4124,8 @@ where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_pftparm=z0v_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_pftparm=z0v_io"
+status = "covered-by-listlen"
+where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_prescribed_dataset=interp#fail-if#1"]
@@ -4519,8 +4519,8 @@ where = "_namelists.JulesNamelists._check_um_only_options"
 hash = "406c3c88402d4a37"
 
 ["namelist:jules_rivers=l_riv_overbank#trigger#1"]
-status = "todo"
-reason = "julesconf does not model jules_rivers=l_riv_overbank"
+status = "implemented"
+where = "jules_rivers.JulesRiversNamelist._warn_inactive_overbank"
 hash = "64d41ae2a82e30d1"
 
 ["namelist:jules_rivers=l_rivers#trigger#1"]
@@ -4534,13 +4534,13 @@ where = "jules_rivers.JulesRivers._warn_inactive_members"
 hash = "994bd718dcb0955b"
 
 ["namelist:jules_rivers=l_rivers#trigger#3"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "jules_rivers.JulesRivers._warn_inactive_members"
 hash = "c6659f343234a7e1"
 
 ["namelist:jules_rivers=l_rivers#trigger#4"]
 status = "implemented"
-where = "jules_rivers.JulesRiversNamelist._warn_inactive_overbank"
+where = "jules_rivers.JulesRivers._warn_inactive_members"
 hash = "f9a1977232a6b756"
 
 ["namelist:jules_rivers=l_rivers#trigger#5"]
@@ -5479,18 +5479,18 @@ reason = "julesconf does not model jules_surface=formdrag"
 hash = "dda974e443e9f83f"
 
 ["namelist:jules_surface=formdrag#trigger#1"]
-status = "todo"
-reason = "julesconf does not model jules_surface=formdrag"
+status = "implemented"
+where = "jules_surface.JulesSurface._warn_inactive_members"
 hash = "415579750ef0a56c"
 
 ["namelist:jules_surface=formdrag#trigger#2"]
-status = "todo"
-reason = "julesconf does not model jules_surface=formdrag"
+status = "implemented"
+where = "jules_surface.JulesSurface._warn_inactive_members"
 hash = "3f4443555bb3fdf3"
 
 ["namelist:jules_surface=formdrag#trigger#3"]
-status = "todo"
-reason = "julesconf does not model jules_surface=formdrag"
+status = "implemented"
+where = "jules_surface.JulesSurface._warn_inactive_members"
 hash = "b232e97b4eeb3447"
 
 ["namelist:jules_surface=i_modiscopt#fail-if#1"]
@@ -5779,8 +5779,8 @@ where = "jules_surface_types.JulesSurfaceTypes._check_pseudo_levels"
 hash = "8502250de72675ab"
 
 ["namelist:jules_surface_types=tile_map_ids#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_surface_types=tile_map_ids"
+status = "covered-by-listlen"
+where = "ListLen('ntype')"
 hash = "be0c7de5bfcde9eb"
 
 ["namelist:jules_surface_types=urban#fail-if#1"]
@@ -5954,8 +5954,8 @@ where = "ListLen('nvars')"
 hash = "4d3d267c8ef24ef0"
 
 ["namelist:jules_triffid=ag_expand_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_triffid=ag_expand_io"
+status = "covered-by-listlen"
+where = "ListLen('nnpft', tolerates=('npft',))"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_triffid=alloc_fast_io#fail-if#1"]
@@ -6004,18 +6004,18 @@ where = "ListLen('npft')"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_triffid=harvest_freq_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_triffid=harvest_freq_io"
+status = "covered-by-listlen"
+where = "ListLen('nnpft', tolerates=('npft',))"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_triffid=harvest_ht_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_triffid=harvest_ht_io"
+status = "covered-by-listlen"
+where = "ListLen('nnpft', tolerates=('npft',))"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_triffid=harvest_type_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_triffid=harvest_type_io"
+status = "covered-by-listlen"
+where = "ListLen('nnpft', tolerates=('npft',))"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_triffid=harvest_type_io#trigger#1"]
@@ -6109,8 +6109,8 @@ where = "_namelists.JulesNamelists._check_um_only_options"
 hash = "27ade019eddc8208"
 
 ["namelist:jules_vegetation=l_ag_expand#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=l_ag_expand"
+status = "implemented"
+where = "jules_vegetation.JulesVegetation._check_triffid_switches"
 hash = "88fe18bc1082ab0c"
 
 ["namelist:jules_vegetation=l_ag_expand#trigger#1"]
@@ -6354,8 +6354,8 @@ reason = "not yet implemented"
 hash = "8a9f15d9757b568d"
 
 ["namelist:jules_vegetation=l_rsl_scalar#trigger#1"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=l_rsl_scalar"
+status = "implemented"
+where = "jules_vegetation.JulesVegetation._warn_inactive_members"
 hash = "bc49bfdfb87353c6"
 
 ["namelist:jules_vegetation=l_spec_veg_z0#trigger#1"]
@@ -6634,23 +6634,23 @@ reason = "julesconf does not model jules_vegetation=photo_acclim_model"
 hash = "ebfaa5fc39a2378d"
 
 ["namelist:jules_vegetation=photo_acclim_model#trigger#3"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=photo_acclim_model"
+status = "implemented"
+where = "jules_vegetation.JulesVegetation._warn_inactive_members"
 hash = "595b838993c500e7"
 
 ["namelist:jules_vegetation=photo_acclim_model#trigger#4"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=photo_acclim_model"
+status = "implemented"
+where = "jules_vegetation.JulesVegetation._warn_inactive_members"
 hash = "1945a7464e4ba527"
 
 ["namelist:jules_vegetation=photo_acclim_model#trigger#5"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=photo_acclim_model"
+status = "implemented"
+where = "jules_vegetation.JulesVegetation._warn_inactive_members"
 hash = "735c7350c9d23797"
 
 ["namelist:jules_vegetation=photo_acclim_model#trigger#6"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=photo_acclim_model"
+status = "implemented"
+where = "jules_vegetation.JulesVegetation._warn_inactive_members"
 hash = "d1ada80e4807d201"
 
 ["namelist:jules_vegetation=photo_acclim_model#trigger#7"]
@@ -6659,8 +6659,8 @@ reason = "julesconf does not model jules_vegetation=photo_acclim_model"
 hash = "ba2b96fc62d3872f"
 
 ["namelist:jules_vegetation=photo_act_model#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=photo_act_model"
+status = "implemented"
+where = "jules_vegetation.JulesVegetation._check_photosynthesis_models"
 hash = "ad734ea608f0bc2c"
 
 ["namelist:jules_vegetation=photo_act_model#trigger#1"]
@@ -6674,28 +6674,28 @@ reason = "julesconf does not model jules_vegetation=photo_act_model"
 hash = "fc670f1429253fac"
 
 ["namelist:jules_vegetation=photo_act_model#trigger#3"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=photo_act_model"
+status = "implemented"
+where = "jules_vegetation.JulesVegetation._warn_inactive_members"
 hash = "1657cab2200688e9"
 
 ["namelist:jules_vegetation=photo_act_model#trigger#4"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=photo_act_model"
+status = "implemented"
+where = "jules_vegetation.JulesVegetation._warn_inactive_members"
 hash = "acc61b0d7d5a6bbc"
 
 ["namelist:jules_vegetation=photo_jv_model#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=photo_jv_model"
+status = "implemented"
+where = "jules_vegetation.JulesVegetation._check_photosynthesis_models"
 hash = "ad734ea608f0bc2c"
 
 ["namelist:jules_vegetation=photo_jv_model#trigger#1"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=photo_jv_model"
+status = "implemented"
+where = "jules_vegetation.JulesVegetation._warn_inactive_members"
 hash = "30796b67ecaedeea"
 
 ["namelist:jules_vegetation=photo_jv_model#trigger#2"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=photo_jv_model"
+status = "implemented"
+where = "jules_vegetation.JulesVegetation._warn_inactive_members"
 hash = "04b7370224c7b7eb"
 
 ["namelist:jules_vegetation=photo_model#fail-if#1"]

@@ -16,8 +16,9 @@ from pydantic import ValidationError
 
 from julesconf.schemas import InactiveNamelistKeyWarning, JulesNamelists
 from julesconf.schemas._conditional import is_specified
-from julesconf.schemas.ancillaries import JulesRiversProps
+from julesconf.schemas.ancillaries import JulesAgric, JulesRiversProps
 from julesconf.schemas.imogen import ChangeMetdataMethod, ImogenRunList
+from julesconf.schemas.jules_deposition import JulesDeposition
 from julesconf.schemas.jules_hydrology import JulesHydrology
 from julesconf.schemas.jules_irrig import JulesIrrig
 from julesconf.schemas.jules_radiation import JulesRadiation
@@ -33,6 +34,7 @@ from julesconf.schemas.jules_surface_types import JulesSurfaceTypes
 from julesconf.schemas.jules_vegetation import JulesVegetation
 from julesconf.schemas.jules_water_resources import JulesWaterResources
 from julesconf.schemas.model_environment import JulesModelEnvironment
+from julesconf.schemas.model_grid import JulesModelGrid
 from julesconf.schemas.urban import JulesUrban
 
 
@@ -172,6 +174,31 @@ def test_is_specified_is_false_for_an_unknown_member():
             {"change_metdata_method": 3, "c_emissions": True},
             "c_emissions is not available when change_metdata_method is"
             " global_temperature_patterns",
+        ),
+        (
+            JulesVegetation,
+            {"l_ag_expand": True},
+            "l_ag_expand requires l_trif_biocrop = TRUE",
+        ),
+        (
+            JulesVegetation,
+            {"photo_acclim_model": 0, "photo_act_model": 2},
+            "photo_act_model must be vary_by_pft",
+        ),
+        (
+            JulesVegetation,
+            {"photo_acclim_model": 0, "photo_jv_model": 2},
+            "photo_jv_model must be jmax_only",
+        ),
+        (
+            JulesModelGrid,
+            {"x_bounds": [55.0, -5.0]},
+            "x_bounds: the lower bound must not exceed the upper bound",
+        ),
+        (
+            JulesModelGrid,
+            {"y_bounds": [70.0, -10.0]},
+            "y_bounds: the lower bound must not exceed the upper bound",
         ),
     ],
 )
@@ -419,8 +446,11 @@ def test_overbank_inundation_is_standalone_only():
         build(
             **UM,
             jules_rivers={
-                "jules_rivers": {"l_rivers": True, "i_river_vn": 2},
-                "jules_overbank": {"l_riv_overbank": True},
+                "jules_rivers": {
+                    "l_rivers": True,
+                    "i_river_vn": 2,
+                    "l_riv_overbank": True,
+                },
             },
         )
 
@@ -523,6 +553,31 @@ def test_minimal_config_still_validates():
         (JulesIrrig, {"l_irrig_dmd": True, "nirrtile": 2}, "nirrtile"),
         (JulesSnow, {"snowliqcap": 0.9}, "snowliqcap"),
         (JulesSurface, {"i_aggregate_opt": 1}, "i_aggregate_opt"),
+        (JulesSurface, {"orog_drag_param": 0.3}, "orog_drag_param"),
+        (JulesSurface, {"formdrag": 1, "fd_hill_option": 2}, "fd_hill_option"),
+        (JulesVegetation, {"stanton_leaf": 0.3}, "stanton_leaf"),
+        (JulesVegetation, {"dsj_coef": [1.0, 0.0, 0.0]}, "dsj_coef"),
+        (JulesVegetation, {"n_day_photo_acclim": 30.0}, "n_day_photo_acclim"),
+        (JulesVegetation, {"act_j_coef": [1.0, 0.0, 0.0]}, "act_j_coef"),
+        (JulesVegetation, {"n_alloc_jmax": 5.3}, "n_alloc_jmax"),
+        (JulesAgric, {"frac_agr": 0.5}, "frac_agr"),
+        (JulesAgric, {"frac_past": 0.5}, "frac_past"),
+        (JulesAgric, {"frac_biocrop": 0.5}, "frac_biocrop"),
+        (JulesDeposition, {"dzl_const": 50.0}, "dzl_const"),
+        (JulesDeposition, {"tundra_s_limit": 0.866}, "tundra_s_limit"),
+        (
+            JulesModelGrid,
+            {"use_subgrid": True, "l_bounds": True, "npoints": 14},
+            "npoints",
+        ),
+        (
+            JulesModelGrid,
+            {"use_subgrid": True, "l_bounds": True, "points_file": "p.dat"},
+            "points_file",
+        ),
+        (JulesModelGrid, {"l_bounds": True}, "l_bounds"),
+        (JulesRivers, {"l_inland": True}, "l_inland"),
+        (JulesRivers, {"l_riv_overbank": True}, "l_riv_overbank"),
         (JulesWaterResources, {"l_water_domestic": True}, "l_water_domestic"),
         (JulesVegetation, {"triffid_period": 10}, "triffid_period"),
         (JulesVegetation, {"phenol_period": 10}, "phenol_period"),
@@ -549,6 +604,30 @@ def test_trigger_warns_about_an_inactive_member(model_cls, kwargs, member):
         (JulesIrrig, {"l_irrig_dmd": True, "irr_crop": 2}),
         (JulesSnow, {"nsmax": 3, "dzsnow": [0.1, 0.2, 0.2], "snowliqcap": 0.9}),
         (JulesRivers, {"l_rivers": True, "i_river_vn": 2, "cland": 0.4}),
+        (JulesSurface, {"formdrag": 2, "fd_hill_option": 2, "orog_drag_param": 0.3}),
+        (JulesVegetation, {"l_rsl_scalar": True, "stanton_leaf": 0.3}),
+        (
+            JulesVegetation,
+            {"photo_acclim_model": 3, "dsj_coef": [1.0, 0.0, 0.0]},
+        ),
+        (JulesVegetation, {"photo_acclim_model": 2, "n_day_photo_acclim": 30.0}),
+        (
+            JulesVegetation,
+            {
+                "photo_acclim_model": 3,
+                "photo_act_model": 2,
+                "act_j_coef": [1.0, 0.0, 0.0],
+            },
+        ),
+        (
+            JulesVegetation,
+            {"photo_acclim_model": 3, "photo_jv_model": 2, "n_alloc_jmax": 5.3},
+        ),
+        (JulesAgric, {"zero_agric": False, "frac_agr": 0.5}),
+        (JulesAgric, {"zero_biocrop": False, "frac_biocrop": 0.5}),
+        (JulesDeposition, {"l_deposition": True, "dzl_const": 50.0}),
+        (JulesModelGrid, {"use_subgrid": True, "l_bounds": False, "npoints": 14}),
+        (JulesRivers, {"l_rivers": True, "l_inland": True}),
     ],
 )
 def test_no_warning_when_the_member_is_active(model_cls, kwargs):
@@ -568,6 +647,9 @@ def test_default_values_never_warn():
         JulesWaterResources,
         JulesVegetation,
         JulesRivers,
+        JulesAgric,
+        JulesDeposition,
+        JulesModelGrid,
     ):
         assert inactive(model_cls) == [], model_cls.__name__
 

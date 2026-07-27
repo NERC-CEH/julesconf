@@ -616,8 +616,7 @@ class JulesNamelists(NamelistModel):
                 " decoupled variable is fully tested.",
             )
         fail_if(
-            self.jules_rivers.jules_overbank.l_riv_overbank
-            and parent != JulesParent.standalone,
+            rivers.l_riv_overbank and parent != JulesParent.standalone,
             "Overbank inundation is not available to the UM or OASIS.",
         )
         return self

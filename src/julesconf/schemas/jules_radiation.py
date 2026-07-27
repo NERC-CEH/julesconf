@@ -29,6 +29,16 @@ class JulesRadiation(NamelistModel):
     """Switch for using prognostic snow properties in model albedo."""
     l_embedded_snow: bool = False
     """Switch to account for pft LAI and pft height in calculation of snow albedo."""
+    l_dolr_land_black: bool = False
+    """Do not use the surface emissivity when adjusting the OLR at land points.
+
+    Has no effect in JULES standalone. Documented only in the rose metadata.
+    """
+    l_sea_alb_var_chl: bool = False
+    """Use a spatially varying chlorophyll content for the open sea albedos.
+
+    Not available to JULES standalone. Documented only in the rose metadata.
+    """
     l_mask_snow_orog: bool = False
     """Switch for orographic masking of snow, which decreases albedo in mountainous regions."""
     l_albedo_obs: bool = False

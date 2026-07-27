@@ -40,6 +40,13 @@ class JulesInitial(NamelistModel):
         list[str] | None, ListLen("nvars"), PerElementDefault("", "nvars")
     ] = None
     """For each variable read from file, this is the name of the variable in the file."""
+    tpl_name: Annotated[
+        list[str] | None, ListLen("nvars"), PerElementDefault("", "nvars")
+    ] = None
+    """For each variable, the string to substitute into a templated file name.
+
+    Not used when `file` does not use variable name templating.
+    """
 
     @model_validator(mode="after")
     def _check_var_lists(self) -> "JulesInitial":

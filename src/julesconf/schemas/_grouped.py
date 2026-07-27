@@ -261,6 +261,19 @@ SPECS_BY_DIM: dict[str, tuple[FieldSpec, ...]] = {
     dim: tuple(s for s in SPECS if s.dim == dim) for dim in CONTRIBUTORS
 }
 
+PIVOTED_SURFACE_MEMBERS = frozenset(
+    spec.member for spec in SPECS if spec.block == "jules_surface_types"
+)
+"""`jules_surface_types` members that are pivoted arrays, not type identifiers.
+
+`JULES_SURFACE_TYPES` holds mostly single indices naming a surface type, which
+the grouped form reconstructs from each entry's position. `tile_map_ids` is
+different: it is an `ntype`-length parameter array like any other, so it is
+pivoted onto the entries and must be kept out of the identifier scan, where a
+list of small integers would otherwise be read as a set of type positions.
+Derived from `SPECS` so a second such member needs no further change.
+"""
+
 if set(SPECS_BY_DIM) != LIST_LEN_DIMS:
     raise GroupedConfigError(
         f"CONTRIBUTORS covers {sorted(SPECS_BY_DIM)} but LIST_LEN_DIMS is "
@@ -600,7 +613,7 @@ def disassemble(data: dict) -> dict:
     }
 
     type_at: dict[int, str] = {}
-    for member in sorted(set(surface) - set(DIM_MEMBERS)):
+    for member in sorted(set(surface) - set(DIM_MEMBERS) - PIVOTED_SURFACE_MEMBERS):
         raw = surface[member]
         # `usr_type` holds an array of positions; every other identifier holds
         # one. Both are pivoted onto the entries the same way.
@@ -684,7 +697,13 @@ def _prune_empty(data: dict) -> None:
 
 # Guard the assumption that every surface type identifier is classified, so a
 # new member added to JulesSurfaceTypes cannot silently become unusable.
-_CLASSIFIED = VEG_TYPE_IDS | NVG_TYPE_IDS | SHARED_TYPE_IDS | frozenset(DIM_MEMBERS)
+_CLASSIFIED = (
+    VEG_TYPE_IDS
+    | NVG_TYPE_IDS
+    | SHARED_TYPE_IDS
+    | frozenset(DIM_MEMBERS)
+    | PIVOTED_SURFACE_MEMBERS
+)
 if frozenset(JulesSurfaceTypes.model_fields) != _CLASSIFIED:
     raise GroupedConfigError(
         "unclassified jules_surface_types members: "
