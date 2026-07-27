@@ -501,6 +501,7 @@ def assemble(data: dict) -> dict:
     surface.update({"npft": npft, "nnvg": nnvg, "ncpft": ncpft})
 
     positions: dict[str, int] = {}
+    usr_positions: list[int] = []
     ordered = [
         (group, index, entry)
         for group in GROUPED_KEYS
@@ -509,6 +510,11 @@ def assemble(data: dict) -> dict:
     for position, (group, index, entry) in enumerate(ordered, start=1):
         type_id = entry.get("type")
         if type_id is None:
+            continue
+        if type_id == "usr_type":
+            # The one identifier JULES holds as an array, so it may legally
+            # be claimed by any number of positions.
+            usr_positions.append(position)
             continue
         if type_id in positions:
             raise GroupedConfigError(
@@ -519,6 +525,8 @@ def assemble(data: dict) -> dict:
             )
         positions[type_id] = position
         surface[type_id] = position
+    if usr_positions:
+        surface["usr_type"] = usr_positions
 
     return data
 
@@ -593,17 +601,23 @@ def disassemble(data: dict) -> dict:
 
     type_at: dict[int, str] = {}
     for member in sorted(set(surface) - set(DIM_MEMBERS)):
-        value = surface[member]
-        if not isinstance(value, int) or not 1 <= value <= dims["ntype"]:
+        raw = surface[member]
+        # `usr_type` holds an array of positions; every other identifier holds
+        # one. Both are pivoted onto the entries the same way.
+        values = raw if isinstance(raw, list) else [raw]
+        if not values or not all(
+            isinstance(value, int) and 1 <= value <= dims["ntype"] for value in values
+        ):
             # A sentinel ("not in use"); leave it in the flat block so it
             # survives the round-trip.
             continue
-        if value in type_at:
-            raise GroupedConfigError(
-                f"surface type position {value} is claimed by both "
-                f"{type_at[value]!r} and {member!r}"
-            )
-        type_at[value] = member
+        for value in values:
+            if value in type_at:
+                raise GroupedConfigError(
+                    f"surface type position {value} is claimed by both "
+                    f"{type_at[value]!r} and {member!r}"
+                )
+            type_at[value] = member
         del surface[member]
 
     for member in DIM_MEMBERS:

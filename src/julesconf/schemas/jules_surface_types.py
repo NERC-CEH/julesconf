@@ -41,8 +41,14 @@ class JulesSurfaceTypes(NamelistModel):
     """Indices of the elevated ice types (#901-925)."""
     elev_rock: int | None = None
     """Indices of the elevated non-glaciated bedrock types (#926-950)."""
-    usr_type: int | None = None
-    """Index of user specified surface type (#10-99)."""
+    usr_type: list[int] | None = None
+    """Indices of the user specified surface types (#10-99).
+
+    Unlike every other surface type identifier this is an array: a
+    configuration may define any number of user types, each of which may be
+    either vegetated or non-vegetated, so the permitted range is the whole
+    of `1:ntype`.
+    """
 
     # Vegetated surface type indices
     brd_leaf: int | None = None
@@ -125,6 +131,11 @@ class JulesSurfaceTypes(NamelistModel):
         `npft`, and a non-vegetated one must be greater than `npft` and at
         most `npft + nnvg`. `-1` is the "not used" sentinel for the elevated
         types.
+
+        `usr_type` is an array and is checked element by element. A user
+        type may be either vegetated or non-vegetated, so the user guide
+        gives it the whole of `1:ntype` and the metadata rule is
+        `any(this > npft + nnvg)` — an upper bound only, over a list.
         """
         ntype = self.npft + self.nnvg
         for member in self._PFT_MEMBERS:
@@ -133,7 +144,7 @@ class JulesSurfaceTypes(NamelistModel):
                 value is not None and value > self.npft,
                 f"{member}: Pseudo level must be less than or equal to npft",
             )
-        for member in (*self._NVG_MEMBERS, "usr_type"):
+        for member in self._NVG_MEMBERS:
             value = getattr(self, member)
             if value is None or value == -1:
                 continue
@@ -141,12 +152,20 @@ class JulesSurfaceTypes(NamelistModel):
                 value > ntype,
                 f"{member}: Pseudo level must be less than or equal to npft+nnvg",
             )
-            # The metadata gives `usr_type` the upper bound only: a user type
-            # may legitimately be numbered among the PFTs.
             fail_if(
-                member != "usr_type" and value <= self.npft,
+                value <= self.npft,
                 f"{member}: PFTs must be grouped together first with"
                 " non-vegetated tiles following",
+            )
+        for index, value in enumerate(self.usr_type or ()):
+            fail_if(
+                value > ntype,
+                f"usr_type[{index}]: Pseudo level must be less than or equal"
+                " to npft+nnvg",
+            )
+            fail_if(
+                value < 1,
+                f"usr_type[{index}]: Pseudo level must be greater than or equal to 1",
             )
         return self
 

@@ -1,6 +1,6 @@
 # JULES rose app corpus
 
-Six real `rose-app.conf` files, vendored verbatim from the JULES model's
+Ten real `rose-app.conf` files, vendored verbatim from the JULES model's
 `rose-stem` test suite. They exist so the rose → namelist converter is tested
 against configurations julesconf did not write, and so the schemas get a
 conformance corpus that reaches parts of JULES the rest of the test suite does
@@ -11,11 +11,14 @@ not.
 - Upstream: [MetOffice/jules](https://github.com/MetOffice/jules),
   `rose-stem/app/<name>/rose-app.conf`.
 - Commit: `aa0f60ff68a62e0ab9b9a8c538ddaa404c1d859b` (2026-07-22).
-- Vendored: 2026-07-26.
+- Vendored: 2026-07-26 (six apps), 2026-07-27 (four more).
 - Each file is copied byte for byte; only the name changes, from
   `<name>/rose-app.conf` to `<name>.conf`.
 
-## Why these six
+## Why these ten
+
+The first six were chosen for the JULES features the rest of the suite does not
+reach:
 
 | `loobos_crops` | crop PFTs — `ncpft > 0`, the documented blind spot in the rest of the suite |
 |---|---|
@@ -25,13 +28,25 @@ not.
 | `loobos_fire` | the fire module |
 | `loobos_irrig` | irrigation, including `jules_irrig_props` |
 
-This app was originally vendored for its indexed
+The next four were chosen by greedy coverage analysis over all 65 upstream
+apps, counting distinct `(block, member)` pairs actually set. They take the
+corpus from 74% to 93% of the pairs the full rose-stem suite exercises:
+
+| `eraint_rfm_2ddata` | +50 pairs — river routing (RFM) and 2D river ancillary data |
+|---|---|
+| `imogen_layeredc` | +39 pairs — IMOGEN (`imogen_run_list`, `imogen_anlg_vals_list`) |
+| `gswp2_ukv` | +15 pairs — UKV grid configuration |
+| `loobos_jules_es_1p0_biocrop_agexpand` | +13 pairs — biocrop, agricultural expansion, and the array-valued `jules_surface_types=usr_type` |
+
+`loobos_jules_es_1p0_deposition` was originally vendored for its indexed
 `namelist:jules_deposition_species(N)` sections. That was a misreading: those
 sections are `[!!namelist:jules_deposition_species(1)]`, i.e. `!!`-ignored, as is
 `ndry_dep_species`, so no deposition-species group is ever emitted and the corpus
 does not exercise that group at all. Its cover is synthetic, in
 `tests/schemas/test_repeated_groups.py`. The app earns its place for the repeated
-groups it *does* emit, which is more than any other app in the corpus.
+groups it *does* emit, which it now ties with
+`loobos_jules_es_1p0_biocrop_agexpand` for (7 output profiles apiece; the
+biocrop app has one more prescribed dataset).
 
 Every one of them declares `meta=jules-standalone/vn8.2` while julesconf's
 schemas are pinned to vn7.9, so they also serve as a rolling record of the
@@ -47,6 +62,10 @@ cp reference/jules/rose-stem/app/<name>/rose-app.conf tests/data/rose_apps/<name
 
 `reference/` is gitignored; the checkout is not part of this repository. The
 apps are committed so the test suite needs neither the checkout nor the network.
+
+With the checkout present, `tests/rose/test_sweep.py` additionally converts and
+validates *every* upstream app, not just the ten vendored here. It is skipped
+without it.
 
 ## Licence and attribution
 

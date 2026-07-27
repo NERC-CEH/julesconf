@@ -5,6 +5,7 @@ the integration round-trip exercises none of the `[[crop_pft]]` or `nnpft`
 machinery. The synthetic crop fixtures here are the only cover for it.
 """
 
+import copy
 import warnings
 
 import pytest
@@ -256,6 +257,27 @@ def test_usr_type_is_accepted_in_either_group():
     data = minimal_grouped(n_pft=2, n_nvg=2)
     data["nvg"][1]["type"] = "usr_type"
     assert assemble(data)
+
+
+def test_usr_type_may_claim_several_positions():
+    """It is the one identifier JULES holds as an array, not a scalar."""
+    data = minimal_grouped(n_pft=2, n_nvg=2)
+    data["pft"][1]["type"] = "usr_type"
+    data["nvg"][1]["type"] = "usr_type"
+
+    flat = assemble(data)
+    assert flat["jules_surface_types"]["jules_surface_types"]["usr_type"] == [2, 4]
+
+
+def test_a_multi_position_usr_type_round_trips_through_the_grouped_form():
+    data = minimal_grouped(n_pft=2, n_nvg=2)
+    data["pft"][1]["type"] = "usr_type"
+    data["nvg"][1]["type"] = "usr_type"
+    expected = {group: copy.deepcopy(data[group]) for group in ("pft", "nvg")}
+    regrouped = disassemble(assemble(data))
+
+    assert regrouped["pft"] == expected["pft"]
+    assert regrouped["nvg"] == expected["nvg"]
 
 
 def test_crop_identifier_is_allowed_on_a_natural_pft():

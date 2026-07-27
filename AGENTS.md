@@ -40,6 +40,8 @@ just
 | `tests/test_toml_grouped.py` | Phase 2 gates. The **only** cover for crop PFTs — Loobos has `ncpft = 0` |
 | `examples/loobos/` | Real Loobos config (29 `.nml` files + input data). Used by `examples/101.py`, **not** by the test suite |
 | `scripts/rose_meta_extract.py` | Dev CLI: `extract` normalises the upstream JULES rose metadata into JSON, `audit` compares it against the schemas |
+| `tests/data/rose_apps/` | Ten real `rose-app.conf` files vendored from JULES `rose-stem` (BSD-3-Clause). The conformance corpus behind `tests/rose/test_convert.py::TestCorpus`; 93% of the `(block, member)` pairs the full upstream suite sets |
+| `tests/rose/test_sweep.py` | The wide sweep: every upstream app, **skipped** without the `reference/jules` checkout. `KNOWN_UNKNOWN_MEMBERS` and the corpus stay the offline gate |
 | `tests/data/rose_meta/vn7.9.json` | The committed extract (BSD-3-Clause, see the README beside it). Regenerate with `extract`; the test suite and audit never need `reference/jules` |
 
 ## Reference docs (ground truth)
@@ -130,6 +132,8 @@ docs job:   docs → deploy to GitHub Pages (currently commented out in workflow
 ```
 
 `rose-meta-freshness.yml` runs monthly (and on demand): it sparsely clones
-`MetOffice/jules`, rebuilds the vn7.9 extract from upstream `main`, and opens or
-updates a `rose-meta-drift` issue if any conditional rule was added, removed or
-changed. It never fails the build.
+`MetOffice/jules` (`rose-meta` **and** `rose-stem`), rebuilds the vn7.9 extract
+from upstream `main`, and runs `tests/rose/test_sweep.py` over every upstream
+`rose-stem/app`. It opens or updates a single `rose-meta-drift` issue if any
+conditional rule moved *or* any app stopped validating — two symptoms of one
+cause, triaged together, as separate sections. It never fails the build.

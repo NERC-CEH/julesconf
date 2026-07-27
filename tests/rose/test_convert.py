@@ -4,7 +4,7 @@ Two halves. The first is unit-level: the emission contract (ordering,
 ignored settings, trailing commas, verbatim values) and environment
 variable handling, all against hand-written miniatures.
 
-The second is `TestCorpus`, which runs the six real `rose-app.conf` files
+The second is `TestCorpus`, which runs the ten real `rose-app.conf` files
 vendored in `tests/data/rose_apps/` all the way through `f90nml` and into
 `JulesNamelists`. That turns the corpus into a conformance suite for the
 schemas: the apps declare `meta=jules-standalone/vn8.2` while julesconf is
@@ -40,10 +40,14 @@ from julesconf.schemas import (
 DATA = Path(__file__).resolve().parent.parent / "data" / "rose_apps"
 
 APPS = [
+    "eraint_rfm_2ddata",
     "gswp2_gl7",
+    "gswp2_ukv",
+    "imogen_layeredc",
     "loobos_crops",
     "loobos_fire",
     "loobos_irrig",
+    "loobos_jules_es_1p0_biocrop_agexpand",
     "loobos_jules_es_1p0_deposition",
     "loobos_trif",
 ]
@@ -330,10 +334,14 @@ That is six more than the 29 julesconf models: the postponed `cable_*`,
 """
 
 UNKNOWN_MEMBER_COUNTS = {
+    "eraint_rfm_2ddata": 33,
     "gswp2_gl7": 4,
+    "gswp2_ukv": 4,
+    "imogen_layeredc": 34,
     "loobos_crops": 4,
     "loobos_fire": 4,
     "loobos_irrig": 3,
+    "loobos_jules_es_1p0_biocrop_agexpand": 17,
     "loobos_jules_es_1p0_deposition": 4,
     "loobos_trif": 4,
 }
@@ -348,20 +356,109 @@ KNOWN_UNKNOWN_MEMBERS = [
     # --- post-vn7.9: present in the vn8.2 apps, absent from the vn7.9 rose
     #     metadata and from the vn7.9 user guide, so out of scope until the
     #     pin moves ---
+    "JulesDrive.l_imogen",
     "JulesIrrig.irrig_option",
+    "JulesRiversProps.is_climatology",
     "JulesSoilBiogeochem.cs_decomp_soil_moist_func",
     "JulesSoilBiogeochem.l_bgc_heat",
     # --- a whole vn7.9 namelist file julesconf does not model yet; adding it
     #     means a new schema module *and* a new file in NamelistConfig, so it
     #     is tracked separately from the per-member gap ---
     "JulesNamelists.jules_soil_ecosse",
+    # --- vn7.9 members deferred in Phase 4 for want of corpus traffic, and
+    #     newly evidenced by the four apps vendored in Phase 9. Reclassified
+    #     from `defer` to `add` in notes/schema_gap_inventory.md; adding them
+    #     is a separate piece of work ---
+    # river routing ancillaries (`eraint_rfm_2ddata`) — JulesRiversProps is
+    # still an empty block, so an RFM configuration cannot be expressed at all
+    "JulesRivers.l_riv_overbank",
+    "JulesRiversProps.coordinate_file",
+    "JulesRiversProps.file",
+    "JulesRiversProps.l_find_grid",
+    "JulesRiversProps.l_use_area",
+    "JulesRiversProps.land_dx",
+    "JulesRiversProps.land_dy",
+    "JulesRiversProps.nvars",
+    "JulesRiversProps.nx_land_grid",
+    "JulesRiversProps.nx_rivers",
+    "JulesRiversProps.ny_land_grid",
+    "JulesRiversProps.ny_rivers",
+    "JulesRiversProps.read_list",
+    "JulesRiversProps.rivers_length",
+    "JulesRiversProps.rivers_regrid",
+    "JulesRiversProps.tpl_name",
+    "JulesRiversProps.use_file",
+    "JulesRiversProps.var",
+    "JulesRiversProps.var_name",
+    "JulesRiversProps.x1_land_grid",
+    "JulesRiversProps.x_dim_name",
+    "JulesRiversProps.y1_land_grid",
+    "JulesRiversProps.y_dim_name",
+    # IMOGEN (`imogen_layeredc`) — ImogenRunList and ImogenAnlgValsList are
+    # both empty blocks
+    "ImogenAnlgValsList.diff_frac_const_imogen",
+    "ImogenAnlgValsList.f_ocean",
+    "ImogenAnlgValsList.file_base_anom",
+    "ImogenAnlgValsList.file_clim",
+    "ImogenAnlgValsList.file_patt",
+    "ImogenAnlgValsList.kappa_o",
+    "ImogenAnlgValsList.lambda_l",
+    "ImogenAnlgValsList.lambda_o",
+    "ImogenAnlgValsList.mu",
+    "ImogenAnlgValsList.q2co2",
+    "ImogenAnlgValsList.t_ocean_init",
+    "ImogenOnoffSwitch.l_daily_metdata_climatol",
+    "ImogenRunList.c_emissions",
+    "ImogenRunList.change_metdata_method",
+    "ImogenRunList.co2_init_ppmv",
+    "ImogenRunList.file_non_co2_radf",
+    "ImogenRunList.file_scen_emits",
+    "ImogenRunList.include_co2",
+    "ImogenRunList.include_non_co2_radf",
+    "ImogenRunList.initial_co2_ch4_year",
+    "ImogenRunList.initialise_from_dump",
+    "ImogenRunList.l_change_metdata",
+    "ImogenRunList.land_feed_ch4",
+    "ImogenRunList.land_feed_co2",
+    "ImogenRunList.nyr_emiss",
+    "ImogenRunList.nyr_non_co2",
+    "ImogenRunList.ocean_feed",
+    # biocrop and agricultural expansion
+    # (`loobos_jules_es_1p0_biocrop_agexpand`)
+    "JulesAgric.biocrop_name",
+    "JulesAgric.file_biocrop",
+    "JulesAgric.file_harvest_doy",
+    "JulesAgric.frac_biocrop",
+    "JulesAgric.harvest_doy_name",
+    "JulesAgric.read_harvest_doy_from_dump",
+    "JulesAgric.zero_biocrop",
+    "JulesTriffid.ag_expand_io",
+    "JulesTriffid.harvest_freq_io",
+    "JulesTriffid.harvest_ht_io",
+    "JulesTriffid.harvest_type_io",
+    "JulesVegetation.l_ag_expand",
+    # gridded configuration (`gswp2_ukv`, `eraint_rfm_2ddata`)
+    "JulesInputGrid.tile_dim_name",
+    "JulesInputGrid.type_dim_name",
+    "JulesModelGrid.l_bounds",
+    "JulesModelGrid.npoints",
+    "JulesModelGrid.points_file",
+    "JulesModelGrid.x_bounds",
+    "JulesModelGrid.y_bounds",
 ]
 """Every member of the corpus that julesconf does not model, corpus-wide.
 
 Each entry is `Model.member`. This is the schema-gap tracker: shrinking it
 is the point, growing it without noticing is the risk. It stood at 97 entries
-when the corpus was first vendored; see `notes/schema_gap_inventory.md` for
-the classification of the rest of the vn7.9 gap.
+when the corpus was first vendored and fell to 4 in Phase 4; see
+`notes/schema_gap_inventory.md` for the classification of the rest of the
+vn7.9 gap.
+
+Phase 9 took it to 75 by vendoring four more apps. That is the tracker
+becoming *accurate*, not the schemas regressing: `jules_rivers_props`,
+`imogen_run_list` and `imogen_anlg_vals_list` are empty blocks whose members
+Phase 4 deferred purely for want of corpus traffic, and these apps supply the
+traffic.
 
 Repeated namelist groups used to appear here as `_grp_*` pseudo-members. They
 are now read as lists of blocks, one entry per occurrence — see
@@ -371,10 +468,17 @@ are now read as lists of blocks, one entry per occurrence — see
 _WARNING_RE = re.compile(r"^(\w+): ignoring unknown namelist member '(\w+)'")
 
 REPEATED_GROUPS = {
+    "eraint_rfm_2ddata": {},
     "gswp2_gl7": {"output.jules_output_profile": 2},
+    "gswp2_ukv": {"output.jules_output_profile": 2},
+    "imogen_layeredc": {},
     "loobos_crops": {"output.jules_output_profile": 3},
     "loobos_fire": {"output.jules_output_profile": 3},
     "loobos_irrig": {"output.jules_output_profile": 3},
+    "loobos_jules_es_1p0_biocrop_agexpand": {
+        "output.jules_output_profile": 7,
+        "prescribed_data.jules_prescribed_dataset": 4,
+    },
     "loobos_jules_es_1p0_deposition": {
         "output.jules_output_profile": 7,
         "prescribed_data.jules_prescribed_dataset": 3,
@@ -384,9 +488,11 @@ REPEATED_GROUPS = {
 """Namelist groups each app repeats, and how many times.
 
 JULES emits one `jules_output_profile` group per output profile and one
-`jules_prescribed_dataset` per prescribed dataset. Every app in the corpus
-repeats at least one group, so this is the corpus's cover for the repeated-group
+`jules_prescribed_dataset` per prescribed dataset. Most apps in the corpus
+repeat at least one group, so this is the corpus's cover for the repeated-group
 machinery: the counts must survive reading, validation and both TOML forms.
+`eraint_rfm_2ddata` and `imogen_layeredc` repeat nothing — a single occurrence
+of every group — which is the other half of the cover.
 
 `jules_deposition_species` is deliberately absent. It repeats in no app in the
 corpus -- `loobos_jules_es_1p0_deposition` has its species sections `!!`-ignored

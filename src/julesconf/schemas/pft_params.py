@@ -104,14 +104,24 @@ class JulesPftparm(NamelistModel):
     """Top leaf nitrogen concentration (kg N/kg C)."""
     nmass_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
     """Top leaf nitrogen content per unit mass."""
-    nr_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
-    """Root nitrogen concentration (kgN/kgC)."""
+    nr_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Root nitrogen concentration (kgN/kgC).
+
+    Only used with `JULES_VEGETATION::l_trait_phys` = T. Unbounded: the user
+    guide gives no permitted range and the vn7.9 rose metadata gives no
+    `range`, and shipped trait-physiology configurations use `-1` to mark a
+    PFT for which the concentration is derived rather than prescribed.
+    """
     nr_nl_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
     """Ratio of root nitrogen to leaf nitrogen concentration."""
     ns_nl_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
     """Ratio of stem nitrogen to leaf nitrogen concentration."""
-    nsw_io: Annotated[list[NonNegFloat] | None, ListLen("npft")] = None
-    """Stemwood nitrogen concentration (kgN/kgC)."""
+    nsw_io: Annotated[list[float] | None, ListLen("npft")] = None
+    """Stemwood nitrogen concentration (kgN/kgC).
+
+    Unbounded for the same reason as `nr_io`, and carries the same `-1`
+    sentinel in the shipped trait-physiology configurations.
+    """
     omega_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
     """Leaf scattering coefficient for PAR."""
     omnir_io: Annotated[list[Fraction] | None, ListLen("npft")] = None

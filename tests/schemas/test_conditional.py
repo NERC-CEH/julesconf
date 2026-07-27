@@ -152,7 +152,14 @@ def test_block_level_fail_if(model_cls, kwargs, message):
             "urban cannot be combined",
         ),
         ({"npft": 5, "nnvg": 4, "urban_canyon": 7}, "canyon and roof"),
-        ({"npft": 5, "nnvg": 4, "usr_type": 10}, "less than or equal to npft\\+nnvg"),
+        (
+            {"npft": 5, "nnvg": 4, "usr_type": [3, 10]},
+            r"usr_type\[1\]: Pseudo level must be less than or equal to npft\+nnvg",
+        ),
+        (
+            {"npft": 5, "nnvg": 4, "usr_type": [0]},
+            r"usr_type\[0\]: Pseudo level must be greater than or equal to 1",
+        ),
     ],
 )
 def test_surface_type_pseudo_levels(kwargs, message):
@@ -172,8 +179,21 @@ def test_elevated_types_accept_the_minus_one_sentinel():
 
 
 def test_usr_type_may_be_numbered_among_the_pfts():
-    """The metadata gives `usr_type` an upper bound only."""
-    JulesSurfaceTypes(npft=5, nnvg=4, usr_type=3)
+    """The user guide permits `usr_type` the whole of `1:ntype`."""
+    JulesSurfaceTypes(npft=5, nnvg=4, usr_type=[3])
+
+
+def test_usr_type_is_an_array_of_positions():
+    """`usr_type` is `integer, length=:`, unlike every other identifier."""
+    config = JulesSurfaceTypes(npft=5, nnvg=4, usr_type=[3, 6, 9])
+    assert config.usr_type == [3, 6, 9]
+
+
+def test_a_scalar_usr_type_is_coerced_to_a_one_element_array():
+    """Fortran writes a one-element array indistinguishably from a scalar."""
+    assert JulesSurfaceTypes.model_validate(
+        {"npft": 5, "nnvg": 4, "usr_type": 3}
+    ).usr_type == [3]
 
 
 # --------------------------------------------------------------------------
