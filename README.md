@@ -22,7 +22,7 @@ There is a command-line interface too, so a validation check needs no Python:
 
 ```
 julesconf validate run/namelists --strict
-julesconf rose2toml rose-app.conf -o config.toml
+julesconf convert rose2toml rose-app.conf -o config.toml
 ```
 
 It exits `0` on success, `1` on an invalid config and `2` on a usage error, and

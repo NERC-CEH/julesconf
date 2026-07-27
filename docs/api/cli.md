@@ -19,10 +19,10 @@ julesconf --help
 | Command | What it does |
 |---|---|
 | `julesconf validate <target>` | Validate a namelists directory or a `.toml` config |
-| `julesconf rose2nml <conf> -o <dir>` | Convert a `rose-app.conf` to namelist files |
-| `julesconf rose2toml <conf> -o <file>` | Convert a `rose-app.conf` to a TOML config |
-| `julesconf toml2nml <file> -o <dir>` | Write the namelists a TOML config describes |
-| `julesconf nml2toml <dir> -o <file>` | Read namelists and write them as TOML |
+| `julesconf convert rose2nml <conf> -o <dir>` | Convert a `rose-app.conf` to namelist files |
+| `julesconf convert rose2toml <conf> -o <file>` | Convert a `rose-app.conf` to a TOML config |
+| `julesconf convert toml2nml <file> -o <dir>` | Write the namelists a TOML config describes |
+| `julesconf convert nml2toml <dir> -o <file>` | Read namelists and write them as TOML |
 
 ### `validate`
 
@@ -37,11 +37,11 @@ julesconf's warnings to errors, exactly as `strict=True` does on
 `from_namelists` / `from_toml` — see
 [enforce strict validation](../how-to/strict-validation.md).
 
-### `rose2nml` and `rose2toml`
+### `convert rose2nml` and `convert rose2toml`
 
 ```bash
-julesconf rose2nml  rose-app.conf -o namelists/
-julesconf rose2toml rose-app.conf -o config.toml
+julesconf convert rose2nml  rose-app.conf -o namelists/
+julesconf convert rose2toml rose-app.conf -o config.toml
 ```
 
 Both accept `--on-unbound keep|error|empty`, which decides what happens to an
@@ -49,14 +49,14 @@ environment variable the app references but nothing binds. `keep` is the
 default. See [convert a rose app to TOML](../how-to/rose-to-toml.md) for why
 this matters in practice.
 
-### `toml2nml` and `nml2toml`
+### `convert toml2nml` and `convert nml2toml`
 
 ```bash
-julesconf toml2nml config.toml -o run/namelists
-julesconf nml2toml run/namelists -o config.toml
+julesconf convert toml2nml config.toml -o run/namelists
+julesconf convert nml2toml run/namelists -o config.toml
 ```
 
-The namelists written by `toml2nml` will be larger than the ones you started
+The namelists written by `convert toml2nml` will be larger than the ones you started
 from: every member julesconf holds a default for is stated explicitly, so the
 files fully determine the run. See
 [the explicit-defaults guarantee](../concepts/defaults-guarantee.md).

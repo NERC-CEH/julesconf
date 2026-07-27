@@ -4,11 +4,11 @@ A thin shell over `julesconf.schemas.JulesNamelists` and `julesconf.rose`, so
 that validating a configuration or converting between the three file forms
 does not require writing any Python:
 
-    julesconf validate  <namelists-dir | config.toml> [--strict]
-    julesconf rose2nml  <rose-app.conf>  -o <dir>
-    julesconf rose2toml <rose-app.conf>  -o <config.toml>
-    julesconf toml2nml  <config.toml>    -o <dir>
-    julesconf nml2toml  <namelists-dir>  -o <config.toml>
+    julesconf validate          <namelists-dir | config.toml> [--strict]
+    julesconf convert rose2nml  <rose-app.conf>  -o <dir>
+    julesconf convert rose2toml <rose-app.conf>  -o <config.toml>
+    julesconf convert toml2nml  <config.toml>    -o <dir>
+    julesconf convert nml2toml  <namelists-dir>  -o <config.toml>
 
 Exit codes are stable, so the tool can be dropped into a CI pipeline or a
 pre-submission check:
@@ -55,6 +55,15 @@ app = typer.Typer(
     no_args_is_help=True,
     add_completion=False,
 )
+
+convert_app = typer.Typer(
+    name="convert",
+    help="Convert between JULES configuration formats.",
+    no_args_is_help=True,
+    add_completion=False,
+)
+
+app.add_typer(convert_app)
 
 # Rich turns colour off by itself when the stream is not a terminal, so the
 # same code is safe interactively and in a pipeline. Markup, highlighting and
@@ -326,7 +335,7 @@ def validate(
         )
 
 
-@app.command()
+@convert_app.command()
 def rose2nml(
     conf: Annotated[
         Path,
@@ -351,7 +360,7 @@ def rose2nml(
         )
 
 
-@app.command()
+@convert_app.command()
 def rose2toml(
     conf: Annotated[
         Path,
@@ -386,7 +395,7 @@ def rose2toml(
         out.print(f"Wrote {form} TOML config to {output}.", style="green")
 
 
-@app.command()
+@convert_app.command()
 def toml2nml(
     config_file: Annotated[
         Path,
@@ -415,7 +424,7 @@ def toml2nml(
         out.print(f"Wrote namelists to {output}.", style="green")
 
 
-@app.command()
+@convert_app.command()
 def nml2toml(
     namelists: Annotated[
         Path,

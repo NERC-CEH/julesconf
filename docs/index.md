@@ -18,8 +18,8 @@ config.to_namelists("run/namelists")               # write what JULES consumes
 Or from a shell, with no Python at all:
 
 ```bash
-julesconf rose2toml rose-app.conf -o config.toml
-julesconf toml2nml  config.toml   -o run/namelists
+julesconf convert rose2toml rose-app.conf -o config.toml
+julesconf convert toml2nml  config.toml   -o run/namelists
 ```
 
 Namelists stay first-class — read and write them directly. TOML is the terse form

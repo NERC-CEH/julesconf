@@ -15,7 +15,7 @@ Conversion is one-way. julesconf reads rose apps; it never writes them.
 ## The one-liner
 
 ```bash
-julesconf rose2toml rose-app.conf -o config.toml
+julesconf convert rose2toml rose-app.conf -o config.toml
 ```
 
 That does three things: converts the app to namelist text exactly as rose's own
@@ -29,7 +29,7 @@ If you only want the namelist files — for a run directory, or to diff against
 an existing one — stop at the first step:
 
 ```bash
-julesconf rose2nml rose-app.conf -o namelists/
+julesconf convert rose2nml rose-app.conf -o namelists/
 ```
 
 ## Expect unresolved environment variables
@@ -62,19 +62,19 @@ not exist. Three ways to deal with it:
     LOOBOS_INSTALL_DIR=/data/loobos \
     DUMP_FILE=/data/dumps/loobos.dump \
     ROSE_TASK_NAME=loobos \
-    julesconf rose2toml rose-app.conf -o config.toml
+    julesconf convert rose2toml rose-app.conf -o config.toml
     ```
 
 === "Blank them"
 
     ```bash
-    julesconf rose2toml rose-app.conf -o config.toml --on-unbound empty
+    julesconf convert rose2toml rose-app.conf -o config.toml --on-unbound empty
     ```
 
 === "Refuse to guess"
 
     ```bash
-    julesconf rose2toml rose-app.conf -o config.toml --on-unbound error
+    julesconf convert rose2toml rose-app.conf -o config.toml --on-unbound error
     ```
 
     This is what rose itself does: an unbound variable is a hard failure.

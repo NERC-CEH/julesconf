@@ -325,7 +325,7 @@ class TestVersion:
     def test_bare_invocation_shows_help(self):
         result = runner.invoke(app, [])
         assert "validate" in result.output
-        assert "rose2toml" in result.output
+        assert "convert" in result.output
 
 
 class TestValidate:
@@ -393,7 +393,7 @@ class TestValidate:
 class TestRose2Nml:
     def test_happy_path(self, cwd):
         result = runner.invoke(
-            app, ["rose2nml", str(DATA / f"{CORPUS}.conf"), "-o", "nml"]
+            app, ["convert", "rose2nml", str(DATA / f"{CORPUS}.conf"), "-o", "nml"]
         )
         assert result.exit_code == 0
         assert len(list((cwd / "nml").glob("*.nml"))) == 35
@@ -401,7 +401,7 @@ class TestRose2Nml:
 
     def test_unresolved_environment_variables_are_named(self, cwd):
         result = runner.invoke(
-            app, ["rose2nml", str(DATA / f"{CORPUS}.conf"), "-o", "nml"]
+            app, ["convert", "rose2nml", str(DATA / f"{CORPUS}.conf"), "-o", "nml"]
         )
         assert "Unresolved environment variables" in result.output
         assert "$DUMP_FILE" in result.output
@@ -412,7 +412,7 @@ class TestRose2Nml:
         for name in ("DUMP_FILE", "LOOBOS_INSTALL_DIR", "ROSE_TASK_NAME"):
             monkeypatch.setenv(name, "bound")
         result = runner.invoke(
-            app, ["rose2nml", str(DATA / f"{CORPUS}.conf"), "-o", "nml"]
+            app, ["convert", "rose2nml", str(DATA / f"{CORPUS}.conf"), "-o", "nml"]
         )
         assert result.exit_code == 0
         assert "Unresolved environment variables" not in result.output
@@ -421,6 +421,7 @@ class TestRose2Nml:
         runner.invoke(
             app,
             [
+                "convert",
                 "rose2nml",
                 str(DATA / f"{CORPUS}.conf"),
                 "-o",
@@ -436,6 +437,7 @@ class TestRose2Nml:
         result = runner.invoke(
             app,
             [
+                "convert",
                 "rose2nml",
                 str(DATA / f"{CORPUS}.conf"),
                 "-o",
@@ -448,7 +450,7 @@ class TestRose2Nml:
         assert "UnboundVariableError" in result.output
 
     def test_refuses_to_overwrite_without_the_flag(self, cwd):
-        args = ["rose2nml", str(DATA / f"{CORPUS}.conf"), "-o", "nml"]
+        args = ["convert", "rose2nml", str(DATA / f"{CORPUS}.conf"), "-o", "nml"]
         assert runner.invoke(app, args).exit_code == 0
         result = runner.invoke(app, args)
         assert result.exit_code == 1
@@ -456,18 +458,29 @@ class TestRose2Nml:
         assert runner.invoke(app, [*args, "--overwrite"]).exit_code == 0
 
     def test_missing_conf_is_a_usage_error(self, cwd):
-        result = runner.invoke(app, ["rose2nml", "nowhere.conf", "-o", "nml"])
+        result = runner.invoke(
+            app, ["convert", "rose2nml", "nowhere.conf", "-o", "nml"]
+        )
         assert result.exit_code == 2
 
     def test_missing_output_option_is_a_usage_error(self, cwd):
-        result = runner.invoke(app, ["rose2nml", str(DATA / f"{CORPUS}.conf")])
+        result = runner.invoke(
+            app, ["convert", "rose2nml", str(DATA / f"{CORPUS}.conf")]
+        )
         assert result.exit_code == 2
 
 
 class TestRose2Toml:
     def test_happy_path(self, cwd):
         result = runner.invoke(
-            app, ["rose2toml", str(DATA / f"{CORPUS}.conf"), "-o", "config.toml"]
+            app,
+            [
+                "convert",
+                "rose2toml",
+                str(DATA / f"{CORPUS}.conf"),
+                "-o",
+                "config.toml",
+            ],
         )
         assert result.exit_code == 0
         assert "pft" in (cwd / "config.toml").read_text()
@@ -477,6 +490,7 @@ class TestRose2Toml:
         result = runner.invoke(
             app,
             [
+                "convert",
                 "rose2toml",
                 str(DATA / f"{CORPUS}.conf"),
                 "-o",
@@ -490,12 +504,25 @@ class TestRose2Toml:
 
     def test_reports_unresolved_variables(self, cwd):
         result = runner.invoke(
-            app, ["rose2toml", str(DATA / f"{CORPUS}.conf"), "-o", "config.toml"]
+            app,
+            [
+                "convert",
+                "rose2toml",
+                str(DATA / f"{CORPUS}.conf"),
+                "-o",
+                "config.toml",
+            ],
         )
         assert "$ROSE_TASK_NAME" in result.output
 
     def test_refuses_to_overwrite_without_the_flag(self, cwd):
-        args = ["rose2toml", str(DATA / f"{CORPUS}.conf"), "-o", "config.toml"]
+        args = [
+            "convert",
+            "rose2toml",
+            str(DATA / f"{CORPUS}.conf"),
+            "-o",
+            "config.toml",
+        ]
         assert runner.invoke(app, args).exit_code == 0
         assert runner.invoke(app, args).exit_code == 1
         assert runner.invoke(app, [*args, "--overwrite"]).exit_code == 0
@@ -504,6 +531,7 @@ class TestRose2Toml:
         result = runner.invoke(
             app,
             [
+                "convert",
                 "rose2toml",
                 str(DATA / f"{CORPUS}.conf"),
                 "-o",
@@ -516,49 +544,60 @@ class TestRose2Toml:
 
 class TestToml2Nml:
     def test_happy_path(self, cwd, config_toml):
-        result = runner.invoke(app, ["toml2nml", str(config_toml), "-o", "out"])
+        result = runner.invoke(
+            app, ["convert", "toml2nml", str(config_toml), "-o", "out"]
+        )
         assert result.exit_code == 0
         assert len(list((cwd / "out").glob("*.nml"))) == 29
         assert runner.invoke(app, ["validate", "out", "-q"]).exit_code == 0
 
     def test_refuses_to_overwrite_without_the_flag(self, cwd, config_toml):
-        args = ["toml2nml", str(config_toml), "-o", "out"]
+        args = ["convert", "toml2nml", str(config_toml), "-o", "out"]
         assert runner.invoke(app, args).exit_code == 0
         result = runner.invoke(app, args)
         assert result.exit_code == 1
         assert runner.invoke(app, [*args, "--overwrite"]).exit_code == 0
 
     def test_a_directory_argument_is_a_usage_error(self, cwd, namelists):
-        result = runner.invoke(app, ["toml2nml", str(namelists), "-o", "out"])
+        result = runner.invoke(
+            app, ["convert", "toml2nml", str(namelists), "-o", "out"]
+        )
         assert result.exit_code == 2
 
 
 class TestNml2Toml:
     def test_happy_path(self, cwd, namelists):
-        result = runner.invoke(app, ["nml2toml", str(namelists), "-o", "c.toml"])
+        result = runner.invoke(
+            app, ["convert", "nml2toml", str(namelists), "-o", "c.toml"]
+        )
         assert result.exit_code == 0
         assert "[[pft]]" in (cwd / "c.toml").read_text()
         assert runner.invoke(app, ["validate", "c.toml", "-q"]).exit_code == 0
 
     def test_flat_form_round_trips(self, cwd, namelists):
         result = runner.invoke(
-            app, ["nml2toml", str(namelists), "-o", "flat.toml", "--flat"]
+            app,
+            ["convert", "nml2toml", str(namelists), "-o", "flat.toml", "--flat"],
         )
         assert result.exit_code == 0
         assert "[[pft]]" not in (cwd / "flat.toml").read_text()
         assert runner.invoke(app, ["validate", "flat.toml", "-q"]).exit_code == 0
 
     def test_refuses_to_overwrite_without_the_flag(self, cwd, namelists):
-        args = ["nml2toml", str(namelists), "-o", "c.toml"]
+        args = ["convert", "nml2toml", str(namelists), "-o", "c.toml"]
         assert runner.invoke(app, args).exit_code == 0
         assert runner.invoke(app, args).exit_code == 1
 
     def test_a_file_argument_is_a_usage_error(self, cwd, config_toml):
-        result = runner.invoke(app, ["nml2toml", str(config_toml), "-o", "c.toml"])
+        result = runner.invoke(
+            app, ["convert", "nml2toml", str(config_toml), "-o", "c.toml"]
+        )
         assert result.exit_code == 2
 
     def test_invalid_namelists_exit_one(self, cwd, namelists):
         break_namelist(cwd / namelists)
-        result = runner.invoke(app, ["nml2toml", str(namelists), "-o", "c.toml"])
+        result = runner.invoke(
+            app, ["convert", "nml2toml", str(namelists), "-o", "c.toml"]
+        )
         assert result.exit_code == 1
         assert not (cwd / "c.toml").exists()
