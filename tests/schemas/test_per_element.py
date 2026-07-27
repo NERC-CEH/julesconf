@@ -2,7 +2,6 @@
 
 Fortran namelist input does not broadcast a scalar across an array, so a
 documented default of "T for every element" must be written out in full.
-See the "Test suite" section of `notes/plans/done/toml_config.md`.
 """
 
 import re

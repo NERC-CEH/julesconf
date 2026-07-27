@@ -15,7 +15,6 @@ itself consumes.
 Writing namelists is deliberately *not* the inverse of reading them: every
 field julesconf holds a default for is written explicitly, so the namelists
 fully determine the run rather than relying on JULES's internal defaults.
-See `notes/plans/done/toml_config.md`.
 """
 
 import tomllib

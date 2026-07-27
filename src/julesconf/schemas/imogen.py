@@ -64,7 +64,7 @@ class ImogenRunList(NamelistModel):
     used when `land_feed_ch4` is TRUE.
 
     Typed `integer` by the rose metadata and `real` by the user guide; julesconf
-    follows the metadata. See `UPSTREAM.md` §1.2.
+    follows the metadata.
     """
     ch4_ppbv_ref: float = 1751.02
     """Atmospheric CH4 concentration at `yr_fch4_ref` (ppbv).

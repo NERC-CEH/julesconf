@@ -219,7 +219,7 @@ class JulesPftparm(NamelistModel):
     Unbounded, unlike its three siblings: the vn7.9 rose metadata gives
     `alnirl_io`, `alniru_io` and `alparu_io` `range=0:1` and gives this member no
     `range` at all, and the user guide states no permitted range for any of the
-    four. See `UPSTREAM.md` §1.4.
+    four.
     """
     alparu_io: Annotated[list[Fraction] | None, ListLen("npft")] = None
     """Upper limit on `alpar_io`, the leaf reflection coefficient for VIS."""
@@ -319,7 +319,7 @@ class JulesPftparm(NamelistModel):
 
     Only used with `JULES_VEGETATION::l_use_pft_psi` = T. Unbounded: the user
     guide says "must be negative", but the vn7.9 rose metadata gives no `range`
-    and shipped configurations set it to `0`. See `UPSTREAM.md` §1.5.
+    and shipped configurations set it to `0`.
     """
     psi_close_io: Annotated[list[float] | None, ListLen("npft")] = None
     """Soil potential below which the soil moisture stress factor is zero (Pa).

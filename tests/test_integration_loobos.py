@@ -18,8 +18,6 @@ Loobos does **not** exercise crops or TRIFFID: `crop_params.nml` and
 `triffid_params.nml` are both empty and `ncpft` is unset, so `nnpft == npft`
 and the `[[crop_pft]]` half of the grouped form never runs here. That cover
 lives in `test_toml_grouped.py`, and the two must be read together.
-
-See the "Test suite" section of `notes/plans/done/toml_config.md`.
 """
 
 import warnings

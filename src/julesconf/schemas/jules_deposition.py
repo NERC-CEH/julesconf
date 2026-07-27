@@ -64,7 +64,7 @@ class JulesDeposition(NamelistModel):
     Deposition of 'CO', 'NO2', 'O3', 'PAN', 'PPAN', 'MPAN' and 'ONITU' is
     calculated differently north of this limit. The user guide calls this a
     latitude in radians, which contradicts both its own metadata range and the
-    shipped configurations; see `UPSTREAM.md` §1.9.
+    shipped configurations.
     """
     l_deposition_flux: bool = False
     """Calculate deposition fluxes rather than deposition velocities.

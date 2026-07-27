@@ -251,8 +251,7 @@ def test_cfrac_s_io_follows_the_metadata_and_tolerates_the_user_guide_dim():
     crop configuration supplies `ncpft` values. julesconf takes `ncpft` as
     canonical — so the parameter groups under `[[crop_pft]]` with its
     siblings, and a crop config round-trips through the grouped TOML form —
-    but tolerates the `npft` length the reference documents. See
-    `notes/plans/done/toml_config.md`.
+    but tolerates the `npft` length the reference documents.
     """
     data = _minimal_valid(npft=5, nnvg=4, ncpft=2)
     crop = data.setdefault("crop_params", {}).setdefault("jules_cropparm", {})

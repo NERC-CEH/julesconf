@@ -200,8 +200,7 @@ class JulesSurfHgt(NamelistModel):
 
     `l_elev_absolute_height` and `surf_hgt_io` are `nsurft`-length arrays, which
     is `npft + nnvg` unless `JULES_SURFACE::l_aggregate` = TRUE, when it is one.
-    julesconf carries no `nsurft` dimension and so no `ListLen` here; see
-    `UPSTREAM.md` §1.7.
+    julesconf carries no `nsurft` dimension and so no `ListLen` here.
     """
 
     l_tile_hgt: bool = False
@@ -219,7 +218,7 @@ class JulesSurfHgt(NamelistModel):
 
     Modelled as a scalar: the user guide types it `logical` with default `T` and
     every shipped configuration writes a scalar, while the rose metadata marks
-    it an array without giving it a length rule. See `UPSTREAM.md` §1.6.
+    it an array without giving it a length rule.
     """
     file: str | None = None
     """File holding the surface tile elevations relative to the gridbox mean."""
@@ -254,8 +253,7 @@ class JulesZLand(NamelistModel):
     use_file: bool = True
     """Read the forcing-data elevation from `file` rather than from `z_land_io`.
 
-    Modelled as a scalar for the same reason as `JULES_SURF_HGT::use_file`; see
-    `UPSTREAM.md` §1.6.
+    Modelled as a scalar for the same reason as `JULES_SURF_HGT::use_file`.
     """
     file: str | None = None
     """File holding the elevation of the forcing data."""
@@ -269,7 +267,7 @@ class JulesZLand(NamelistModel):
 
     Only used with `use_file` = FALSE. Modelled as a scalar, following the user
     guide's `real` and the shipped configurations, against the rose metadata's
-    unaccompanied array marking; see `UPSTREAM.md` §1.6.
+    unaccompanied array marking.
     """
 
 

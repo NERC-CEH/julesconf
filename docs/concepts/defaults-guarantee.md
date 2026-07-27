@@ -23,8 +23,7 @@ parameter.
 A field whose default is `None` means "julesconf has no value for this", and is
 omitted from the output; for those, JULES still falls back to its own internal
 default. `None` is not the same as "JULES has no value for this", and that is the
-crack the goal falls through. Closing it is ongoing work, tracked in
-`notes/plans/done/toml_config.md`.
+crack the goal falls through. Closing it is ongoing work.
 
 So the guarantee holds fully for every parameter julesconf carries a default for,
 and the [coverage page](coverage.md) is where to look for how much of the

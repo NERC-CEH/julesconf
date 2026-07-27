@@ -68,7 +68,7 @@ class JulesCropparm(NamelistModel):
     therefore takes `ncpft` as canonical, so the parameter groups with the
     other crop parameters under `[[crop_pft]]`, while still tolerating an
     `npft`-length array on input for anything written to the reference's
-    spelling. See `UPSTREAM.md` §1.1.
+    spelling.
     """
     cfrac_r_io: Annotated[list[Fraction] | None, ListLen("ncpft")] = None
     """Carbon fraction of dry matter for roots."""

@@ -68,7 +68,7 @@ class JulesRivers(NamelistModel):
     Only used with `l_rivers` = TRUE; when FALSE the optional `JULES_OVERBANK`
     namelist is not required. The user guide documents this member under both
     `JULES_RIVERS` and `JULES_OVERBANK`; the rose metadata and every shipped
-    configuration put it on `JULES_RIVERS`. See `UPSTREAM.md` §1.8.
+    configuration put it on `JULES_RIVERS`.
     """
     lake_water_conserve_method: Literal[1, 2] = 1
     """Selects the field used for lake evaporation conservation: 1 = fqw_lk, 2 = surf_roff."""
