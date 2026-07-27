@@ -172,6 +172,7 @@ class JulesRiversProps(_NvarsModel):
     Documented in the user guide (`ancillaries.nml.rst:1364`) as
     `logical(nvars)` but **absent from the vn7.9 rose metadata**, so the audit
     cannot see it. The gap is upstream's, not ours: `eraint_rfm_2ddata` sets it.
+    See `UPSTREAM.md` §2.1.
     """
     coordinate_file: str | None = None
     """The file to read coordinates for the river routing input grid from.

@@ -48,7 +48,11 @@ just
 
 `reference/jules-lsm.github.io/user_guide/doc/source/namelists/` — official JULES v7.9 RST docs for every namelist. This is the authoritative source for schema field definitions, types, and bounds. `reference/.../input/` documents the ASCII/NetCDF input data format.
 
-`reference/jules/rose-meta/` — the machine-readable spec shipped with the model (a sparse clone of MetOffice/jules; `reference/` is gitignored, never commit it). `jules-standalone/vn7.9/rose-meta.conf` is **not** the whole spec: it opens with an `import=` list of ten `jules-shared/*/vn7.9` packages, and blocks such as `jules_nvegparm` live only in the shared tree. Merging is per *setting*, not per section, imports first. `scripts/rose_meta_extract.py` does all of this; use the committed extract rather than re-parsing. Where the metadata and the RST docs contradict each other (e.g. `jules_cropparm=cfrac_s_io`, `ncpft` vs `npft`) the schemas follow the RST docs.
+`reference/jules/rose-meta/` — the machine-readable spec shipped with the model (a sparse clone of MetOffice/jules; `reference/` is gitignored, never commit it). `jules-standalone/vn7.9/rose-meta.conf` is **not** the whole spec: it opens with an `import=` list of ten `jules-shared/*/vn7.9` packages, and blocks such as `jules_nvegparm` live only in the shared tree. Merging is per *setting*, not per section, imports first. `scripts/rose_meta_extract.py` does all of this; use the committed extract rather than re-parsing.
+
+**When the two sources contradict each other, there is no blanket rule — decide on evidence and record it in `UPSTREAM.md`.** The tiebreaker is what the shipped `rose-stem` configurations actually do, since those are tested against the model itself. In practice the metadata has won every time so far (`cfrac_s_io` dimension, `yr_fch4_ref` type, `tmax_io` spelling), but not always: `JULES_RIVERS_PROPS::is_climatology` is documented only in the user guide and is missing from the metadata entirely. Note also that a namelist is not always documented in the RST file its name suggests — `JULES_RIVERS_PROPS` lives in `ancillaries.nml.rst`, and assuming otherwise has already produced one wrong conclusion.
+
+`UPSTREAM.md` (committed, repo root) is the running list of these discrepancies, cited by section number from the schema docstrings that depend on them. Add to it rather than burying the reasoning in `notes/`, which is gitignored.
 
 ### Postponed namelists
 

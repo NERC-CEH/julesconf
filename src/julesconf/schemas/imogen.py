@@ -57,6 +57,9 @@ class ImogenRunList(NamelistModel):
 
     Gives the year `fch4_ref`, `tau_ch4_ref` and `ch4_ppbv_ref` describe. Only
     used when `land_feed_ch4` is TRUE.
+
+    Typed `integer` by the rose metadata and `real` by the user guide; julesconf
+    follows the metadata. See `UPSTREAM.md` §1.2.
     """
     ch4_ppbv_ref: float = 1751.02
     """Atmospheric CH4 concentration at `yr_fch4_ref` (ppbv).
