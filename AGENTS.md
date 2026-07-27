@@ -15,3 +15,19 @@ uv sync --group dev --locked && just
 - `warn_inactive` compares value to schema default, not `model_fields_set`.
 - Tests: must `chdir` into `tmp_path`. Loobos has no crops/TRIFFID — use synthetic fixtures for those.
 - Docs: `zensical` (mkdocs-material), NOT sphinx — no `:class:`, `.. note::`, double-backtick, etc.
+
+## `notes/`
+
+Design and decision records. **Gitignored** — local to the maintainer's checkout, so never
+cite them from shipped code, docs or commit messages; quote the reasoning inline instead.
+Each carries a status banner; trust that over anything below.
+
+- `UPSTREAM.md` — the live register of JULES upstream defects: RST-vs-metadata contradictions, malformed rules, enums missing values still in use. Add to it whenever the two sources disagree.
+- `roadmap.md` — remaining julesconf work, per item and marked done/outstanding. The short answer to "what is left?"
+- `rose_implementation_log.md` — the rose integration, phase by phase, with findings and plan deviations; also holds the PR-message draft. The record of what was actually built and why.
+- `rose_converter.md` — pre-implementation design for rose→namelist. Still authoritative on the rose *file format* (§2) and on why rose ships no such converter itself (§1).
+- `rose_meta.md` — what the `rose-meta` tree contains. Track B (conditional validation) is built; **Track A, the version-upgrade macro generator, is unbuilt and this is its design doc.**
+- `schema_gap_inventory.md` — historical triage of the 290 vn7.9 members julesconf once lacked. The gap is now zero; keep it for the add/defer/out-of-scope reasoning.
+- `toml_config.md` — why TOML, the defaults policy, and the grouped `[[pft]]` form. Explains `PerElementDefault` and the all-or-none rule better than the code does.
+- `enum_migration.md` — inventory for the `int` → `IntEnum` conversion. **Phase 2a (17 fields) and 2b (3 fields) are genuinely outstanding.**
+- `docs_reorg.md` — the Diátaxis restructure of `docs/`, fully implemented. Consult §4 for where a new page belongs.
