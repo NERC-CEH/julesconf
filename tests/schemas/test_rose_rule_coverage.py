@@ -19,6 +19,7 @@ Everything here is hermetic: no network, no JULES checkout.
 
 import hashlib
 import json
+import re
 import tomllib
 from pathlib import Path
 
@@ -196,3 +197,47 @@ def test_todo_entries_carry_a_reason(disposition):
         if entry.get("status") == "todo" and not entry.get("reason")
     ]
     assert not silent, f"`todo` entries with no reason: {silent[:5]}"
+
+
+def test_no_todo_reason_names_something_julesconf_now_models():
+    """A `todo` reason of "does not model X" must still be true of X.
+
+    The gap this closes is the one that let 47 rules sit in the backlog with a
+    blocker that had stopped existing: a later phase modelled the member, and
+    nothing re-read the dispositions. Every other gate here checks that a rule
+    *has* a disposition, not that its stated reason still holds, so the file
+    rots in the one direction that hides available work rather than surfacing
+    it.
+
+    `jules_soil_ecosse` is the legitimate case and stays: it is a deliberate
+    scope exclusion, not a gap (see `AGENTS.md`).
+    """
+    from julesconf.schemas import JulesNamelists
+
+    disposition = tomllib.loads(DISPOSITION.read_text())
+
+    def modelled(name: str) -> bool:
+        """Whether `block` or `block=member` resolves against the schemas."""
+        block, _, member = name.partition("=")
+        for field in JulesNamelists.model_fields.values():
+            annotation = field.annotation
+            sub = getattr(annotation, "model_fields", None)
+            if sub is None or block not in sub:
+                continue
+            if not member:
+                return True
+            inner = sub[block].annotation
+            return member in (getattr(inner, "model_fields", None) or {})
+        return False
+
+    stale = []
+    for rule_id, entry in sorted(disposition.items()):
+        if entry.get("status") != "todo":
+            continue
+        match = re.search(r"does not model ([\w=]+)", entry.get("reason", ""))
+        if match and modelled(match.group(1)):
+            stale.append(f"{rule_id}: claims {match.group(1)} is not modelled")
+    assert not stale, (
+        "`todo` reasons that are no longer true — the member is modelled now,"
+        " so the rule is implementable:\n  " + "\n  ".join(stale)
+    )
