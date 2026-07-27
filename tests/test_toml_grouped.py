@@ -135,14 +135,21 @@ def test_multiple_violations_are_reported_together():
 
 
 def test_ntype_pivots_tile_map_ids_but_not_the_repeated_rsurf_std():
-    """`ntype` has exactly one pivotable member, and it is not `rsurf_std_io`.
+    """Every pivotable `ntype` member pivots, and `rsurf_std_io` is not one.
 
     `JULES_DEPOSITION_SPECIES` is a repeated group, so each species carries its
     own `ntype`-long surface-resistance array and there is no single value a
-    `[[pft]]` entry could hold; it stays in the flat form. `tile_map_ids` is an
-    ordinary `ntype` array and does pivot, onto every group in turn.
+    `[[pft]]` entry could hold; it stays in the flat form.
+    `JULES_DEPOSITION_SPECIES_SPECIFIC` is read once, so its four `ntype`
+    arrays pivot like `tile_map_ids` does, onto every group in turn.
     """
-    assert {spec.member for spec in SPECS_BY_DIM["ntype"]} == {"tile_map_ids"}
+    assert {spec.member for spec in SPECS_BY_DIM["ntype"]} == {
+        "tile_map_ids",
+        "ch4_up_flux_io",
+        "h2dd_c_io",
+        "h2dd_m_io",
+        "h2dd_q_io",
+    }
     assert "rsurf_std" not in set(Pft.model_fields) | set(Nvg.model_fields)
     for model in (Pft, CropPft, Nvg):
         assert "tile_map_ids" in model.model_fields
@@ -274,6 +281,25 @@ def test_usr_type_is_accepted_in_either_group():
     data = minimal_grouped(n_pft=2, n_nvg=2)
     data["nvg"][1]["type"] = "usr_type"
     assert assemble(data)
+
+
+def test_elevated_ice_may_claim_several_positions():
+    """`elev_ice` is an array too: one entry per elevation band."""
+    data = minimal_grouped(n_pft=2, n_nvg=3)
+    data["nvg"][1]["type"] = "elev_ice"
+    data["nvg"][2]["type"] = "elev_ice"
+
+    flat = assemble(data)
+    assert flat["jules_surface_types"]["jules_surface_types"]["elev_ice"] == [4, 5]
+
+
+def test_a_multi_band_elev_ice_round_trips_through_the_grouped_form():
+    data = minimal_grouped(n_pft=2, n_nvg=3)
+    data["nvg"][1]["type"] = "elev_ice"
+    data["nvg"][2]["type"] = "elev_ice"
+    expected = copy.deepcopy(data["nvg"])
+
+    assert disassemble(assemble(data))["nvg"] == expected
 
 
 def test_usr_type_may_claim_several_positions():

@@ -4,8 +4,9 @@ Reference: JULES user guide v7.9,
 `jules-lsm.github.io/user_guide/doc/source/namelists/jules_soil.nml.rst`
 """
 
+from collections.abc import Mapping
 from enum import IntEnum
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import Field, model_validator
 
@@ -28,7 +29,13 @@ class JulesSoil(NamelistModel):
     """`JULES_SOIL` namelist members."""
 
     sm_levels: int = Field(default=4, ge=1)
-    """Number of soil layers."""
+    """Number of soil layers.
+
+    Derived from the length of `dzsoil_io` when that is given and `sm_levels`
+    is not, so a configuration that lists the layer depths need not also state
+    how many there are. An explicit value always wins and is still checked
+    against `dzsoil_io`.
+    """
     l_vg_soil: bool = False
     """Switch for van Genuchten soil hydraulic model."""
     l_dpsids_dsdz: bool = False
@@ -69,6 +76,43 @@ class JulesSoil(NamelistModel):
     """The heat conductivity of the bedrock (W m⁻² K⁻¹)."""
     dzdeep: float = 0.5
     """The thickness of the bedrock layers (m)."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _derive_sm_levels(cls, data: Any) -> Any:
+        """Fill in `sm_levels` from the length of `dzsoil_io` when it is omitted.
+
+        A configuration that lists the layer depths has already said how many
+        layers there are, so restating the count is redundant. This fills the
+        gap and nothing more:
+
+        - An explicit `sm_levels` always wins. It is never overwritten, so
+          `_check_dzsoil_length` still catches a real disagreement between the
+          two rather than papering over it.
+        - The test is whether `sm_levels` appears in the *raw input*, not
+          whether it differs from the default, so a configuration that means
+          `sm_levels = 4` is indistinguishable from one that omits it only
+          when `dzsoil_io` also has four elements — in which case the two
+          answers coincide.
+
+        The `to_namelist_dict` round-trip is unaffected for the same reason:
+        it writes `sm_levels` explicitly, so the derivation does not fire, and
+        the value it writes came from a configuration the length check already
+        passed.
+        """
+        if not isinstance(data, Mapping):
+            return data
+        if data.get("sm_levels") is not None:
+            return data
+        dzsoil = data.get("dzsoil_io")
+        if dzsoil is None:
+            return data
+        # Fortran writes a one-element array indistinguishably from a scalar,
+        # which `NamelistModel` coerces to a list; either form means one layer.
+        length = len(dzsoil) if isinstance(dzsoil, (list, tuple)) else 1
+        if length == 0:
+            return data
+        return {**data, "sm_levels": length}
 
     @model_validator(mode="after")
     def _check_dzsoil_length(self) -> "JulesSoil":

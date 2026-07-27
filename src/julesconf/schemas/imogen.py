@@ -10,7 +10,7 @@ from typing import Annotated, ClassVar
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas._conditional import fail_if
+from julesconf.schemas._conditional import fail_if, warn_discouraged
 from julesconf.schemas.constraints import Fraction, name_or_value
 
 __all__ = [
@@ -175,7 +175,9 @@ class ImogenAnlgValsList(NamelistModel):
     diff_frac_const_imogen: Fraction = 0.4
     """Fraction of downward shortwave radiation assumed to be diffuse.
 
-    IMOGEN uses this in place of `JULES_DRIVE::diff_frac_const`.
+    IMOGEN uses this in place of `JULES_DRIVE::diff_frac_const`. Setting it to
+    zero is legal but leaves the run with no diffuse downward shortwave
+    radiation at all, which is rarely intended.
     """
     q2co2: float = 3.74
     """Radiative forcing due to doubling CO2 (W m⁻²)."""
@@ -207,6 +209,15 @@ class ImogenAnlgValsList(NamelistModel):
     One file per year, named `file_base_anom` followed by a four-digit year and
     `.nc`.
     """
+
+    @model_validator(mode="after")
+    def _warn_no_diffuse_radiation(self) -> "ImogenAnlgValsList":
+        """A zero diffuse fraction leaves the run with no diffuse shortwave."""
+        warn_discouraged(
+            self.diff_frac_const_imogen == 0,
+            "There will be no diffuse downward SW radiation",
+        )
+        return self
 
 
 class ImogenNamelist(NamelistModel):

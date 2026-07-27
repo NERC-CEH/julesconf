@@ -39,6 +39,7 @@ __all__ = [
     "WarningGroup",
     "WarningKind",
     "format_config_errors",
+    "format_cross_namelist_skipped",
     "format_validation_error",
     "format_warnings",
     "group_warnings",
@@ -225,6 +226,34 @@ def format_config_errors(errors: Iterable[ConfigError]) -> str:
         lines.extend(_wrap(error.message, "    ", hanging="      "))
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
+
+
+def format_cross_namelist_skipped(
+    directory_hint: str = "the namelists directory",
+) -> str:
+    """Render the notice that only one namelist file was checked.
+
+    Validating a single file runs that namelist's own rules and nothing else.
+    The rules that were not run are exactly the ones an error report locates as
+    `<cross-namelist>`, so the notice names them the same way: a reader who has
+    seen one report can tell which half of the checking they are missing.
+
+    Args:
+        directory_hint: How to refer to the whole configuration in the closing
+            suggestion.
+
+    Returns:
+        A wrapped, multi-line notice ending in a newline.
+    """
+    paragraphs = [
+        f"Checked this file alone. The {CROSS_NAMELIST} rules were skipped:"
+        " the list lengths tied to npft, ncpft, nnvg and ntype, which are"
+        " declared in jules_surface_types.nml, and the consistency rules that"
+        " read switches from more than one namelist.",
+        "This file passing does not mean the configuration is valid. Run"
+        f" julesconf validate on {directory_hint} to run those checks too.",
+    ]
+    return "\n\n".join("\n".join(_wrap(text, "")) for text in paragraphs) + "\n"
 
 
 @dataclasses.dataclass(frozen=True)

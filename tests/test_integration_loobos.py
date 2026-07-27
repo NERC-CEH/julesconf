@@ -20,6 +20,7 @@ and the `[[crop_pft]]` half of the grouped form never runs here. That cover
 lives in `test_toml_grouped.py`, and the two must be read together.
 """
 
+import tomllib
 import warnings
 from pathlib import Path
 
@@ -29,7 +30,9 @@ from conftest import assert_superset, flatten
 from julesconf.config import NamelistConfig
 from julesconf.schemas import JulesNamelists, UnknownNamelistKeyWarning
 
-LOOBOS = Path(__file__).resolve().parent.parent / "examples" / "loobos" / "namelists"
+LOOBOS_DIR = Path(__file__).resolve().parent.parent / "examples" / "loobos"
+LOOBOS = LOOBOS_DIR / "namelists"
+LOOBOS_TOML = LOOBOS_DIR / "loobos.toml"
 
 pytestmark = pytest.mark.skipif(
     not LOOBOS.is_dir(), reason="Loobos example data not present"
@@ -204,3 +207,43 @@ def test_explicit_values_in_real_config_are_preserved(loobos):
     """Loobos sets output_type via Fortran repeat syntax; it must not be replaced."""
     written = flatten(loobos.to_namelist_dict())
     assert written["output.jules_output_profile(1).output_type"] == ["M"] * 22
+
+
+# ---------------------------------------------------------------------------
+# The shipped example TOML
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.skipif(not LOOBOS_TOML.is_file(), reason="Loobos TOML not present")
+def test_shipped_example_toml_is_grouped_and_valid(tmp_path, monkeypatch):
+    """`examples/loobos/loobos.toml` is the grouped form, and it validates.
+
+    The docs point new users at this file, so it must use the `[[pft]]` /
+    `[[nvg]]` form they are told to write, and it must read without warnings.
+    Loobos has `ncpft = 0`, so there is deliberately no `[[crop_pft]]` half.
+    """
+    monkeypatch.chdir(tmp_path)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UnknownNamelistKeyWarning)
+        config = JulesNamelists.from_toml(LOOBOS_TOML)
+
+    raw = tomllib.loads(LOOBOS_TOML.read_text())
+    assert len(raw["pft"]) == 5
+    assert len(raw["nvg"]) == 4
+    assert "crop_pft" not in raw
+    assert "jules_surface_types" not in raw
+
+    surface = config.jules_surface_types.jules_surface_types
+    assert (surface.npft, surface.nnvg, surface.ncpft) == (5, 4, 0)
+
+
+@pytest.mark.skipif(not LOOBOS_TOML.is_file(), reason="Loobos TOML not present")
+def test_shipped_example_toml_round_trips(tmp_path, monkeypatch):
+    """Rewriting the example in grouped form reproduces the same config."""
+    monkeypatch.chdir(tmp_path)
+    config = JulesNamelists.from_toml(LOOBOS_TOML)
+    config.to_toml(tmp_path / "out.toml", grouped=True)
+
+    assert JulesNamelists.from_toml(tmp_path / "out.toml").model_dump() == (
+        config.model_dump()
+    )

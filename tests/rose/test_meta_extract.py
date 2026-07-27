@@ -313,7 +313,7 @@ def audit(extract) -> rme.Audit:
 
 def test_audit_counts_blocks_and_members(audit):
     counts = audit.counts
-    assert counts["blocks_shared"] == 54
+    assert counts["blocks_shared"] == 55
     assert counts["blocks_in_schemas"] == counts["blocks_shared"] + len(
         audit.schema_only_blocks
     )

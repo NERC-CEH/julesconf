@@ -5,7 +5,7 @@ Reference: JULES user guide v7.9,
 """
 
 from enum import IntEnum
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from pydantic import Field, model_validator
 
@@ -19,6 +19,7 @@ __all__ = [
     "JulesDeposition",
     "JulesDepositionNamelist",
     "JulesDepositionSpecies",
+    "JulesDepositionSpeciesSpecific",
 ]
 
 
@@ -149,11 +150,72 @@ class JulesDepositionSpecies(NamelistModel):
     ) = None
     """Three coefficients of the quadratic function relating dry deposition over ice to temperature."""
 
+    _FLEXIBLE_ONLY: ClassVar[tuple[str, ...]] = (
+        "dep_species_rmm_io",
+        "diffusion_coeff_io",
+        "rsurf_std_io",
+        "diffusion_corr_io",
+        "r_tundra_io",
+        "dd_ice_coeff_io",
+    )
+    """Members read only when `JULES_DEPOSITION::dry_dep_model` is `flexible_ukca`.
+
+    Every member of this block except `dep_species_name_io`, which the rose
+    metadata triggers on both values of `dry_dep_model`: the species still has
+    to be named whichever scheme is in use.
+    """
+
+
+class JulesDepositionSpeciesSpecific(NamelistModel):
+    """`JULES_DEPOSITION_SPECIES_SPECIFIC` namelist members.
+
+    Deposition parameters that apply to exactly one deposited species. Unlike
+    `JULES_DEPOSITION_SPECIES`, which JULES reads once per species, this block
+    is read **once** — the rose file definition is
+    `namelist:jules_deposition (namelist:jules_deposition_species(:))
+    (namelist:jules_deposition_species_specific)`, with no repeat marker on the
+    last group. It exists to keep species-specific parameters off every species
+    block, where all but one occurrence would be redundant.
+
+    Every member is read only when `JULES_DEPOSITION::dry_dep_model` is
+    `flexible_ukca`; the restricted scheme hard-wires them in the JULES source.
+    """
+
+    # CH4
+    ch4_scaling_io: NonNegFloat | None = None
+    """Scaling applied to methane soil uptake (dimensionless)."""
+    ch4_mml_io: NonNegFloat | None = None
+    """Factor converting the methane soil uptake flux (µg m⁻² h⁻¹) to a dry deposition velocity (m s⁻¹)."""
+    ch4dd_tundra_io: (
+        Annotated[list[float], Field(min_length=4, max_length=4)] | None
+    ) = None
+    """Four coefficients of the cubic polynomial relating methane loss for tundra to temperature, giving a flux in µg(CH4) m⁻² s⁻¹."""
+    ch4_up_flux_io: Annotated[list[NonNegFloat] | None, ListLen("ntype")] = None
+    """Methane uptake flux for each surface type (µg(CH4) m⁻² s⁻¹); one value per surface type."""
+
+    # H2
+    h2dd_c_io: Annotated[list[float] | None, ListLen("ntype")] = None
+    """Constant term of the quadratic relating hydrogen deposition to soil moisture (s m⁻¹); one value per surface type."""
+    h2dd_m_io: Annotated[list[float] | None, ListLen("ntype")] = None
+    """First order coefficient of the quadratic relating hydrogen deposition to soil moisture (s m⁻¹); one value per surface type."""
+    h2dd_q_io: Annotated[list[float] | None, ListLen("ntype")] = None
+    """Second order coefficient of the quadratic relating hydrogen deposition to soil moisture (s m⁻¹); one value per surface type."""
+
+    # O3
+    cuticle_o3_io: NonNegFloat | None = None
+    """Constant used in the calculation of cuticular resistance for ozone (s m⁻¹)."""
+    r_wet_soil_o3_io: NonNegFloat | None = None
+    """Wet soil surface resistance for ozone (s m⁻¹)."""
+
 
 class JulesDepositionNamelist(NamelistModel):
     """Top-level schema for `jules_deposition.nml`."""
 
     jules_deposition: JulesDeposition = JulesDeposition()
+    jules_deposition_species_specific: JulesDepositionSpeciesSpecific = (
+        JulesDepositionSpeciesSpecific()
+    )
+    """Parameters specific to a single deposited species. Read once, not once per species."""
     jules_deposition_species: list[JulesDepositionSpecies] = Field(default_factory=list)
     """One entry per `JULES_DEPOSITION_SPECIES` group, in file order.
 
@@ -170,4 +232,49 @@ class JulesDepositionNamelist(NamelistModel):
             self.jules_deposition.ndry_dep_species,
             count_member="JULES_DEPOSITION::ndry_dep_species",
         )
+        return self
+
+    @model_validator(mode="after")
+    def _warn_inactive_species_specific(self) -> "JulesDepositionNamelist":
+        """The species-specific block is read only by the flexible scheme.
+
+        The metadata triggers every one of its members on
+        `dry_dep_model == 2`: the restricted UKCA scheme hard-wires these
+        parameters in the JULES source and never reads the block.
+        """
+        deposition = self.jules_deposition
+        if not deposition.l_deposition:
+            because = "l_deposition is false"
+        elif deposition.dry_dep_model is not DryDepModel.flexible_ukca:
+            because = "dry_dep_model is not flexible_ukca"
+        else:
+            return self
+        warn_inactive(
+            self.jules_deposition_species_specific,
+            tuple(JulesDepositionSpeciesSpecific.model_fields),
+            because=because,
+        )
+        return self
+
+    @model_validator(mode="after")
+    def _warn_inactive_species_members(self) -> "JulesDepositionNamelist":
+        """Warn about per-species members the deposition scheme does not read.
+
+        With deposition off the whole group is inert; with the restricted UKCA
+        scheme only the species name is read, every other parameter being
+        hard-wired in the JULES source. Each occurrence is checked separately,
+        so a config with one over-specified species is reported once per
+        species, not once for the group.
+        """
+        deposition = self.jules_deposition
+        if not deposition.l_deposition:
+            members = tuple(JulesDepositionSpecies.model_fields)
+            because = "l_deposition is false"
+        elif deposition.dry_dep_model is not DryDepModel.flexible_ukca:
+            members = JulesDepositionSpecies._FLEXIBLE_ONLY
+            because = "dry_dep_model is not flexible_ukca"
+        else:
+            return self
+        for species in self.jules_deposition_species:
+            warn_inactive(species, members, because=because)
         return self

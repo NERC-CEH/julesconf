@@ -390,6 +390,219 @@ class TestValidate:
         assert "Error:" in result.output
 
 
+class TestValidateSingleNamelist:
+    def test_one_file_is_valid(self, cwd, namelists):
+        result = runner.invoke(app, ["validate", str(namelists / "jules_soil.nml")])
+        assert result.exit_code == 0
+        assert "is valid on its own" in result.output
+
+    def test_says_the_cross_namelist_checks_were_skipped(self, cwd, namelists):
+        result = runner.invoke(app, ["validate", str(namelists / "jules_soil.nml")])
+        assert "<cross-namelist> rules were skipped" in result.output
+        assert "does not mean the configuration is valid" in result.output
+
+    def test_the_caveat_survives_quiet(self, cwd, namelists):
+        """`--quiet` drops noise, not the statement of what was not checked."""
+        result = runner.invoke(
+            app, ["validate", str(namelists / "jules_soil.nml"), "-q"]
+        )
+        assert result.exit_code == 0
+        assert "is valid on its own" not in result.output
+        assert "<cross-namelist> rules were skipped" in result.output
+
+    def test_invalid_file_exits_one_and_locates_the_error(self, cwd, namelists):
+        break_namelist(cwd / namelists)
+        result = runner.invoke(app, ["validate", str(namelists / "jules_soil.nml")])
+        assert result.exit_code == 1
+        assert "Validation failed (1 error):" in result.output
+        assert "jules_soil.nml  JULES_SOIL  dzsoil_io" in result.output
+
+    def test_a_failure_within_the_file_is_still_reported(self, cwd, namelists):
+        """Only the *cross*-namelist rules are skipped, not the block's own."""
+        break_namelist(cwd / namelists)
+        result = runner.invoke(
+            app, ["validate", str(namelists / "jules_soil_biogeochem.nml")]
+        )
+        assert result.exit_code == 1
+        assert "soil_bgc_model" in result.output
+
+    def test_a_cross_namelist_failure_is_not_reported(self, cwd, namelists):
+        """A file whose only problem lies in another namelist passes alone.
+
+        `l_triffid` with the single-pool soil carbon model is rejected by the
+        whole-directory read, as `<cross-namelist>`. Reading `jules_vegetation`
+        on its own cannot see the soil model, which is exactly what the
+        skipped-checks notice warns about.
+        """
+        veg = namelists / "jules_vegetation.nml"
+        (cwd / veg).write_text(
+            re.sub(r"l_triffid=[^\n]*", "l_triffid=.true.,", (cwd / veg).read_text())
+        )
+        bgc = namelists / "jules_soil_biogeochem.nml"
+        (cwd / bgc).write_text(
+            re.sub(
+                r"soil_bgc_model=[^\n]*",
+                "soil_bgc_model='single_pool',",
+                (cwd / bgc).read_text(),
+            )
+        )
+        assert runner.invoke(app, ["validate", str(veg), "-q"]).exit_code == 0
+        assert runner.invoke(app, ["validate", str(bgc), "-q"]).exit_code == 0
+        result = runner.invoke(app, ["validate", str(namelists), "-q"])
+        assert result.exit_code == 1
+        assert "<cross-namelist>" in result.output
+
+    def test_length_check_is_skipped_not_run(self, cwd, namelists):
+        """`dzsoil_io` is checked against `sm_levels`, a sibling in the file.
+
+        The `npft`-length arrays are the ones that cannot be checked, since
+        `npft` lives in another file. Truncating one must therefore pass here
+        and fail on the directory.
+        """
+        path = cwd / namelists / "pft_params.nml"
+        path.write_text(
+            re.sub(r"canht_ft_io=[^\n]*", "canht_ft_io=19.01,", path.read_text())
+        )
+        assert (
+            runner.invoke(app, ["validate", "nml/pft_params.nml", "-q"]).exit_code == 0
+        )
+        assert runner.invoke(app, ["validate", str(namelists), "-q"]).exit_code == 1
+
+    def test_strict_escalates_warnings_to_a_failure(self, cwd, namelists):
+        path = cwd / namelists / "jules_soil.nml"
+        path.write_text(
+            path.read_text().replace("&jules_soil", "&jules_soil\n nonsense=1,")
+        )
+        assert (
+            runner.invoke(
+                app, ["validate", str(namelists / "jules_soil.nml")]
+            ).exit_code
+            == 0
+        )
+        result = runner.invoke(
+            app, ["validate", str(namelists / "jules_soil.nml"), "--strict"]
+        )
+        assert result.exit_code == 1
+        assert "UnknownNamelistKeyWarning" in result.output
+
+    def test_a_postponed_namelist_is_a_usage_error(self, cwd, namelists):
+        (cwd / namelists / "cable_pfts.nml").write_text("&cable_pfts\n/\n")
+        result = runner.invoke(app, ["validate", "nml/cable_pfts.nml"])
+        assert result.exit_code == 2
+        assert "deliberately does not model" in result.output
+
+    def test_an_unknown_namelist_name_is_a_usage_error(self, cwd, namelists):
+        (cwd / namelists / "notes.nml").write_text("&notes\n/\n")
+        result = runner.invoke(app, ["validate", "nml/notes.nml"])
+        assert result.exit_code == 2
+        assert "is not a JULES namelist file julesconf models" in result.output
+
+
+class TestFormat:
+    def formatted(self, cwd, *args: str) -> bytes:
+        result = runner.invoke(app, ["format", *args])
+        assert result.exit_code == 0, result.output
+        return (cwd / "config.toml").read_bytes()
+
+    def test_in_place_is_idempotent(self, cwd, config_toml):
+        once = self.formatted(cwd, str(config_toml), "--in-place", "-q")
+        twice = self.formatted(cwd, str(config_toml), "--in-place", "-q")
+        assert once == twice
+
+    def test_flat_form_is_idempotent(self, cwd, config_toml):
+        once = self.formatted(cwd, str(config_toml), "-i", "--flat", "-q")
+        twice = self.formatted(cwd, str(config_toml), "-i", "--flat", "-q")
+        assert once == twice
+        assert b"[[pft]]" not in once
+
+    def test_output_file_leaves_the_input_alone(self, cwd, config_toml):
+        before = (cwd / config_toml).read_bytes()
+        result = runner.invoke(app, ["format", str(config_toml), "-o", "tidy.toml"])
+        assert result.exit_code == 0
+        assert (cwd / config_toml).read_bytes() == before
+        assert (cwd / "tidy.toml").read_bytes() == before
+
+    def test_is_a_pure_reformat(self, cwd, config_toml, namelists):
+        """The namelists written before and after a reformat must agree."""
+        runner.invoke(app, ["convert", "toml2nml", str(config_toml), "-o", "before"])
+        runner.invoke(app, ["format", str(config_toml), "-i", "-q"])
+        runner.invoke(app, ["convert", "toml2nml", str(config_toml), "-o", "after"])
+        for path in sorted((cwd / "before").glob("*.nml")):
+            assert path.read_text() == (cwd / "after" / path.name).read_text()
+
+    def test_a_flat_config_is_canonicalised_to_the_grouped_form(self, cwd, namelists):
+        runner.invoke(
+            app, ["convert", "nml2toml", str(namelists), "-o", "flat.toml", "--flat"]
+        )
+        result = runner.invoke(app, ["format", "flat.toml", "-i", "-q"])
+        assert result.exit_code == 0
+        assert "[[pft]]" in (cwd / "flat.toml").read_text()
+
+    def test_enums_are_written_as_names(self, cwd, config_toml):
+        assert b'soilhc_method = "' in self.formatted(cwd, str(config_toml), "-i", "-q")
+
+    def test_refuses_to_write_an_invalid_config_and_leaves_it_alone(self, cwd):
+        broken = cwd / "config.toml"
+        broken.write_text('[jules_soil.jules_soil]\nsm_levels = "not a number"\n')
+        before = broken.read_bytes()
+        result = runner.invoke(app, ["format", "config.toml", "--in-place"])
+        assert result.exit_code == 1
+        assert "Validation failed" in result.output
+        assert broken.read_bytes() == before
+
+    def test_malformed_toml_is_left_alone(self, cwd):
+        broken = cwd / "config.toml"
+        broken.write_text("this is not = = toml\n")
+        result = runner.invoke(app, ["format", "config.toml", "-i"])
+        assert result.exit_code == 1
+        assert broken.read_text() == "this is not = = toml\n"
+
+    def test_no_destination_is_a_usage_error(self, cwd, config_toml):
+        result = runner.invoke(app, ["format", str(config_toml)])
+        assert result.exit_code == 2
+        assert "--in-place" in result.output
+
+    def test_both_destinations_is_a_usage_error(self, cwd, config_toml):
+        result = runner.invoke(
+            app, ["format", str(config_toml), "-o", "out.toml", "--in-place"]
+        )
+        assert result.exit_code == 2
+        assert not (cwd / "out.toml").exists()
+
+    def test_refuses_to_overwrite_the_output_without_the_flag(self, cwd, config_toml):
+        args = ["format", str(config_toml), "-o", "tidy.toml"]
+        assert runner.invoke(app, args).exit_code == 0
+        result = runner.invoke(app, args)
+        assert result.exit_code == 1
+        assert "--overwrite" in result.output
+        assert runner.invoke(app, [*args, "--overwrite"]).exit_code == 0
+
+    def test_a_directory_argument_is_a_usage_error(self, cwd, namelists):
+        result = runner.invoke(app, ["format", str(namelists), "-i"])
+        assert result.exit_code == 2
+
+    def test_strict_exits_one(self, cwd, config_toml):
+        path = cwd / config_toml
+        text = path.read_text().replace(
+            "[jules_soil.jules_soil]", "[jules_soil.jules_soil]\nnonsense = 1"
+        )
+        assert "nonsense" in text
+        path.write_text(text)
+        result = runner.invoke(app, ["format", str(config_toml), "-i", "--strict"])
+        assert result.exit_code == 1
+        assert path.read_text() == text
+        # Without --strict the unknown member is dropped, which is data loss the
+        # report has to name: a reformat is otherwise meant to change nothing.
+        result = runner.invoke(app, ["format", str(config_toml), "-i"])
+        assert result.exit_code == 0
+        assert "UnknownNamelistKeyWarning" in result.output
+        assert "nonsense" not in path.read_text()
+
+    def test_leaves_no_temporary_file_behind(self, cwd, config_toml):
+        runner.invoke(app, ["format", str(config_toml), "-i", "-q"])
+        assert sorted(p.name for p in cwd.glob(".*")) == []
+
+
 class TestRose2Nml:
     def test_happy_path(self, cwd):
         result = runner.invoke(

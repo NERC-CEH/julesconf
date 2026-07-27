@@ -57,6 +57,21 @@ default for — does not warn about every inactive member of every unused scheme
 
 ::: julesconf.schemas.InactiveNamelistKeyWarning
 
+### `DiscouragedValueWarning`
+
+A value JULES accepts and acts on, but which its own authors advise against: a
+deprecated option, a scheme tuned only for some other setting, or a value with a
+physical consequence that is rarely intended. These come from the `warn-if` rules
+in the JULES rose metadata, and the message is the JULES developers' own wording.
+
+This is the one warning here that does **not** mean anything was dropped, ignored
+or truncated — the setting takes effect exactly as written. Everything else on this
+page reports a limitation of how julesconf handles your config; this one reports a
+scientific opinion about the config itself. A project with a considered reason to
+disagree can filter this category alone and keep the rest.
+
+::: julesconf.schemas.DiscouragedValueWarning
+
 ### `ToleratedLengthWarning`
 
 Emitted when writing the [grouped TOML form](grouped.md) from a config whose TRIFFID

@@ -38,10 +38,18 @@ class JulesSurfaceTypes(NamelistModel):
     """Index of the urban canyon surface type (#601)."""
     urban_roof: int | None = None
     """Index of the urban roof surface type (#602)."""
-    elev_ice: int | None = None
-    """Indices of the elevated ice types (#901-925)."""
-    elev_rock: int | None = None
-    """Indices of the elevated non-glaciated bedrock types (#926-950)."""
+    elev_ice: list[int] | None = None
+    """Indices of the elevated ice types (#901-925).
+
+    An array: the elevated-tile (glacier/ice sheet) scheme divides the ice
+    surface into any number of elevation bands, each of which is its own
+    surface type. `-1` is the "not in use" sentinel.
+    """
+    elev_rock: list[int] | None = None
+    """Indices of the elevated non-glaciated bedrock types (#926-950).
+
+    An array, for the same reason as `elev_ice`.
+    """
     usr_type: list[int] | None = None
     """Indices of the user specified surface types (#10-99).
 
@@ -121,10 +129,16 @@ class JulesSurfaceTypes(NamelistModel):
         "ice",
         "urban_canyon",
         "urban_roof",
-        "elev_ice",
-        "elev_rock",
     )
     """Members naming a non-vegetated surface type, which must index past the PFTs."""
+
+    _NVG_ARRAY_MEMBERS: ClassVar[tuple[str, ...]] = ("elev_ice", "elev_rock")
+    """Non-vegetated members holding an *array* of surface type indices.
+
+    The elevated ice and bedrock schemes each define one surface type per
+    elevation band, so these carry the same constraints as `_NVG_MEMBERS` but
+    element by element.
+    """
 
     @model_validator(mode="after")
     def _check_ncpft(self) -> "JulesSurfaceTypes":
@@ -142,10 +156,13 @@ class JulesSurfaceTypes(NamelistModel):
         most `npft + nnvg`. `-1` is the "not used" sentinel for the elevated
         types.
 
-        `usr_type` is an array and is checked element by element. A user
-        type may be either vegetated or non-vegetated, so the user guide
-        gives it the whole of `1:ntype` and the metadata rule is
-        `any(this > npft + nnvg)` — an upper bound only, over a list.
+        `usr_type`, `elev_ice` and `elev_rock` are arrays and are checked
+        element by element. A user type may be either vegetated or
+        non-vegetated, so the user guide gives `usr_type` the whole of
+        `1:ntype` and the metadata rule is `any(this > npft + nnvg)` — an
+        upper bound only, over a list. `elev_ice` and `elev_rock` carry both
+        the metadata's `any(...)` rules, so each element must lie past the
+        PFTs unless it is the `-1` sentinel.
         """
         ntype = self.npft + self.nnvg
         for member in self._PFT_MEMBERS:
@@ -167,6 +184,20 @@ class JulesSurfaceTypes(NamelistModel):
                 f"{member}: PFTs must be grouped together first with"
                 " non-vegetated tiles following",
             )
+        for member in self._NVG_ARRAY_MEMBERS:
+            for index, value in enumerate(getattr(self, member) or ()):
+                if value == -1:
+                    continue
+                fail_if(
+                    value > ntype,
+                    f"{member}[{index}]: Pseudo level must be less than or"
+                    " equal to npft+nnvg",
+                )
+                fail_if(
+                    value <= self.npft,
+                    f"{member}[{index}]: PFTs must be grouped together first"
+                    " with non-vegetated tiles following",
+                )
         for index, value in enumerate(self.usr_type or ()):
             fail_if(
                 value > ntype,

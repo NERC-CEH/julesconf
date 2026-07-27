@@ -234,6 +234,28 @@ class JulesSurfHgt(NamelistModel):
     Only used with `use_file` = FALSE.
     """
 
+    @property
+    def elevations_are_absolute(self) -> bool:
+        """Whether any surface tile takes its elevation above sea level.
+
+        `l_elev_absolute_height` is itself read only when `zero_height` is
+        FALSE, so a config that zeroes every tile elevation answers `False`
+        however the array is filled in. This is what decides whether
+        `JULES_Z_LAND` is read at all.
+        """
+        if self.zero_height or not self.l_elev_absolute_height:
+            return False
+        return any(self.l_elev_absolute_height)
+
+    @model_validator(mode="after")
+    def _warn_inactive_members(self) -> "JulesSurfHgt":
+        """Warn about the members the elevation source makes inactive."""
+        if self.use_file:
+            warn_inactive(self, ("surf_hgt_io",), because="use_file is true")
+        else:
+            warn_inactive(self, ("file", "surf_hgt_name"), because="use_file is false")
+        return self
+
 
 class JulesZLand(NamelistModel):
     """`JULES_Z_LAND` namelist members.
@@ -270,6 +292,15 @@ class JulesZLand(NamelistModel):
     unaccompanied array marking.
     """
 
+    @model_validator(mode="after")
+    def _warn_inactive_members(self) -> "JulesZLand":
+        """Warn about the members the elevation source makes inactive."""
+        if self.use_file:
+            warn_inactive(self, ("z_land_io",), because="use_file is true")
+        else:
+            warn_inactive(self, ("file", "z_land_name"), because="use_file is false")
+        return self
+
 
 class ModelGridNamelist(NamelistModel):
     """Top-level schema for `model_grid.nml`."""
@@ -281,3 +312,28 @@ class ModelGridNamelist(NamelistModel):
     jules_nlsizes: JulesNlsizes = JulesNlsizes()
     jules_surf_hgt: JulesSurfHgt = JulesSurfHgt()
     jules_z_land: JulesZLand = JulesZLand()
+
+    @model_validator(mode="after")
+    def _warn_inactive_elevation_members(self) -> "ModelGridNamelist":
+        """Warn about the members `l_elev_absolute_height` makes inactive.
+
+        The two blocks are alternatives. With every tile elevation relative to
+        the gridbox mean — the usual case — `JULES_Z_LAND` is not read at all;
+        with any of them absolute, the forcing-data elevation in
+        `JULES_Z_LAND` takes over and `JULES_SURF_HGT::use_file` is ignored.
+        """
+        if self.jules_surf_hgt.elevations_are_absolute:
+            warn_inactive(
+                self.jules_surf_hgt,
+                ("use_file",),
+                because="some l_elev_absolute_height is true, so the tile"
+                " elevations come from jules_z_land",
+            )
+        else:
+            warn_inactive(
+                self.jules_z_land,
+                ("use_file", "surf_hgt_band"),
+                because="no l_elev_absolute_height is true, so jules_z_land is"
+                " not read",
+            )
+        return self

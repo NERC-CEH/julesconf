@@ -6,9 +6,10 @@ Reference: JULES user guide v7.9,
 
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._conditional import warn_inactive
 from julesconf.schemas.constraints import (
     Fraction,
     ListLen,
@@ -133,6 +134,23 @@ class JulesTriffid(NamelistModel):
     Unbounded: the user guide's `> 0` cannot be applied to the placeholder
     values the other PFTs must carry, and the rose metadata states no range.
     """
+
+    @model_validator(mode="after")
+    def _warn_inactive_harvest_members(self) -> "JulesTriffid":
+        """Warn about the harvest parameters no PFT harvests periodically.
+
+        `harvest_freq_io` and `harvest_ht_io` describe the periodic harvest
+        cycle, so JULES reads them only when some PFT sets
+        `harvest_type_io = 2`. Both carry a placeholder for every other PFT,
+        which is why the test is `any`, not "this element".
+        """
+        if not any(kind == 2 for kind in self.harvest_type_io or ()):
+            warn_inactive(
+                self,
+                ("harvest_freq_io", "harvest_ht_io"),
+                because="no PFT sets harvest_type_io = 2",
+            )
+        return self
 
 
 class TriffidParamsNamelist(NamelistModel):

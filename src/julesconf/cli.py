@@ -4,7 +4,8 @@ A thin shell over `julesconf.schemas.JulesNamelists` and `julesconf.rose`, so
 that validating a configuration or converting between the three file forms
 does not require writing any Python:
 
-    julesconf validate          <namelists-dir | config.toml> [--strict]
+    julesconf validate          <namelists-dir | config.toml | one.nml> [--strict]
+    julesconf format            <config.toml>    -o <config.toml> | --in-place
     julesconf convert rose2nml  <rose-app.conf>  -o <dir>
     julesconf convert rose2toml <rose-app.conf>  -o <config.toml>
     julesconf convert toml2nml  <config.toml>    -o <dir>
@@ -29,6 +30,7 @@ from __future__ import annotations
 import enum
 import tempfile
 import warnings
+from collections.abc import Callable
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _package_version
 from pathlib import Path
@@ -40,12 +42,13 @@ from rich.console import Console
 
 from julesconf._errors import (
     WarningGroup,
+    format_cross_namelist_skipped,
     format_validation_error,
     format_warnings,
     group_warnings,
 )
 from julesconf.rose import NamelistFiles, RoseApp, rose_to_namelists
-from julesconf.schemas import JulesNamelists
+from julesconf.schemas import JulesNamelists, NamelistModel
 
 __all__ = ["app"]
 
@@ -189,6 +192,36 @@ def _check_output(path: Path, overwrite: bool) -> None:
 # ----------------------------------------------------------------------
 
 
+def _guarded[T](read: Callable[[], T]) -> tuple[T, list[WarningGroup]]:
+    """Run a library read, reporting whatever it raises or warns about.
+
+    Args:
+        read: A zero-argument call into `julesconf.schemas`.
+
+    Returns:
+        Whatever `read` returned and the warnings it raised.
+
+    Raises:
+        typer.Exit: With code 1 if the read failed for any reason.
+    """
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        try:
+            value = read()
+        except ValidationError as exc:
+            _report_warnings(group_warnings(caught), quiet=False)
+            _report_validation_error(exc)
+            raise typer.Exit(1) from None
+        except Warning as exc:
+            # `strict` turns julesconf's own warnings into raised warnings.
+            _report_warnings(group_warnings(caught), quiet=False)
+            raise _fail(f"{type(exc).__name__}: {exc}") from None
+        except (ValueError, OSError) as exc:
+            raise _fail(f"{type(exc).__name__}: {exc}") from None
+
+    return value, group_warnings(caught)
+
+
 def _load(target: Path, *, strict: bool) -> tuple[JulesNamelists, list[WarningGroup]]:
     """Read a config from a namelists directory or a TOML file.
 
@@ -212,22 +245,33 @@ def _load(target: Path, *, strict: bool) -> tuple[JulesNamelists, list[WarningGr
             f"{target} is neither a namelists directory nor a .toml file"
         )
 
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        try:
-            config = read(target, strict=strict)
-        except ValidationError as exc:
-            _report_warnings(group_warnings(caught), quiet=False)
-            _report_validation_error(exc)
-            raise typer.Exit(1) from None
-        except Warning as exc:
-            # `strict` turns julesconf's own warnings into raised warnings.
-            _report_warnings(group_warnings(caught), quiet=False)
-            raise _fail(f"{type(exc).__name__}: {exc}") from None
-        except (ValueError, OSError) as exc:
-            raise _fail(f"{type(exc).__name__}: {exc}") from None
+    return _guarded(lambda: read(target, strict=strict))
 
-    return config, group_warnings(caught)
+
+def _load_namelist_file(
+    target: Path, *, strict: bool
+) -> tuple[NamelistModel, list[WarningGroup]]:
+    """Read and validate one `.nml` file against its own schema.
+
+    Args:
+        target: A single `.nml` file.
+        strict: Escalate julesconf's warnings to errors.
+
+    Returns:
+        The validated namelist block and the warnings raised reading it.
+
+    Raises:
+        typer.Exit: With code 2 if the file is not a namelist julesconf
+            models, or code 1 if it is invalid.
+    """
+    try:
+        JulesNamelists.namelist_field(target)
+    except ValueError as exc:
+        # A path that names no schema is a mistake in the command line, not an
+        # invalid configuration, so it is a usage error like `notes.txt` is.
+        raise typer.BadParameter(str(exc)) from None
+
+    return _guarded(lambda: JulesNamelists.from_namelist_file(target, strict=strict))
 
 
 def _convert_rose(conf: Path, on_unbound: OnUnbound) -> NamelistFiles:
@@ -313,17 +357,32 @@ def validate(
         Path,
         typer.Argument(
             exists=True,
-            help="A namelists directory, or a .toml config file.",
+            help="A namelists directory, a .toml config file, or one .nml file.",
         ),
     ],
     strict: _Strict = False,
     quiet: _Quiet = False,
 ) -> None:
-    """Validate a JULES configuration.
+    """Validate a JULES configuration, or a single namelist file.
 
-    The argument may be a directory of `.nml` files or a `.toml` config in
-    either form; which one it is is detected from the path.
+    The argument may be a directory of `.nml` files, a `.toml` config in
+    either form, or one `.nml` file; which one it is is detected from the path.
+
+    A single `.nml` file is checked against its own schema only. The rules
+    spanning more than one namelist cannot run on it and are skipped, which the
+    report says plainly.
     """
+    if target.is_file() and target.suffix == ".nml":
+        _, groups = _load_namelist_file(target, strict=strict)
+        _report_warnings(groups, quiet=quiet)
+        # Always printed, even under --quiet: it says what was *not* checked,
+        # so suppressing it would make a passing exit code mean more than it
+        # does. --quiet drops noise, not caveats.
+        err.print(format_cross_namelist_skipped(), style="yellow")
+        if not quiet:
+            out.print(f"{target} is valid on its own.", style="green")
+        return
+
     config, groups = _load(target, strict=strict)
     _report_warnings(groups, quiet=quiet)
     if not quiet:
@@ -333,6 +392,58 @@ def validate(
             f"(npft={surface.npft}, ncpft={surface.ncpft}, nnvg={surface.nnvg}).",
             style="green",
         )
+
+
+@app.command(name="format")
+def format_config(
+    config_file: Annotated[
+        Path,
+        typer.Argument(exists=True, dir_okay=False, help="Path to a .toml config."),
+    ],
+    output: Annotated[
+        Path | None,
+        typer.Option("--output", "-o", help="Destination .toml file."),
+    ] = None,
+    in_place: Annotated[
+        bool,
+        typer.Option("--in-place", "-i", help="Rewrite the input file itself."),
+    ] = False,
+    flat: _Flat = False,
+    strict: _Strict = False,
+    overwrite: _Overwrite = False,
+    quiet: _Quiet = False,
+) -> None:
+    """Rewrite a TOML config in julesconf's canonical form.
+
+    A pure reformat: the config is read, validated and written back out the way
+    `convert nml2toml` writes one — enum members by name, the grouped
+    `[[pft]]` / `[[crop_pft]]` / `[[nvg]]` form unless `--flat`, and the block
+    order the schemas declare. Nothing is added, removed or reinterpreted, so
+    running it twice gives the same bytes as running it once.
+
+    The config must validate first. An invalid config is reported and nothing
+    is written, so a reformat can never quietly discard a half-finished edit.
+
+    Pass either `-o` for a new file or `--in-place` to rewrite the input.
+    """
+    if in_place and output is not None:
+        raise typer.BadParameter("pass either --in-place or --output, not both")
+    if not in_place and output is None:
+        raise typer.BadParameter(
+            "pass --output/-o to write a new file, or --in-place to rewrite "
+            f"{config_file}"
+        )
+
+    destination = config_file if output is None else output
+    if output is not None:
+        _check_output(output, overwrite)
+
+    config, groups = _load(config_file, strict=strict)
+    _report_warnings(groups, quiet=quiet)
+    _write_toml(config, destination, flat=flat)
+    if not quiet:
+        form = "flat" if flat else "grouped"
+        out.print(f"Wrote {form} TOML config to {destination}.", style="green")
 
 
 @convert_app.command()

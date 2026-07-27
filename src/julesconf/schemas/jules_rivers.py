@@ -5,7 +5,7 @@ Reference: JULES user guide v7.9,
 """
 
 from enum import IntEnum
-from typing import Annotated, ClassVar, Literal
+from typing import Annotated, ClassVar
 
 from pydantic import Field, model_validator
 
@@ -17,7 +17,10 @@ __all__ = [
     "JulesOverbank",
     "JulesRivers",
     "JulesRiversNamelist",
+    "LakeWaterConserveMethod",
+    "OverbankModel",
     "RiverRoutingAlgorithm",
+    "TripGlobeShape",
 ]
 
 
@@ -27,6 +30,28 @@ class RiverRoutingAlgorithm(IntEnum):
     um_trip = 1
     rfm = 2
     standalone_trip = 3
+
+
+class LakeWaterConserveMethod(IntEnum):
+    """Field used for water conservation of lake evaporation (`lake_water_conserve_method`)."""
+
+    fqw_surft = 1
+    elake_surft = 2
+
+
+class TripGlobeShape(IntEnum):
+    """Shape of the Earth in the UM-TRIP routing scheme (`trip_globe_shape`)."""
+
+    spherical = 1
+    ellipsoidal = 2
+
+
+class OverbankModel(IntEnum):
+    """Choice of overbank inundation model (`overbank_model`)."""
+
+    simple = 1
+    simple_rosgen = 2
+    hypsometric = 3
 
 
 class JulesRivers(NamelistModel):
@@ -70,10 +95,14 @@ class JulesRivers(NamelistModel):
     `JULES_RIVERS` and `JULES_OVERBANK`; the rose metadata and every shipped
     configuration put it on `JULES_RIVERS`.
     """
-    lake_water_conserve_method: Literal[1, 2] = 1
-    """Selects the field used for lake evaporation conservation: 1 = fqw_lk, 2 = surf_roff."""
-    trip_globe_shape: Literal[1, 2] = 2
-    """Earth shape used in the UM-TRIP scheme: 1 = spherical, 2 = ellipsoidal."""
+    lake_water_conserve_method: Annotated[
+        LakeWaterConserveMethod, name_or_value(LakeWaterConserveMethod)
+    ] = LakeWaterConserveMethod.fqw_surft
+    """Selects the field used for lake evaporation conservation: `fqw_surft` (1), `elake_surft` (2)."""
+    trip_globe_shape: Annotated[TripGlobeShape, name_or_value(TripGlobeShape)] = (
+        TripGlobeShape.ellipsoidal
+    )
+    """Earth shape used in the UM-TRIP scheme: `spherical` (1), `ellipsoidal` (2)."""
 
     _ROUTING_ONLY: ClassVar[dict[str, tuple[RiverRoutingAlgorithm, ...]]] = {
         "cland": (RiverRoutingAlgorithm.rfm,),
@@ -133,8 +162,8 @@ class JulesRivers(NamelistModel):
 class JulesOverbank(NamelistModel):
     """`JULES_OVERBANK` namelist members."""
 
-    overbank_model: Literal[1, 2, 3] | None = None
-    """Choice of overbank inundation model: 1 = simple, 2 = LISFLOOD, 3 = probability."""
+    overbank_model: Annotated[OverbankModel, name_or_value(OverbankModel)] | None = None
+    """Choice of overbank inundation model: `simple` (1, allometric river width), `simple_rosgen` (2, allometric width and depth with the Rosgen entrenchment ratio), `hypsometric` (3, hypsometric integral; recommended)."""
     riv_c: float | None = Field(default=None, ge=0)
     """Coefficient in river depth allometry (dimensionless). Suggested: 0.27."""
     riv_f: float | None = Field(default=None, ge=0)

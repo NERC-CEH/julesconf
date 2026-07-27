@@ -18,6 +18,13 @@ severities, which julesconf deliberately treats differently:
     believes it is doing something — but it is not an error, so it raises
     `InactiveNamelistKeyWarning` instead.
 
+`warn-if`
+:   The value is used, and the run will proceed, but JULES's own authors advise
+    against it: a deprecated option, a scheme tuned only for some other
+    setting, a value with a surprising physical consequence. This is the one
+    severity that says nothing about whether the value takes effect — it does —
+    so it raises `DiscouragedValueWarning`.
+
 Which rules are implemented, and which are deliberately not, is tracked in
 `tests/data/rose_meta/rules_disposition.toml` and gated by
 `tests/schemas/test_rose_rule_coverage.py`.
@@ -27,13 +34,18 @@ import warnings
 from collections.abc import Iterable
 from typing import Any
 
+from pydantic.fields import FieldInfo
+
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas.constraints import PerElementDefault
 
 __all__ = [
+    "DiscouragedValueWarning",
     "InactiveNamelistKeyWarning",
     "check_group_count",
     "fail_if",
     "is_specified",
+    "warn_discouraged",
     "warn_inactive",
 ]
 
@@ -68,6 +80,52 @@ class InactiveNamelistKeyWarning(UserWarning):
     """
 
 
+class DiscouragedValueWarning(UserWarning):
+    """A value JULES accepts and uses, but which its authors advise against.
+
+    The `warn-if` half of the rose metadata, and the only one of julesconf's
+    warnings that does *not* mean something is being ignored or dropped. The
+    setting takes effect exactly as written; upstream simply thinks it is a
+    poor choice — a deprecated canopy model, a scheme tuned only for some other
+    substrate, a value with a physical consequence the author may not have
+    intended.
+
+    That distinction matters when deciding what to escalate.
+    `UnknownNamelistKeyWarning`, `PostponedNamelistWarning` and
+    `RepeatedNamelistGroupWarning` all mean part of the configuration is
+    silently lost, and `InactiveNamelistKeyWarning` means part of it does
+    nothing. Those are defects in the config *as julesconf handles it*. This
+    one is a scientific opinion held by the JULES developers, so a project with
+    a considered reason to disagree can filter it alone:
+
+        import warnings
+
+        from julesconf.schemas import DiscouragedValueWarning
+
+        warnings.simplefilter("ignore", DiscouragedValueWarning)
+
+    or, in a pipeline that should not ship a discouraged option, escalate it
+    the same way:
+
+        warnings.simplefilter("error", DiscouragedValueWarning)
+    """
+
+
+def warn_discouraged(condition: Any, reason: str) -> None:
+    """Warn with `reason` when a rose `warn-if` condition holds.
+
+    The mirror of `fail_if`, for the advisory severity.
+
+    Args:
+        condition: The rule's condition, already evaluated.
+        reason: The message to warn with. Where upstream supplies a `#` comment
+            on the rule, that comment is used verbatim — the JULES developers'
+            wording carries their intent better than a paraphrase.
+    """
+    if condition:
+        warnings.warn(reason, DiscouragedValueWarning, stacklevel=3)
+
+
 def is_specified(model: NamelistModel, member: str) -> bool:
     """Return whether a member holds a value other than its schema default.
 
@@ -81,6 +139,14 @@ def is_specified(model: NamelistModel, member: str) -> bool:
         model: The block holding the member.
         member: Name of the member.
 
+    A list field marked `PerElementDefault` declares its default twice: `None`
+    on the field, and a scalar that `to_namelist_dict` repeats to the full
+    length of the dimension, because Fortran namelist input does not broadcast.
+    Both spellings mean "the author said nothing", so a list whose every
+    element is that scalar counts as unspecified too — otherwise a config would
+    acquire warnings simply by being written out and read back, which is the
+    exact failure this helper exists to prevent.
+
     Returns:
         `True` if the member exists, is not `None`, and differs from the
         default declared for it.
@@ -91,7 +157,27 @@ def is_specified(model: NamelistModel, member: str) -> bool:
     value = getattr(model, member, None)
     if value is None:
         return False
-    return bool(value != field.get_default(call_default_factory=True))
+    if value == field.get_default(call_default_factory=True):
+        return False
+    per_element = _per_element_default(field)
+    if per_element is None or not isinstance(value, list):
+        return True
+    return not all(element == per_element.value for element in value)
+
+
+def _per_element_default(field: FieldInfo) -> PerElementDefault | None:
+    """Return the `PerElementDefault` marking `field`, if it carries one.
+
+    Deliberately a local reimplementation of
+    `julesconf.schemas._namelists.find_per_element_default`: `_namelists`
+    imports this module, so importing it back would be circular. Like that
+    one, it looks only at the outermost `Annotated`, which is where
+    `PerElementDefault` has to sit to be seen at all.
+    """
+    for meta in field.metadata:
+        if isinstance(meta, PerElementDefault):
+            return meta
+    return None
 
 
 def warn_inactive(

@@ -4,15 +4,68 @@ Reference: JULES user guide v7.9,
 `jules-lsm.github.io/user_guide/doc/source/namelists/jules_snow.nml.rst`
 """
 
+from enum import IntEnum
 from typing import Annotated
 
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
 from julesconf.schemas._conditional import warn_inactive
-from julesconf.schemas.constraints import ListLen, PerElementDefault
+from julesconf.schemas.constraints import ListLen, PerElementDefault, name_or_value
 
-__all__ = ["JulesSnow", "JulesSnowNamelist"]
+__all__ = [
+    "BasalMeltingOpt",
+    "FracSnowSublMelt",
+    "GrainGrowthOpt",
+    "GraupelOptions",
+    "JulesSnow",
+    "JulesSnowNamelist",
+    "RelayerOpt",
+    "SnowCondParm",
+]
+
+
+class FracSnowSublMelt(IntEnum):
+    """Use of snow-cover fraction in sublimation and melting (`frac_snow_subl_melt`)."""
+
+    off = 0
+    on = 1
+
+
+class GraupelOptions(IntEnum):
+    """Treatment of graupel in the snow scheme (`graupel_options`)."""
+
+    include_as_snowfall = 0
+    ignore = 1
+    treat_separately = 2
+
+
+class SnowCondParm(IntEnum):
+    """Parametrization of snow conductivity (`i_snow_cond_parm`)."""
+
+    yen1981 = 0
+    calonne2011 = 1
+
+
+class GrainGrowthOpt(IntEnum):
+    """Rate of growth of snow grains (`i_grain_growth_opt`)."""
+
+    marshall1989 = 0
+    taillandier2007_et = 1
+
+
+class RelayerOpt(IntEnum):
+    """Method of relayering the multi-layer snow pack (`i_relayer_opt`)."""
+
+    original = 0
+    inverse_grain_size = 1
+
+
+class BasalMeltingOpt(IntEnum):
+    """Treatment of melting at the base of the snow pack (`i_basal_melting_opt`)."""
+
+    none = 0
+    instantaneous = 1
 
 
 class JulesSnow(NamelistModel):
@@ -22,10 +75,14 @@ class JulesSnow(NamelistModel):
     """Maximum possible number of snow layers."""
     l_snowdep_surf: bool = False
     """Use equivalent canopy snow depth for surface calculations on snow canopy tiles."""
-    frac_snow_subl_melt: int = Field(default=0, ge=0, le=1)
-    """Switch for use of snow-cover fraction in the calculation of sublimation and melting."""
-    graupel_options: int = Field(default=0, ge=0, le=2)
-    """Switch for treatment of graupel in the snow scheme."""
+    frac_snow_subl_melt: Annotated[
+        FracSnowSublMelt, name_or_value(FracSnowSublMelt)
+    ] = FracSnowSublMelt.off
+    """Switch for use of snow-cover fraction in the calculation of sublimation and melting: `off` (0), `on` (1)."""
+    graupel_options: Annotated[GraupelOptions, name_or_value(GraupelOptions)] = (
+        GraupelOptions.include_as_snowfall
+    )
+    """Switch for treatment of graupel in the snow scheme: `include_as_snowfall` (0), `ignore` (1), `treat_separately` (2)."""
 
     # Length nsmax (only used if nsmax > 0)
     dzsnow: Annotated[list[float] | None, ListLen("nsmax")] = None
@@ -90,8 +147,8 @@ class JulesSnow(NamelistModel):
     """Constant term in the background unloading rate for snow on the canopy."""
     unload_rate_u: Annotated[list[float] | None, ListLen("npft")] = None
     """Term proportional to wind speed in the background unloading rate for snow on canopy."""
-    i_snow_cond_parm: int | None = Field(default=None, ge=0, le=1)
-    """Scheme used to calculate the conductivity of snow."""
+    i_snow_cond_parm: Annotated[SnowCondParm, name_or_value(SnowCondParm)] | None = None
+    """Scheme used to calculate the conductivity of snow: `yen1981` (0), `calonne2011` (1)."""
     l_et_metamorph: bool = False
     """Include the effect of thermal metamorphism on the snow density."""
     l_snow_infilt: bool = False
@@ -106,12 +163,18 @@ class JulesSnow(NamelistModel):
     """Constant in parametrization of thermal metamorphism."""
     rho_snow_et_crit: float | None = None
     """Critical density in parametrization of thermal metamorphism."""
-    i_grain_growth_opt: int = Field(default=0, ge=0, le=1)
-    """Scheme used to calculate the rate of growth of snow grains."""
-    i_relayer_opt: int = Field(default=0, ge=0, le=1)
-    """Scheme used to relayer the snowpack."""
-    i_basal_melting_opt: int = Field(default=0, ge=0, le=1)
-    """Option to treat basal melting of the snow pack."""
+    i_grain_growth_opt: Annotated[GrainGrowthOpt, name_or_value(GrainGrowthOpt)] = (
+        GrainGrowthOpt.marshall1989
+    )
+    """Scheme used to calculate the rate of growth of snow grains: `marshall1989` (0), `taillandier2007_et` (1)."""
+    i_relayer_opt: Annotated[RelayerOpt, name_or_value(RelayerOpt)] = (
+        RelayerOpt.original
+    )
+    """Scheme used to relayer the snowpack: `original` (0), `inverse_grain_size` (1)."""
+    i_basal_melting_opt: Annotated[BasalMeltingOpt, name_or_value(BasalMeltingOpt)] = (
+        BasalMeltingOpt.none
+    )
+    """Option to treat basal melting of the snow pack: `none` (0), `instantaneous` (1)."""
 
     @model_validator(mode="after")
     def _check_dzsnow_length(self) -> "JulesSnow":

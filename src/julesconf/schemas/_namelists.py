@@ -17,15 +17,18 @@ field julesconf holds a default for is written explicitly, so the namelists
 fully determine the run rather than relying on JULES's internal defaults.
 """
 
+import contextlib
 import tomllib
 import warnings
+from collections.abc import Iterator
 from enum import IntEnum
+from functools import cache
 from os import PathLike
 from pathlib import Path
 from typing import Any, get_args
 
 import tomli_w
-from pydantic import model_validator
+from pydantic import BaseModel, create_model, model_validator
 from pydantic.fields import FieldInfo
 
 from julesconf.schemas._base import (
@@ -35,7 +38,11 @@ from julesconf.schemas._base import (
     _warn_repeated_groups,
     repeated_group_model,
 )
-from julesconf.schemas._conditional import fail_if, warn_inactive
+from julesconf.schemas._conditional import (
+    fail_if,
+    warn_discouraged,
+    warn_inactive,
+)
 from julesconf.schemas.ancillaries import AncillariesNamelist
 from julesconf.schemas.constraints import (
     SIBLING_DIMS,
@@ -77,6 +84,21 @@ __all__ = [
     "JulesNamelists",
     "PostponedNamelistWarning",
 ]
+
+_STANDALONE_TEMP_FIXES = (
+    "l_dtcanfix",
+    "l_fix_alb_ice_thick",
+    "l_fix_albsnow_ts",
+    "l_fix_neg_snow",
+    "l_fix_ustar_dust",
+    "l_fix_wind_snow",
+)
+"""`JULES_TEMP_FIXES` members upstream expects to be true in standalone JULES.
+
+The six boolean members carrying a rose rule of the form "this should be
+`.true.` in JULES standalone". `ctile_orog_fix` carries the seventh but is an
+enum rather than a switch, so it is checked separately.
+"""
 
 POSTPONED_NAMELISTS = frozenset(
     {
@@ -292,6 +314,52 @@ def _expand_per_element_defaults(
             data[field_name] = [meta.value] * length
 
 
+@contextlib.contextmanager
+def _strict_warnings(strict: bool) -> Iterator[None]:
+    """Escalate the warnings `strict` covers, for the duration of the block.
+
+    Args:
+        strict: If `True`, turn everything julesconf cannot represent into an
+            error. If `False`, the block runs under the ambient filters.
+
+    Yields:
+        Nothing; the context is entered for its warning filter alone.
+    """
+    with warnings.catch_warnings():
+        if strict:
+            warnings.simplefilter("error", UnknownNamelistKeyWarning)
+            warnings.simplefilter("error", RepeatedNamelistGroupWarning)
+        yield
+
+
+@cache
+def _single_namelist_model(name: str) -> type[BaseModel]:
+    """Build a one-field wrapper model around a single namelist's schema.
+
+    Validating `jules_soil.nml` on its own could call
+    `JulesSoilNamelist.model_validate` directly, but then pydantic would locate
+    a failure at `('jules_soil', 'dzsoil_io')` — block, member — where the same
+    failure found by a whole-directory read is located at
+    `('jules_soil', 'jules_soil', 'dzsoil_io')` — file, block, member. Wrapping
+    the model in a single-field model named after the file restores the leading
+    element, so `julesconf._errors` renders the two identically with no special
+    case of its own.
+
+    Args:
+        name: A field of `JulesNamelists`, which is also the `.nml` stem.
+
+    Returns:
+        A model with exactly that one required field. Cached, so repeated
+        validation of the same namelist does not rebuild it.
+    """
+    info = JulesNamelists.model_fields[name]
+    return create_model(
+        f"Single_{name}",
+        __module__=__name__,
+        **{name: (info.annotation, ...)},  # type: ignore[call-overload]
+    )
+
+
 class JulesNamelists(NamelistModel):
     """Schema for a complete JULES namelists directory.
 
@@ -373,10 +441,7 @@ class JulesNamelists(NamelistModel):
         """
         from julesconf.schemas._grouped import assemble, is_grouped
 
-        with warnings.catch_warnings():
-            if strict:
-                warnings.simplefilter("error", UnknownNamelistKeyWarning)
-                warnings.simplefilter("error", RepeatedNamelistGroupWarning)
+        with _strict_warnings(strict):
             if allow_grouped and is_grouped(data):
                 data = assemble(data)
             return cls.model_validate(data)
@@ -407,6 +472,76 @@ class JulesNamelists(NamelistModel):
 
         _warn_postponed_files(directory)
         return cls._validate(NamelistConfig().read(directory), strict=strict)
+
+    @classmethod
+    def namelist_field(cls, path: str | PathLike) -> str:
+        """Resolve a `.nml` path to the field of this model it belongs to.
+
+        The fields of `JulesNamelists` are named one-to-one after the namelist
+        files, so the mapping is the file stem. This is the same correspondence
+        `from_namelists` relies on, exposed so that a caller holding one file
+        can find its schema without hard-coding a second copy of the table.
+
+        Args:
+            path: Path to a `.nml` file. Only its stem is looked at; the file
+                does not have to exist.
+
+        Returns:
+            The field name, which is also the name of the namelist.
+
+        Raises:
+            ValueError: If the stem is not a namelist julesconf models, either
+                because it is one of `POSTPONED_NAMELISTS` or because it is not
+                a JULES namelist at all.
+        """
+        name = Path(path).stem
+        if name in POSTPONED_NAMELISTS:
+            raise ValueError(
+                f"{name}.nml is a JULES namelist that julesconf deliberately"
+                " does not model, so there is nothing to validate it against"
+            )
+        if name not in cls.model_fields:
+            raise ValueError(
+                f"{name}.nml is not a JULES namelist file julesconf models;"
+                f" expected one of: {', '.join(sorted(cls.model_fields))}"
+            )
+        return name
+
+    @classmethod
+    def from_namelist_file(
+        cls, path: str | PathLike, *, strict: bool = False
+    ) -> NamelistModel:
+        """Read and validate a **single** namelist file against its own schema.
+
+        The file is matched to its schema by name, exactly as `from_namelists`
+        does — `jules_soil.nml` against the `jules_soil` field of this model.
+
+        Only that namelist's own rules are applied. The cross-namelist rules
+        live on `JulesNamelists` and cannot run here: the list-length checks
+        need the dimensions declared in `jules_surface_types.nml`, and the
+        consistency rules read switches from other files. A file that passes
+        this check may still be rejected by `from_namelists`, so this is a
+        faster, weaker check and not a substitute for validating the directory.
+
+        Args:
+            path: Path to one `.nml` file.
+            strict: If `True`, raise on anything julesconf cannot represent, as
+                `from_namelists` does.
+
+        Returns:
+            The validated namelist model — the same object `from_namelists`
+            would leave on the corresponding field of `JulesNamelists`.
+
+        Raises:
+            ValueError: If the file is not a namelist julesconf models.
+        """
+        from julesconf.config import NamelistFileHandler
+
+        name = cls.namelist_field(path)
+        data = NamelistFileHandler().read(path)
+        with _strict_warnings(strict):
+            wrapper = _single_namelist_model(name).model_validate({name: data})
+        return getattr(wrapper, name)
 
     @classmethod
     def from_toml(
@@ -503,9 +638,22 @@ class JulesNamelists(NamelistModel):
                 `False` for the flat form, which mirrors the namelists exactly
                 and is the more faithful choice when migrating a config whose
                 arrays are longer than JULES reads.
+
+        The file is replaced only once it has been rendered in full: the TOML
+        is written to a temporary file beside the destination and moved into
+        place. Nothing can therefore leave a half-written config behind, which
+        matters most when the destination is also the source, as it is for an
+        in-place reformat.
         """
-        with open(path, "wb") as f:
-            tomli_w.dump(self.to_toml_dict(grouped=grouped), f)
+        destination = Path(path)
+        data = self.to_toml_dict(grouped=grouped)
+        staged = destination.with_name(f".{destination.name}.julesconf-tmp")
+        try:
+            with open(staged, "wb") as f:
+                tomli_w.dump(data, f)
+            staged.replace(destination)
+        finally:
+            staged.unlink(missing_ok=True)
 
     # ------------------------------------------------------------------
     # Cross-namelist conditional rules
@@ -618,6 +766,82 @@ class JulesNamelists(NamelistModel):
             rivers.l_riv_overbank and parent != JulesParent.standalone,
             "Overbank inundation is not available to the UM or OASIS.",
         )
+        if parent == JulesParent.standalone:
+            self._check_standalone_only_options()
+        return self
+
+    def _check_standalone_only_options(self) -> None:
+        """Reject the options JULES implements only for its UM coupling.
+
+        Each of these is a rose `fail-if` naming `l_jules_parent == 0`
+        explicitly, so none of them applies to a CABLE parent. They are grouped
+        here rather than left in their own blocks because none of those blocks
+        can see `JULES_MODEL_ENVIRONMENT`.
+
+        Raises:
+            ValueError: If a UM-only option is selected in standalone.
+        """
+        from julesconf.schemas.jules_surface import FormDrag, IModiscOpt, SrfExCnvGust
+
+        surface = self.jules_surface.jules_surface
+        fail_if(
+            surface.formdrag != FormDrag.no_orographic_stress,
+            "In standalone formdrag should be 0",
+        )
+        fail_if(
+            surface.i_modiscopt != IModiscOpt.off,
+            "In standalone i_modiscopt should be 0",
+        )
+        fail_if(
+            surface.srf_ex_cnv_gust != SrfExCnvGust.off,
+            "This is not currently available to standalone.",
+        )
+        fail_if(
+            surface.l_vary_z0m_soil,
+            "Variable roughness length of bare soil is currently not available to standalone.",
+        )
+        fail_if(
+            self.jules_radiation.jules_radiation.l_sea_alb_var_chl,
+            "This is not currently available to standalone.",
+        )
+        fail_if(
+            self.jules_vegetation.jules_vegetation.l_trif_init_accum,
+            "This is only applicable to the UM so should be false in standalone",
+        )
+
+    @model_validator(mode="after")
+    def _warn_temp_fixes_off_in_standalone(self) -> "JulesNamelists":
+        """Warn for each JULES_TEMP_FIXES correction switched off in standalone.
+
+        The rose metadata carries seven rules of the form "this should be
+        `.true.` in JULES standalone" — a bug fix the model's authors expect a
+        standalone run to have on. julesconf defaults all seven to the
+        corrected behaviour, so this fires only when a configuration turns one
+        back off deliberately.
+
+        Advisory rather than fatal, unlike the other rules in this class.
+        Upstream writes them as `fail-if`, but reproducing a historical run is
+        a legitimate reason to disable a fix, and refusing to model that would
+        make julesconf unable to describe configurations JULES itself will
+        happily execute. The warning makes the choice visible instead.
+        """
+        from julesconf.schemas.model_environment import JulesParent
+        from julesconf.schemas.science_fixes import CtileOrogFix
+
+        if self.model_environment.jules_model_environment.l_jules_parent != (
+            JulesParent.standalone
+        ):
+            return self
+        fixes = self.science_fixes.jules_temp_fixes
+        for member in _STANDALONE_TEMP_FIXES:
+            warn_discouraged(
+                not getattr(fixes, member),
+                f"{member} should be .true. in JULES standalone.",
+            )
+        warn_discouraged(
+            fixes.ctile_orog_fix != CtileOrogFix.correct_sea_only,
+            "ctile_orog_fix should be 2 in JULES standalone.",
+        )
         return self
 
     @model_validator(mode="after")
@@ -658,12 +882,101 @@ class JulesNamelists(NamelistModel):
 
     @model_validator(mode="after")
     def _check_deposition_consistency(self) -> "JulesNamelists":
-        """Dry deposition needs the individual surface tiles."""
+        """Check the deposition options against the tiling and the parent model.
+
+        JULES's deposition routines are called from UKCA, so which of them are
+        reachable depends on whether JULES is coupled to the UM. Every check
+        below the first is gated on `l_deposition`: the block is inert when
+        deposition is off, exactly as `JulesDeposition._warn_inactive_members`
+        reports, and applying these rules to an inert block would make a UM
+        configuration that does no deposition at all invalid for the sake of a
+        switch JULES never reads. See `notes/UPSTREAM.md` §4.4.
+        """
+        from julesconf.schemas.jules_deposition import DepH2SoilScheme
+        from julesconf.schemas.model_environment import JulesParent
+
+        deposition = self.jules_deposition.jules_deposition
         fail_if(
-            self.jules_deposition.jules_deposition.l_deposition
-            and self.jules_surface.jules_surface.l_aggregate,
+            deposition.l_deposition and self.jules_surface.jules_surface.l_aggregate,
             "Deposition does not work with aggregated tile",
         )
+        if not deposition.l_deposition:
+            return self
+        parent = self.model_environment.jules_model_environment.l_jules_parent
+        if parent == JulesParent.um:
+            fail_if(
+                deposition.dep_h2_soil_scheme == DepH2SoilScheme.paulot,
+                "The Paulot et al. H2 scheme is not yet fully implemented for UM-coupled JULES applications (when JULES deposition called from UKCA): only Conrad & Seiler scheme available, dep_h2_soil_scheme = 1",
+            )
+            fail_if(
+                not deposition.l_deposition_from_ukca,
+                "For UM_JULES applications, only the call to the deposition routines from the UKCA is currently available",
+            )
+            fail_if(
+                deposition.l_deposition_gc_corr,
+                "For UM_JULES applications, stomatal conductance corrected for bare soil evaporation is not available in the UKCA",
+            )
+        elif parent == JulesParent.standalone:
+            fail_if(
+                deposition.l_deposition_from_ukca,
+                "Deposition switch cannot be true in JULES standalone as JULES-based deposition routines called from UKCA",
+            )
+            fail_if(
+                deposition.l_ukca_ddepo3_ocean,
+                "Deposition switch not available in JULES standalone as requires >75% open water fraction",
+            )
+            fail_if(
+                deposition.l_ukca_dry_dep_so2wet,
+                "Deposition switch not fully implemented in JULES standalone",
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _check_surface_height_lengths(self) -> "JulesNamelists":
+        """Check the surface-elevation arrays against the number of tiles.
+
+        `l_elev_absolute_height`, `surf_hgt_io` and `surf_hgt_band` are all
+        `nsurft`-length, which is `npft + nnvg` unless the tiles are
+        aggregated. julesconf carries no `nsurft` dimension, so these cannot go
+        through the `ListLen` machinery and are checked here, where
+        `JULES_SURFACE` and `JULES_SURFACE_TYPES` are both in view.
+
+        Each check is gated on the member actually being read. Upstream's
+        `fail-if` rules do not repeat the conditions of their own `trigger`
+        rules, because rose never evaluates a `fail-if` on a setting a trigger
+        has deactivated — see `notes/UPSTREAM.md` §4.1. Applied ungated they
+        would reject the common shape where `zero_height` is TRUE and a stray
+        elevation array is left over from an earlier edit.
+
+        Raises:
+            ValueError: If an array that JULES reads has the wrong length.
+        """
+        surf_hgt = self.model_grid.jules_surf_hgt
+        z_land = self.model_grid.jules_z_land
+        types = self.jules_surface_types.jules_surface_types
+        nsurft = (
+            1
+            if self.jules_surface.jules_surface.l_aggregate
+            else types.npft + types.nnvg
+        )
+
+        def check(block: str, member: str, value: list | None) -> None:
+            fail_if(
+                value is not None and len(value) != nsurft,
+                f"{block}: {member} has {len(value or ())} element(s), expected"
+                f" nsurft={nsurft}",
+            )
+
+        if not surf_hgt.zero_height:
+            check(
+                "jules_surf_hgt",
+                "l_elev_absolute_height",
+                surf_hgt.l_elev_absolute_height,
+            )
+        if not surf_hgt.use_file:
+            check("jules_surf_hgt", "surf_hgt_io", surf_hgt.surf_hgt_io)
+        if surf_hgt.elevations_are_absolute:
+            check("jules_z_land", "surf_hgt_band", z_land.surf_hgt_band)
         return self
 
     @model_validator(mode="after")
@@ -708,6 +1021,45 @@ class JulesNamelists(NamelistModel):
                     "snowunloadfact",
                 ),
                 because="jules_vegetation can_model is not radiative_snow",
+            )
+
+        from julesconf.schemas.jules_vegetation import PhotoAcclimModel, PhotoActModel
+
+        veg = self.jules_vegetation.jules_vegetation
+        if veg.photo_acclim_model != PhotoAcclimModel.no_acclimation:
+            warn_inactive(
+                self.pft_params.jules_pftparm,
+                ("ds_jmax_io", "ds_vcmax_io"),
+                because="jules_vegetation photo_acclim_model is not"
+                " no_acclimation, so the entropy factors come from dsj_coef"
+                " and dsv_coef instead",
+            )
+        if veg.photo_acclim_model not in (
+            PhotoAcclimModel.thermal_adaptation,
+            PhotoAcclimModel.adaptation_and_acclimation,
+        ):
+            # The block exists solely to prescribe `t_home_gb`, which only
+            # thermal *adaptation* uses.
+            warn_inactive(
+                self.ancillaries.jules_vegetation_props,
+                tuple(type(self.ancillaries.jules_vegetation_props).model_fields),
+                because="jules_vegetation photo_acclim_model is neither"
+                " thermal_adaptation nor adaptation_and_acclimation, so no"
+                " spatially varying vegetation property is read",
+            )
+        if veg.photo_act_model != PhotoActModel.vary_by_pft:
+            warn_inactive(
+                self.pft_params.jules_pftparm,
+                ("act_jmax_io", "act_vcmax_io"),
+                because="jules_vegetation photo_act_model is not vary_by_pft,"
+                " so the activation energies come from act_j_coef and"
+                " act_v_coef instead",
+            )
+        if not veg.l_ag_expand:
+            warn_inactive(
+                self.triffid_params.jules_triffid,
+                ("ag_expand_io",),
+                because="jules_vegetation l_ag_expand is false",
             )
         return self
 

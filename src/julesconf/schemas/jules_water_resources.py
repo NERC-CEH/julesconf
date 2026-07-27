@@ -4,14 +4,28 @@ Reference: JULES user guide v7.9,
 `jules-lsm.github.io/user_guide/doc/source/namelists/jules_water_resources.nml.rst`
 """
 
-from typing import Literal
+from enum import IntEnum
+from typing import Annotated
 
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
 from julesconf.schemas._conditional import warn_inactive
+from julesconf.schemas.constraints import name_or_value
 
-__all__ = ["JulesWaterResources", "JulesWaterResourcesNamelist"]
+__all__ = [
+    "JulesWaterResources",
+    "JulesWaterResourcesNamelist",
+    "NrGwaterModel",
+]
+
+
+class NrGwaterModel(IntEnum):
+    """Model for non-renewable groundwater (`nr_gwater_model`)."""
+
+    none = 0
+    last_resort = 1
+    mix = 2
 
 
 class JulesWaterResources(NamelistModel):
@@ -37,8 +51,10 @@ class JulesWaterResources(NamelistModel):
     """Switch controlling prioritisation of demands when water supply is insufficient."""
     priority: list[str] | None = None
     """List of water sector names in order of decreasing priority; all active sectors must be listed."""
-    nr_gwater_model: Literal[0, 1, 2] | None = None
-    """Non-renewable groundwater approach: 0 = none, 1 = last resort, 2 = mixed."""
+    nr_gwater_model: Annotated[NrGwaterModel, name_or_value(NrGwaterModel)] | None = (
+        None
+    )
+    """Non-renewable groundwater approach: `none` (0), `last_resort` (1, used only when no other source is available), `mix` (2, used alongside other sources)."""
     rf_domestic: float | None = Field(default=None, ge=0, le=1)
     """Fraction of water returned to the system after domestic abstraction."""
     rf_industry: float | None = Field(default=None, ge=0, le=1)

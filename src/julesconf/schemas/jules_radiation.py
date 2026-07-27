@@ -4,14 +4,26 @@ Reference: JULES user guide v7.9,
 `jules-lsm.github.io/user_guide/doc/source/namelists/jules_radiation.nml.rst`
 """
 
-from pydantic import Field, model_validator
+from enum import IntEnum
+from typing import Annotated
+
+from pydantic import model_validator
 
 from julesconf.schemas._base import NamelistModel
 from julesconf.schemas._conditional import fail_if, warn_inactive
+from julesconf.schemas.constraints import name_or_value
 
-__all__ = ["JulesRadiation", "JulesRadiationNamelist"]
+__all__ = ["JulesRadiation", "JulesRadiationNamelist", "SeaAlbedoMethod"]
 
-_SEA_ALB_METHODS = (1, 2, 3, 4, 5)
+
+class SeaAlbedoMethod(IntEnum):
+    """Model for the ocean surface albedo (`i_sea_alb_method`)."""
+
+    briegleb_ramanathan = 1
+    barker_li = 2
+    jin = 3
+    fixed = 4
+    fixed_with_sea_ice = 5
 
 
 class JulesRadiation(NamelistModel):
@@ -49,8 +61,10 @@ class JulesRadiation(NamelistModel):
     """Switch to enable Hapke's model of soil albedo to include a zenith-angle dependence."""
     l_partition_albsoil: bool = False
     """Switch to apply a spectral partitioning to the soil albedo."""
-    i_sea_alb_method: int | None = Field(default=None, ge=1, le=5)
-    """Choice of model for the Ocean Surface Albedo (open water, ice free)."""
+    i_sea_alb_method: (
+        Annotated[SeaAlbedoMethod, name_or_value(SeaAlbedoMethod)] | None
+    ) = None
+    """Choice of model for the Ocean Surface Albedo (open water, ice free): `briegleb_ramanathan` (1), `barker_li` (2), `jin` (3), `fixed` (4), `fixed_with_sea_ice` (5)."""
     fixed_sea_albedo: float | None = None
     """The global value of sea albedo to use for specific sea albedo methods."""
     wght_alb: list[float] | None = None

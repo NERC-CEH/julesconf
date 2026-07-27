@@ -449,8 +449,8 @@ reason = "not yet implemented"
 hash = "5aa56ad410cf1fe5"
 
 ["namelist:imogen_anlg_vals_list=diff_frac_const_imogen#warn-if#1"]
-status = "todo"
-reason = "advisory `warn-if`; julesconf has no advisory warning category yet"
+status = "implemented"
+where = "imogen.ImogenAnlgValsList._warn_no_diffuse_radiation"
 hash = "2f7bcf2aee3116ec"
 
 ["namelist:imogen_onoff_switch=l_imogen#fail-if#1"]
@@ -909,88 +909,88 @@ where = "ListLen('ncpft')"
 hash = "b6fef1b5c0ec85f6"
 
 ["namelist:jules_deposition=dep_h2_soil_scheme#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=dep_h2_soil_scheme"
+status = "implemented"
+where = "_namelists.JulesNamelists._check_deposition_consistency"
 hash = "c8e5ba41434b3681"
 
 ["namelist:jules_deposition=dry_dep_model#trigger#1"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=dry_dep_model"
+status = "implemented"
+where = "jules_deposition.JulesDepositionNamelist._warn_inactive_species_members"
 hash = "2e92c2b40bca4d57"
 
 ["namelist:jules_deposition=dry_dep_model#trigger#10"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=dry_dep_model"
+status = "implemented"
+where = "jules_deposition.JulesDepositionNamelist._warn_inactive_species_specific"
 hash = "08ec6f130ca87a8c"
 
 ["namelist:jules_deposition=dry_dep_model#trigger#11"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=dry_dep_model"
+status = "implemented"
+where = "jules_deposition.JulesDepositionNamelist._warn_inactive_species_specific"
 hash = "19d43d466a270a70"
 
 ["namelist:jules_deposition=dry_dep_model#trigger#12"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=dry_dep_model"
+status = "implemented"
+where = "jules_deposition.JulesDepositionNamelist._warn_inactive_species_specific"
 hash = "9bb1100e91c70130"
 
 ["namelist:jules_deposition=dry_dep_model#trigger#13"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=dry_dep_model"
+status = "implemented"
+where = "jules_deposition.JulesDepositionNamelist._warn_inactive_species_specific"
 hash = "be388286dac8dbd0"
 
 ["namelist:jules_deposition=dry_dep_model#trigger#14"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=dry_dep_model"
+status = "implemented"
+where = "jules_deposition.JulesDepositionNamelist._warn_inactive_species_specific"
 hash = "53504f4e80e8acb8"
 
 ["namelist:jules_deposition=dry_dep_model#trigger#15"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=dry_dep_model"
+status = "implemented"
+where = "jules_deposition.JulesDepositionNamelist._warn_inactive_species_specific"
 hash = "bdb24036075b3330"
 
 ["namelist:jules_deposition=dry_dep_model#trigger#16"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=dry_dep_model"
+status = "implemented"
+where = "jules_deposition.JulesDepositionNamelist._warn_inactive_species_specific"
 hash = "4e4b828dac346a99"
 
 ["namelist:jules_deposition=dry_dep_model#trigger#2"]
 status = "todo"
-reason = "julesconf does not model jules_deposition=dry_dep_model"
+reason = "the trigger lists both dry_dep_model values, so dep_species_name_io is never inactive on account of it and there is nothing to enforce"
 hash = "dad944a87c58541c"
 
 ["namelist:jules_deposition=dry_dep_model#trigger#3"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=dry_dep_model"
+status = "implemented"
+where = "jules_deposition.JulesDepositionNamelist._warn_inactive_species_members"
 hash = "8dc069e5a5142a0c"
 
 ["namelist:jules_deposition=dry_dep_model#trigger#4"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=dry_dep_model"
+status = "implemented"
+where = "jules_deposition.JulesDepositionNamelist._warn_inactive_species_members"
 hash = "003f7575804f6810"
 
 ["namelist:jules_deposition=dry_dep_model#trigger#5"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=dry_dep_model"
+status = "implemented"
+where = "jules_deposition.JulesDepositionNamelist._warn_inactive_species_members"
 hash = "8a47577f425aba5a"
 
 ["namelist:jules_deposition=dry_dep_model#trigger#6"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=dry_dep_model"
+status = "implemented"
+where = "jules_deposition.JulesDepositionNamelist._warn_inactive_species_members"
 hash = "ef235109810771bb"
 
 ["namelist:jules_deposition=dry_dep_model#trigger#7"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=dry_dep_model"
+status = "implemented"
+where = "jules_deposition.JulesDepositionNamelist._warn_inactive_species_members"
 hash = "010b1b6727c83899"
 
 ["namelist:jules_deposition=dry_dep_model#trigger#8"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=dry_dep_model"
+status = "implemented"
+where = "jules_deposition.JulesDepositionNamelist._warn_inactive_species_specific"
 hash = "c59e2edf89092b48"
 
 ["namelist:jules_deposition=dry_dep_model#trigger#9"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=dry_dep_model"
+status = "implemented"
+where = "jules_deposition.JulesDepositionNamelist._warn_inactive_species_specific"
 hash = "694dd3b702f550d5"
 
 ["namelist:jules_deposition=l_deposition#fail-if#1"]
@@ -1014,13 +1014,13 @@ where = "jules_deposition.JulesDeposition._warn_inactive_members"
 hash = "6761014f23ab0895"
 
 ["namelist:jules_deposition=l_deposition#trigger#12"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "jules_deposition.JulesDepositionNamelist._warn_inactive_species_members"
 hash = "9e9ecc2edbeef366"
 
 ["namelist:jules_deposition=l_deposition#trigger#13"]
-status = "todo"
-reason = "not yet implemented"
+status = "implemented"
+where = "jules_deposition.JulesDepositionNamelist._warn_inactive_species_specific"
 hash = "20bb22d608c00a0c"
 
 ["namelist:jules_deposition=l_deposition#trigger#14"]
@@ -1079,28 +1079,28 @@ where = "jules_deposition.JulesDeposition._warn_inactive_members"
 hash = "0fe14515f01fa7b5"
 
 ["namelist:jules_deposition=l_deposition_from_ukca#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=l_deposition_from_ukca"
+status = "implemented"
+where = "_namelists.JulesNamelists._check_deposition_consistency"
 hash = "ed5422a98298a2e5"
 
 ["namelist:jules_deposition=l_deposition_from_ukca#fail-if#2"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=l_deposition_from_ukca"
+status = "implemented"
+where = "_namelists.JulesNamelists._check_deposition_consistency"
 hash = "d3a6957f38041f3c"
 
 ["namelist:jules_deposition=l_deposition_gc_corr#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=l_deposition_gc_corr"
+status = "implemented"
+where = "_namelists.JulesNamelists._check_deposition_consistency"
 hash = "416ca0f6b0c9b586"
 
 ["namelist:jules_deposition=l_ukca_ddepo3_ocean#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=l_ukca_ddepo3_ocean"
+status = "implemented"
+where = "_namelists.JulesNamelists._check_deposition_consistency"
 hash = "d3a6957f38041f3c"
 
 ["namelist:jules_deposition=l_ukca_dry_dep_so2wet#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_deposition=l_ukca_dry_dep_so2wet"
+status = "implemented"
+where = "_namelists.JulesNamelists._check_deposition_consistency"
 hash = "d3a6957f38041f3c"
 
 ["namelist:jules_deposition_species=dd_ice_coeff_io#fail-if#1"]
@@ -1134,28 +1134,28 @@ where = "ListLen('ntype')"
 hash = "013e8a9f4be677b7"
 
 ["namelist:jules_deposition_species_specific=ch4_up_flux_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_deposition_species_specific"
+status = "covered-by-listlen"
+where = "ListLen('ntype')"
 hash = "013e8a9f4be677b7"
 
 ["namelist:jules_deposition_species_specific=ch4dd_tundra_io#fail-if#1"]
 status = "todo"
-reason = "julesconf does not model jules_deposition_species_specific"
+reason = "not yet implemented (RIF sentinel check)"
 hash = "2cf7d69956ae7e53"
 
 ["namelist:jules_deposition_species_specific=h2dd_c_io#fail-if#1"]
 status = "todo"
-reason = "julesconf does not model jules_deposition_species_specific"
+reason = "malformed upstream rule: a len() test and an any() test concatenated with no operator. The length half is covered by ListLen('ntype'); the RIF sentinel half is not implemented"
 hash = "6c6c9e7bcf707051"
 
 ["namelist:jules_deposition_species_specific=h2dd_m_io#fail-if#1"]
 status = "todo"
-reason = "julesconf does not model jules_deposition_species_specific"
+reason = "malformed upstream rule: a len() test and an any() test concatenated with no operator. The length half is covered by ListLen('ntype'); the RIF sentinel half is not implemented"
 hash = "6c6c9e7bcf707051"
 
 ["namelist:jules_deposition_species_specific=h2dd_q_io#fail-if#1"]
 status = "todo"
-reason = "julesconf does not model jules_deposition_species_specific"
+reason = "malformed upstream rule: a len() test and an any() test concatenated with no operator. The length half is covered by ListLen('ntype'); the RIF sentinel half is not implemented"
 hash = "6c6c9e7bcf707051"
 
 ["namelist:jules_drive=interp#fail-if#1"]
@@ -4289,8 +4289,8 @@ reason = "not yet implemented"
 hash = "cfad39fcb2c138e1"
 
 ["namelist:jules_radiation=l_sea_alb_var_chl#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_radiation=l_sea_alb_var_chl"
+status = "implemented"
+where = "_namelists.JulesNamelists._check_standalone_only_options"
 hash = "dc9546f3e0c2d3dc"
 
 ["namelist:jules_radiation=l_snow_albedo#fail-if#1"]
@@ -4869,8 +4869,8 @@ where = "jules_soil_biogeochem.JulesSoilBiogeochem._warn_inactive_members"
 hash = "7f714e6ffa2dd6da"
 
 ["namelist:jules_soil_biogeochem=l_ch4_microbe#warn-if#1"]
-status = "todo"
-reason = "advisory `warn-if`; julesconf has no advisory warning category yet"
+status = "implemented"
+where = "jules_soil_biogeochem.JulesSoilBiogeochem._warn_microbe_substrate"
 hash = "630489123a991ec2"
 
 ["namelist:jules_soil_biogeochem=l_ch4_tlayered#trigger#1"]
@@ -5424,43 +5424,43 @@ where = "ListLen('nvars')"
 hash = "0d1a808b2f0d5320"
 
 ["namelist:jules_surf_hgt=l_elev_absolute_height#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_surf_hgt=l_elev_absolute_height"
+status = "implemented"
+where = "_namelists.JulesNamelists._check_surface_height_lengths"
 hash = "cb788090f42bfbb0"
 
 ["namelist:jules_surf_hgt=l_elev_absolute_height#trigger#1"]
-status = "todo"
-reason = "julesconf does not model jules_surf_hgt=l_elev_absolute_height"
+status = "implemented"
+where = "model_grid.ModelGridNamelist._warn_inactive_elevation_members"
 hash = "b3b2680ee0995ab8"
 
 ["namelist:jules_surf_hgt=l_elev_absolute_height#trigger#2"]
-status = "todo"
-reason = "julesconf does not model jules_surf_hgt=l_elev_absolute_height"
+status = "implemented"
+where = "model_grid.ModelGridNamelist._warn_inactive_elevation_members"
 hash = "ac9a8d3cc0a077bc"
 
 ["namelist:jules_surf_hgt=l_elev_absolute_height#trigger#3"]
-status = "todo"
-reason = "julesconf does not model jules_surf_hgt=l_elev_absolute_height"
+status = "implemented"
+where = "model_grid.ModelGridNamelist._warn_inactive_elevation_members"
 hash = "4564e7a62c403a48"
 
 ["namelist:jules_surf_hgt=surf_hgt_io#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_surf_hgt=surf_hgt_io"
+status = "implemented"
+where = "_namelists.JulesNamelists._check_surface_height_lengths"
 hash = "cb788090f42bfbb0"
 
 ["namelist:jules_surf_hgt=use_file#trigger#1"]
-status = "todo"
-reason = "julesconf does not model jules_surf_hgt=use_file"
+status = "implemented"
+where = "model_grid.JulesSurfHgt._warn_inactive_members"
 hash = "69769825a525fd02"
 
 ["namelist:jules_surf_hgt=use_file#trigger#2"]
-status = "todo"
-reason = "julesconf does not model jules_surf_hgt=use_file"
+status = "implemented"
+where = "model_grid.JulesSurfHgt._warn_inactive_members"
 hash = "73f8cb0940158915"
 
 ["namelist:jules_surf_hgt=use_file#trigger#3"]
-status = "todo"
-reason = "julesconf does not model jules_surf_hgt=use_file"
+status = "implemented"
+where = "model_grid.JulesSurfHgt._warn_inactive_members"
 hash = "6801e21817393907"
 
 ["namelist:jules_surf_hgt=zero_height#trigger#1"]
@@ -5474,8 +5474,8 @@ reason = "not yet implemented"
 hash = "c78521b67691f2bd"
 
 ["namelist:jules_surface=formdrag#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_surface=formdrag"
+status = "implemented"
+where = "_namelists.JulesNamelists._check_standalone_only_options"
 hash = "dda974e443e9f83f"
 
 ["namelist:jules_surface=formdrag#trigger#1"]
@@ -5494,8 +5494,8 @@ where = "jules_surface.JulesSurface._warn_inactive_members"
 hash = "b232e97b4eeb3447"
 
 ["namelist:jules_surface=i_modiscopt#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_surface=i_modiscopt"
+status = "implemented"
+where = "_namelists.JulesNamelists._check_standalone_only_options"
 hash = "f1182aee7777f135"
 
 ["namelist:jules_surface=iscrntdiag#fail-if#1"]
@@ -5614,13 +5614,13 @@ reason = "not yet implemented"
 hash = "3465f86b00725b76"
 
 ["namelist:jules_surface=l_vary_z0m_soil#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_surface=l_vary_z0m_soil"
+status = "implemented"
+where = "_namelists.JulesNamelists._check_standalone_only_options"
 hash = "dc9546f3e0c2d3dc"
 
 ["namelist:jules_surface=srf_ex_cnv_gust#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_surface=srf_ex_cnv_gust"
+status = "implemented"
+where = "_namelists.JulesNamelists._check_standalone_only_options"
 hash = "f1182aee7777f135"
 
 ["namelist:jules_surface_types=brd_leaf#fail-if#1"]
@@ -5844,38 +5844,45 @@ where = "jules_surface_types.JulesSurfaceTypes._check_pseudo_levels"
 hash = "b106602233d9ea27"
 
 ["namelist:jules_temp_fixes=ctile_orog_fix#fail-if#1"]
-status = "todo"
-reason = "would reject julesconf's own defaults: these are 'should be' advice for standalone, and our defaults follow the JULES defaults (false / 0). Needs a maintainer decision on changing the defaults"
+status = "implemented"
+where = "_namelists.JulesNamelists._warn_temp_fixes_off_in_standalone"
+reason = "upstream writes these as fail-if, but reproducing a historical run is a legitimate reason to disable a fix; julesconf defaults all seven to the corrected behaviour and warns (DiscouragedValueWarning) rather than rejecting, so a config JULES will execute stays representable"
 hash = "790ba071cf97ef07"
 
 ["namelist:jules_temp_fixes=l_dtcanfix#fail-if#1"]
-status = "todo"
-reason = "would reject julesconf's own defaults: these are 'should be' advice for standalone, and our defaults follow the JULES defaults (false / 0). Needs a maintainer decision on changing the defaults"
+status = "implemented"
+where = "_namelists.JulesNamelists._warn_temp_fixes_off_in_standalone"
+reason = "upstream writes these as fail-if, but reproducing a historical run is a legitimate reason to disable a fix; julesconf defaults all seven to the corrected behaviour and warns (DiscouragedValueWarning) rather than rejecting, so a config JULES will execute stays representable"
 hash = "a5a234a8fb1fdf3c"
 
 ["namelist:jules_temp_fixes=l_fix_alb_ice_thick#fail-if#1"]
-status = "todo"
-reason = "would reject julesconf's own defaults: these are 'should be' advice for standalone, and our defaults follow the JULES defaults (false / 0). Needs a maintainer decision on changing the defaults"
+status = "implemented"
+where = "_namelists.JulesNamelists._warn_temp_fixes_off_in_standalone"
+reason = "upstream writes these as fail-if, but reproducing a historical run is a legitimate reason to disable a fix; julesconf defaults all seven to the corrected behaviour and warns (DiscouragedValueWarning) rather than rejecting, so a config JULES will execute stays representable"
 hash = "a5a234a8fb1fdf3c"
 
 ["namelist:jules_temp_fixes=l_fix_albsnow_ts#fail-if#1"]
-status = "todo"
-reason = "would reject julesconf's own defaults: these are 'should be' advice for standalone, and our defaults follow the JULES defaults (false / 0). Needs a maintainer decision on changing the defaults"
+status = "implemented"
+where = "_namelists.JulesNamelists._warn_temp_fixes_off_in_standalone"
+reason = "upstream writes these as fail-if, but reproducing a historical run is a legitimate reason to disable a fix; julesconf defaults all seven to the corrected behaviour and warns (DiscouragedValueWarning) rather than rejecting, so a config JULES will execute stays representable"
 hash = "a5a234a8fb1fdf3c"
 
 ["namelist:jules_temp_fixes=l_fix_neg_snow#fail-if#1"]
-status = "todo"
-reason = "would reject julesconf's own defaults: these are 'should be' advice for standalone, and our defaults follow the JULES defaults (false / 0). Needs a maintainer decision on changing the defaults"
+status = "implemented"
+where = "_namelists.JulesNamelists._warn_temp_fixes_off_in_standalone"
+reason = "upstream writes these as fail-if, but reproducing a historical run is a legitimate reason to disable a fix; julesconf defaults all seven to the corrected behaviour and warns (DiscouragedValueWarning) rather than rejecting, so a config JULES will execute stays representable"
 hash = "a5a234a8fb1fdf3c"
 
 ["namelist:jules_temp_fixes=l_fix_ustar_dust#fail-if#1"]
-status = "todo"
-reason = "would reject julesconf's own defaults: these are 'should be' advice for standalone, and our defaults follow the JULES defaults (false / 0). Needs a maintainer decision on changing the defaults"
+status = "implemented"
+where = "_namelists.JulesNamelists._warn_temp_fixes_off_in_standalone"
+reason = "upstream writes these as fail-if, but reproducing a historical run is a legitimate reason to disable a fix; julesconf defaults all seven to the corrected behaviour and warns (DiscouragedValueWarning) rather than rejecting, so a config JULES will execute stays representable"
 hash = "a5a234a8fb1fdf3c"
 
 ["namelist:jules_temp_fixes=l_fix_wind_snow#fail-if#1"]
-status = "todo"
-reason = "would reject julesconf's own defaults: these are 'should be' advice for standalone, and our defaults follow the JULES defaults (false / 0). Needs a maintainer decision on changing the defaults"
+status = "implemented"
+where = "_namelists.JulesNamelists._warn_temp_fixes_off_in_standalone"
+reason = "upstream writes these as fail-if, but reproducing a historical run is a legitimate reason to disable a fix; julesconf defaults all seven to the corrected behaviour and warns (DiscouragedValueWarning) rather than rejecting, so a config JULES will execute stays representable"
 hash = "a5a234a8fb1fdf3c"
 
 ["namelist:jules_time=l_360#fail-if#1"]
@@ -6019,13 +6026,13 @@ where = "ListLen('nnpft', tolerates=('npft',))"
 hash = "10546d1b32cdd5a5"
 
 ["namelist:jules_triffid=harvest_type_io#trigger#1"]
-status = "todo"
-reason = "julesconf does not model jules_triffid=harvest_type_io"
+status = "implemented"
+where = "triffid_params.JulesTriffid._warn_inactive_harvest_members"
 hash = "4d56659c3a55373b"
 
 ["namelist:jules_triffid=harvest_type_io#trigger#2"]
-status = "todo"
-reason = "julesconf does not model jules_triffid=harvest_type_io"
+status = "implemented"
+where = "triffid_params.JulesTriffid._warn_inactive_harvest_members"
 hash = "356964113d072ef2"
 
 ["namelist:jules_triffid=lai_max_io#fail-if#1"]
@@ -6084,8 +6091,8 @@ where = "_namelists.JulesNamelists._warn_inactive_across_namelists"
 hash = "fdbfc4f70495058d"
 
 ["namelist:jules_vegetation=can_model#warn-if#1"]
-status = "todo"
-reason = "advisory `warn-if`; julesconf has no advisory warning category yet"
+status = "implemented"
+where = "jules_vegetation.JulesVegetation._warn_deprecated_can_model"
 hash = "bd718c3d71241e46"
 
 ["namelist:jules_vegetation=can_rad_mod#trigger#1"]
@@ -6114,8 +6121,8 @@ where = "jules_vegetation.JulesVegetation._check_triffid_switches"
 hash = "88fe18bc1082ab0c"
 
 ["namelist:jules_vegetation=l_ag_expand#trigger#1"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=l_ag_expand"
+status = "implemented"
+where = "_namelists.JulesNamelists._warn_inactive_across_namelists"
 hash = "ecf0e95f0e4195e3"
 
 ["namelist:jules_vegetation=l_bvoc_emis#trigger#1"]
@@ -6494,8 +6501,8 @@ reason = "not yet implemented"
 hash = "c3f75bf0a2465964"
 
 ["namelist:jules_vegetation=l_trif_init_accum#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=l_trif_init_accum"
+status = "implemented"
+where = "_namelists.JulesNamelists._check_standalone_only_options"
 hash = "dc9546f3e0c2d3dc"
 
 ["namelist:jules_vegetation=l_triffid#trigger#1"]
@@ -6624,13 +6631,13 @@ reason = "not yet implemented"
 hash = "49c7a6f37935b5c0"
 
 ["namelist:jules_vegetation=photo_acclim_model#trigger#1"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=photo_acclim_model"
+status = "implemented"
+where = "_namelists.JulesNamelists._warn_inactive_across_namelists"
 hash = "b22ed4217f3411db"
 
 ["namelist:jules_vegetation=photo_acclim_model#trigger#2"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=photo_acclim_model"
+status = "implemented"
+where = "_namelists.JulesNamelists._warn_inactive_across_namelists"
 hash = "ebfaa5fc39a2378d"
 
 ["namelist:jules_vegetation=photo_acclim_model#trigger#3"]
@@ -6654,8 +6661,8 @@ where = "jules_vegetation.JulesVegetation._warn_inactive_members"
 hash = "d1ada80e4807d201"
 
 ["namelist:jules_vegetation=photo_acclim_model#trigger#7"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=photo_acclim_model"
+status = "implemented"
+where = "_namelists.JulesNamelists._warn_inactive_across_namelists"
 hash = "ba2b96fc62d3872f"
 
 ["namelist:jules_vegetation=photo_act_model#fail-if#1"]
@@ -6664,13 +6671,13 @@ where = "jules_vegetation.JulesVegetation._check_photosynthesis_models"
 hash = "ad734ea608f0bc2c"
 
 ["namelist:jules_vegetation=photo_act_model#trigger#1"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=photo_act_model"
+status = "implemented"
+where = "_namelists.JulesNamelists._warn_inactive_across_namelists"
 hash = "230b732ffdb44a44"
 
 ["namelist:jules_vegetation=photo_act_model#trigger#2"]
-status = "todo"
-reason = "julesconf does not model jules_vegetation=photo_act_model"
+status = "implemented"
+where = "_namelists.JulesNamelists._warn_inactive_across_namelists"
 hash = "fc670f1429253fac"
 
 ["namelist:jules_vegetation=photo_act_model#trigger#3"]
@@ -6999,23 +7006,23 @@ where = "ListLen('nvars')"
 hash = "bd8ed170ce04c7c6"
 
 ["namelist:jules_z_land=surf_hgt_band#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_z_land=surf_hgt_band"
+status = "implemented"
+where = "_namelists.JulesNamelists._check_surface_height_lengths"
 hash = "cb788090f42bfbb0"
 
 ["namelist:jules_z_land=use_file#trigger#1"]
-status = "todo"
-reason = "julesconf does not model jules_z_land=use_file"
+status = "implemented"
+where = "model_grid.JulesZLand._warn_inactive_members"
 hash = "04e42bd00aee38f5"
 
 ["namelist:jules_z_land=use_file#trigger#2"]
-status = "todo"
-reason = "julesconf does not model jules_z_land=use_file"
+status = "implemented"
+where = "model_grid.JulesZLand._warn_inactive_members"
 hash = "26cda1332499e2cd"
 
 ["namelist:jules_z_land=use_file#trigger#3"]
-status = "todo"
-reason = "julesconf does not model jules_z_land=use_file"
+status = "implemented"
+where = "model_grid.JulesZLand._warn_inactive_members"
 hash = "ba8c83aa6016d142"
 
 ["namelist:oasis_rivers=cpl_freq#fail-if#1"]

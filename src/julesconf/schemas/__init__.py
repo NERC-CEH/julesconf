@@ -25,7 +25,10 @@ from julesconf.schemas._base import (
     RepeatedNamelistGroupWarning,
     UnknownNamelistKeyWarning,
 )
-from julesconf.schemas._conditional import InactiveNamelistKeyWarning
+from julesconf.schemas._conditional import (
+    DiscouragedValueWarning,
+    InactiveNamelistKeyWarning,
+)
 from julesconf.schemas._grouped import (
     CropPft,
     GroupedConfigError,
@@ -74,6 +77,7 @@ __all__ = [
     "CanRadMod",
     "Ch4Substrate",
     "CropPft",
+    "DiscouragedValueWarning",
     "Fraction",
     "GroupedConfigError",
     "IgnitionMethod",

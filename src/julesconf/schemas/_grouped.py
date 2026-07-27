@@ -130,6 +130,15 @@ NVG_TYPE_IDS = frozenset(
 SHARED_TYPE_IDS = frozenset({"usr_type"})
 """Surface type identifiers valid at any position (`1:ntype`)."""
 
+ARRAY_TYPE_IDS = frozenset({"usr_type", "elev_ice", "elev_rock"})
+"""Surface type identifiers JULES holds as arrays rather than single indices.
+
+A configuration may define several user types, several elevated ice bands and
+several elevated bedrock bands, so these three identifiers may each be claimed
+by any number of grouped entries. Every other identifier names exactly one
+surface type and so may appear at most once.
+"""
+
 DIM_MEMBERS = ("npft", "nnvg", "ncpft")
 """`jules_surface_types` members the grouped form derives rather than reads."""
 
@@ -514,7 +523,7 @@ def assemble(data: dict) -> dict:
     surface.update({"npft": npft, "nnvg": nnvg, "ncpft": ncpft})
 
     positions: dict[str, int] = {}
-    usr_positions: list[int] = []
+    array_positions: dict[str, list[int]] = {}
     ordered = [
         (group, index, entry)
         for group in GROUPED_KEYS
@@ -524,10 +533,10 @@ def assemble(data: dict) -> dict:
         type_id = entry.get("type")
         if type_id is None:
             continue
-        if type_id == "usr_type":
-            # The one identifier JULES holds as an array, so it may legally
-            # be claimed by any number of positions.
-            usr_positions.append(position)
+        if type_id in ARRAY_TYPE_IDS:
+            # The identifiers JULES holds as arrays, so each may legally be
+            # claimed by any number of positions.
+            array_positions.setdefault(type_id, []).append(position)
             continue
         if type_id in positions:
             raise GroupedConfigError(
@@ -538,8 +547,7 @@ def assemble(data: dict) -> dict:
             )
         positions[type_id] = position
         surface[type_id] = position
-    if usr_positions:
-        surface["usr_type"] = usr_positions
+    surface.update(array_positions)
 
     return data
 
@@ -615,8 +623,8 @@ def disassemble(data: dict) -> dict:
     type_at: dict[int, str] = {}
     for member in sorted(set(surface) - set(DIM_MEMBERS) - PIVOTED_SURFACE_MEMBERS):
         raw = surface[member]
-        # `usr_type` holds an array of positions; every other identifier holds
-        # one. Both are pivoted onto the entries the same way.
+        # `ARRAY_TYPE_IDS` hold an array of positions; every other identifier
+        # holds one. Both are pivoted onto the entries the same way.
         values = raw if isinstance(raw, list) else [raw]
         if not values or not all(
             isinstance(value, int) and 1 <= value <= dims["ntype"] for value in values

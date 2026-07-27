@@ -4,15 +4,25 @@ Reference: JULES user guide v7.9,
 `jules-lsm.github.io/user_guide/doc/source/namelists/output.nml.rst`
 """
 
+from enum import IntEnum
 from typing import Annotated, Literal
 
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
 from julesconf.schemas._conditional import check_group_count
-from julesconf.schemas.constraints import ListLen, PerElementDefault
+from julesconf.schemas.constraints import ListLen, PerElementDefault, name_or_value
 
-__all__ = ["JulesOutput", "JulesOutputProfile", "OutputNamelist"]
+__all__ = ["FilePeriod", "JulesOutput", "JulesOutputProfile", "OutputNamelist"]
+
+
+class FilePeriod(IntEnum):
+    """Period covered by each output file (`file_period`)."""
+
+    daily = -3
+    annual = -2
+    monthly = -1
+    single_file = 0
 
 
 class JulesOutput(NamelistModel):
@@ -41,8 +51,10 @@ class JulesOutputProfile(NamelistModel):
 
     profile_name: str | None = None
     """The name of the output profile."""
-    file_period: int = Field(default=0, ge=-3, le=0)
-    """The period for output files, i.e. the time interval during which output goes to the same file."""
+    file_period: Annotated[FilePeriod, name_or_value(FilePeriod)] = (
+        FilePeriod.single_file
+    )
+    """The period for output files, i.e. the time interval during which output goes to the same file: `daily` (-3), `annual` (-2), `monthly` (-1), `single_file` (0)."""
     output_spinup: bool = False
     """Determines whether the profile will provide output during model spin-up."""
     output_main_run: bool = False

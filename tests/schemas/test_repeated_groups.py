@@ -26,6 +26,7 @@ from julesconf.schemas import (
     InactiveNamelistKeyWarning,
     JulesNamelists,
 )
+from julesconf.schemas.jules_deposition import JulesDepositionSpeciesSpecific
 
 
 def with_profiles(*profiles: dict) -> dict:
@@ -62,6 +63,51 @@ def test_the_three_groups_jules_repeats_are_the_repeatable_ones():
         "jules_prescribed_dataset",
         "jules_deposition_species",
     } == REPEATABLE_GROUPS
+
+
+def test_species_specific_is_not_a_repeated_group():
+    """`JULES_DEPOSITION_SPECIES_SPECIFIC` is read once, unlike its sibling.
+
+    The rose file definition is `namelist:jules_deposition
+    (namelist:jules_deposition_species(:))
+    (namelist:jules_deposition_species_specific)` -- the repeat marker is on
+    the species group only.
+    """
+    assert "jules_deposition_species_specific" not in REPEATABLE_GROUPS
+    config = JulesNamelists.model_validate(minimal_valid())
+    assert isinstance(
+        config.jules_deposition.jules_deposition_species_specific,
+        JulesDepositionSpeciesSpecific,
+    )
+
+
+def test_species_specific_members_are_read_by_the_flexible_scheme_only():
+    data = with_species({"dep_species_name_io": "O3"})
+    data["jules_deposition"]["jules_deposition_species_specific"] = {
+        "cuticle_o3_io": 5000.0
+    }
+
+    with pytest.warns(InactiveNamelistKeyWarning, match="dry_dep_model"):
+        JulesNamelists.model_validate(data)
+
+    data["jules_deposition"]["jules_deposition"]["dry_dep_model"] = "flexible_ukca"
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", InactiveNamelistKeyWarning)
+        config = JulesNamelists.model_validate(data)
+    specific = config.jules_deposition.jules_deposition_species_specific
+    assert specific.cuticle_o3_io == 5000.0
+
+
+def test_species_specific_ntype_arrays_are_length_checked():
+    """`ch4_up_flux_io` carries `ListLen("ntype")`, so a short array fails."""
+    data = with_species({"dep_species_name_io": "CH4"})
+    data["jules_deposition"]["jules_deposition"]["dry_dep_model"] = "flexible_ukca"
+    data["jules_deposition"]["jules_deposition_species_specific"] = {
+        "ch4_up_flux_io": [0.0, 1.0]
+    }
+
+    with pytest.raises(ValidationError, match="ch4_up_flux_io"):
+        JulesNamelists.model_validate(data)
 
 
 # ---------------------------------------------------------------------------

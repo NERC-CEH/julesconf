@@ -10,7 +10,7 @@ from typing import Annotated
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas._conditional import fail_if, warn_inactive
+from julesconf.schemas._conditional import fail_if, warn_discouraged, warn_inactive
 from julesconf.schemas.constraints import (
     Fraction,
     ListLen,
@@ -22,6 +22,7 @@ from julesconf.schemas.constraints import (
 __all__ = [
     "CanModel",
     "CanRadMod",
+    "FsmcShape",
     "IgnitionMethod",
     "JulesVegetation",
     "JulesVegetationNamelist",
@@ -31,6 +32,13 @@ __all__ = [
     "PhotoModel",
     "StomataModel",
 ]
+
+
+class FsmcShape(IntEnum):
+    """Shape of the soil moisture stress function on vegetation (`fsmc_shape`)."""
+
+    linear_vol = 0
+    linear_pot = 1
 
 
 class CanModel(IntEnum):
@@ -215,8 +223,8 @@ class JulesVegetation(NamelistModel):
     """Seed fraction for TRIFFID."""
     pow: float = 5.241e-4
     """Power in the sigmoidal function used to get competition coefficients."""
-    fsmc_shape: int = Field(default=0, ge=0, le=1)
-    """Shape of soil moisture stress function on vegetation."""
+    fsmc_shape: Annotated[FsmcShape, name_or_value(FsmcShape)] = FsmcShape.linear_vol
+    """Shape of soil moisture stress function on vegetation: `linear_vol` (0, piece-wise linear in volumetric soil moisture), `linear_pot` (1, piece-wise linear in soil potential)."""
     ignition_method: Annotated[IgnitionMethod, name_or_value(IgnitionMethod)] = (
         IgnitionMethod.constant
     )
@@ -300,6 +308,15 @@ class JulesVegetation(NamelistModel):
     Note that `JULES_PFTPARM::z0v_io` is the per-PFT roughness length the drag
     scheme uses when `l_spec_veg_z0` is TRUE.
     """
+
+    @model_validator(mode="after")
+    def _warn_deprecated_can_model(self) -> "JulesVegetation":
+        """`can_model = 3` is deprecated upstream in favour of 4."""
+        warn_discouraged(
+            self.can_model == CanModel.radiative_heat_capacity,
+            "can_model = 3 is deprecated, with 4 preferred",
+        )
+        return self
 
     @model_validator(mode="after")
     def _check_triffid_switches(self) -> "JulesVegetation":

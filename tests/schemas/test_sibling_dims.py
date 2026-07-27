@@ -23,6 +23,7 @@ from julesconf.schemas.constraints import (
     ListLen,
     PerElementDefault,
 )
+from julesconf.schemas.jules_soil import JulesSoil
 
 
 def _with_profile(*profiles, **profile) -> dict:
@@ -175,3 +176,39 @@ def test_list_len_accepts_sibling_dims():
 def test_list_len_still_rejects_an_unknown_dim():
     with pytest.raises(ValueError, match="Unknown ListLen dim 'nvar'"):
         ListLen("nvar")
+
+
+# ---------------------------------------------------------------------------
+# sm_levels is derived from dzsoil_io
+# ---------------------------------------------------------------------------
+
+
+def test_sm_levels_is_derived_from_the_layer_depths():
+    """Listing the layer depths already says how many layers there are."""
+    assert JulesSoil(dzsoil_io=[0.1, 0.25, 0.65, 2.0, 3.0, 4.0]).sm_levels == 6
+
+
+def test_a_scalar_dzsoil_io_means_one_layer():
+    """Fortran writes a one-element array indistinguishably from a scalar."""
+    config = JulesSoil.model_validate({"dzsoil_io": 0.1})
+    assert (config.sm_levels, config.dzsoil_io) == (1, [0.1])
+
+
+def test_sm_levels_keeps_its_default_without_dzsoil_io():
+    assert JulesSoil().sm_levels == 4
+
+
+def test_an_explicit_sm_levels_is_never_overwritten():
+    """The derivation fills a gap; it does not hide a real disagreement."""
+    with pytest.raises(ValidationError, match="expected sm_levels=4"):
+        JulesSoil(sm_levels=4, dzsoil_io=[0.1] * 6)
+
+
+def test_a_derived_sm_levels_survives_the_namelist_round_trip():
+    """`to_namelist_dict` writes `sm_levels`, so the second read agrees."""
+    data = minimal_valid()
+    data["jules_soil"]["jules_soil"] = {"dzsoil_io": [0.1] * 6}
+    written = JulesNamelists.model_validate(data).to_namelist_dict()
+    block = written["jules_soil"]["jules_soil"]
+    assert block["sm_levels"] == 6
+    assert JulesSoil.model_validate(block).sm_levels == 6

@@ -18,7 +18,8 @@ julesconf --help
 
 | Command | What it does |
 |---|---|
-| `julesconf validate <target>` | Validate a namelists directory or a `.toml` config |
+| `julesconf validate <target>` | Validate a namelists directory, a `.toml` config, or one `.nml` file |
+| `julesconf format <file> -o <file>` | Rewrite a `.toml` config in canonical form |
 | `julesconf convert rose2nml <conf> -o <dir>` | Convert a `rose-app.conf` to namelist files |
 | `julesconf convert rose2toml <conf> -o <file>` | Convert a `rose-app.conf` to a TOML config |
 | `julesconf convert toml2nml <file> -o <dir>` | Write the namelists a TOML config describes |
@@ -29,13 +30,54 @@ julesconf --help
 ```bash
 julesconf validate run/namelists
 julesconf validate config.toml --strict
+julesconf validate run/namelists/jules_soil.nml
 ```
 
-The argument may be a directory of `.nml` files or a `.toml` config in either
-form; which one it is is detected from the path. `--strict` escalates
-julesconf's warnings to errors, exactly as `strict=True` does on
-`from_namelists` / `from_toml` — see
+The argument may be a directory of `.nml` files, a `.toml` config in either
+form, or a single `.nml` file; which one it is is detected from the path.
+`--strict` escalates julesconf's warnings to errors, exactly as `strict=True`
+does on `from_namelists` / `from_toml` — see
 [enforce strict validation](../how-to/strict-validation.md).
+
+A single `.nml` file is checked against its own schema alone. The file is
+matched to that schema by name, so `jules_soil.nml` is validated by the same
+model a whole-directory read uses for it, and a name julesconf does not model —
+`cable_pfts.nml`, or anything that is not a JULES namelist — is a usage error.
+
+The rules rendered as `<cross-namelist>` below cannot run on one file: the list
+lengths need the dimensions in `jules_surface_types.nml`, and the consistency
+rules read switches from other files. They are skipped, and the report says so
+on every run, including under `--quiet` — a caveat about what was not checked is
+not advisory noise. See
+[validate a single namelist](../how-to/validate-single-namelist.md).
+
+### `format`
+
+```bash
+julesconf format config.toml -o tidy.toml
+julesconf format config.toml --in-place
+```
+
+Rewrites a TOML config the way julesconf writes one: enum members by name
+rather than by integer, the grouped `[[pft]]` / `[[crop_pft]]` / `[[nvg]]` form
+unless `--flat`, and the block order the schemas declare. It is a pure
+reformat — nothing is added, removed or reinterpreted — so running it twice
+produces byte-identical output, and the namelists written from the config before
+and after are the same.
+
+Two safeguards, because the destination may be the file you are editing:
+
+- The config must validate first. An invalid config is reported and **nothing is
+  written**, so a reformat cannot silently discard a half-finished edit.
+  Reformatting is not repair: julesconf will not adjust a config until the
+  validators pass, since that would be guesswork about scientific intent.
+- A destination is always explicit. `-o` writes elsewhere; `--in-place` (`-i`)
+  rewrites the input. Passing neither, or both, is a usage error. The file is
+  replaced only once the new TOML has been rendered in full, so an interrupted
+  run cannot leave it truncated.
+
+A flat config is rewritten in the grouped form unless you pass `--flat`, since
+canonical means one form rather than whichever the file happened to use.
 
 ### `convert rose2nml` and `convert rose2toml`
 
@@ -65,10 +107,10 @@ files fully determine the run. See
 
 | Option | Applies to | Meaning |
 |---|---|---|
-| `--strict` | `validate`, `rose2toml`, `toml2nml`, `nml2toml` | Treat julesconf's warnings as errors |
-| `--flat` | `rose2toml`, `nml2toml` | Write the flat TOML form instead of the grouped `[[pft]]` form |
+| `--strict` | `validate`, `format`, `rose2toml`, `toml2nml`, `nml2toml` | Treat julesconf's warnings as errors |
+| `--flat` | `format`, `rose2toml`, `nml2toml` | Write the flat TOML form instead of the grouped `[[pft]]` form |
 | `--on-unbound` | `rose2nml`, `rose2toml` | `keep` (default), `error` or `empty` |
-| `--overwrite` | every command that writes | Replace existing output; without it, an existing output is an error |
+| `--overwrite` | every command that writes | Replace existing output; without it, an existing output is an error. `format --in-place` does not need it: `--in-place` is itself the explicit consent |
 | `--quiet`, `-q` | every command | Drop advisory output. Data-loss warnings and errors are still shown |
 
 ## Exit codes

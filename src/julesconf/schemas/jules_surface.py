@@ -14,12 +14,17 @@ from julesconf.schemas._conditional import warn_inactive
 from julesconf.schemas.constraints import name_or_value
 
 __all__ = [
+    "AggregateOpt",
+    "AllTiles",
+    "AnthropHeatOption",
     "FdHillOption",
     "FdStabilityDep",
     "FormDrag",
     "IModiscOpt",
     "JulesSurface",
     "JulesSurfaceNamelist",
+    "MoIterCorrection",
+    "ScreenDiagMethod",
     "SrfExCnvGust",
 ]
 
@@ -62,18 +67,66 @@ class SrfExCnvGust(IntEnum):
     on = 1
 
 
+class AllTiles(IntEnum):
+    """Switch for calculating tile properties on all tiles (`all_tiles`)."""
+
+    off = 0
+    on = 1
+
+
+class MoIterCorrection(IntEnum):
+    """Correction to the Monin-Obukhov surface exchange calculation (`cor_mo_iter`)."""
+
+    correct_gustiness = 1
+    correct_ustar_dust = 2
+    limit_obukhov_length = 3
+    improve_initial_guess = 4
+
+
+class AggregateOpt(IntEnum):
+    """Method of aggregating tiled properties (`i_aggregate_opt`)."""
+
+    original = 0
+    separate_aggregation = 1
+
+
+class ScreenDiagMethod(IntEnum):
+    """Method of diagnosing the screen temperature (`iscrntdiag`)."""
+
+    similarity = 0
+    similarity_decoupled = 1
+    transient = 2
+    transient_humidity = 3
+
+
+class AnthropHeatOption(IntEnum):
+    """Method of calculating urban anthropogenic heat (`anthrop_heat_option`)."""
+
+    dukes = 0
+    flanner = 1
+
+
 class JulesSurface(NamelistModel):
     """`JULES_SURFACE` namelist members."""
 
-    all_tiles: int = Field(default=0, ge=0, le=1)
-    """Perform calculations on all tiles for all gridpoints even when the tile fraction is zero."""
-    cor_mo_iter: int = Field(default=1, ge=1, le=4)
-    """Corrections to Monin-Obukhov surface exchange calculation."""
-    i_aggregate_opt: int = Field(default=0, ge=0, le=1)
-    """Option for aggregating surface properties to surface tiles."""
-    iscrntdiag: int = Field(default=0, ge=0, le=3)
-    """Switch controlling method for diagnosing screen temperature."""
-    anthrop_heat_option: int = Field(default=0, ge=0, le=1)
+    all_tiles: Annotated[AllTiles, name_or_value(AllTiles)] = AllTiles.off
+    """Perform calculations on all tiles for all gridpoints even when the tile fraction is zero: `off` (0), `on` (1)."""
+    cor_mo_iter: Annotated[MoIterCorrection, name_or_value(MoIterCorrection)] = (
+        MoIterCorrection.correct_gustiness
+    )
+    """Corrections to Monin-Obukhov surface exchange calculation: `correct_gustiness` (1), `correct_ustar_dust` (2), `limit_obukhov_length` (3), `improve_initial_guess` (4)."""
+    i_aggregate_opt: Annotated[AggregateOpt, name_or_value(AggregateOpt)] = (
+        AggregateOpt.original
+    )
+    """Option for aggregating surface properties to surface tiles: `original` (0), `separate_aggregation` (1)."""
+    iscrntdiag: Annotated[ScreenDiagMethod, name_or_value(ScreenDiagMethod)] = (
+        ScreenDiagMethod.similarity
+    )
+    """Switch controlling method for diagnosing screen temperature: `similarity` (0), `similarity_decoupled` (1), `transient` (2), `transient_humidity` (3)."""
+    anthrop_heat_option: Annotated[
+        AnthropHeatOption, name_or_value(AnthropHeatOption)
+    ] = AnthropHeatOption.dukes
+    """Switch for how urban anthropogenic heat is calculated: `dukes` (0), `flanner` (1)."""
     l_aggregate: bool = False
     """Switch controlling number of surface tiles for each gridbox."""
     l_anthrop_heat_src: bool = False

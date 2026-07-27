@@ -34,7 +34,13 @@ from julesconf.schemas.jules_surface_types import JulesSurfaceTypes
 from julesconf.schemas.jules_vegetation import JulesVegetation
 from julesconf.schemas.jules_water_resources import JulesWaterResources
 from julesconf.schemas.model_environment import JulesModelEnvironment
-from julesconf.schemas.model_grid import JulesModelGrid
+from julesconf.schemas.model_grid import (
+    JulesModelGrid,
+    JulesSurfHgt,
+    JulesZLand,
+    ModelGridNamelist,
+)
+from julesconf.schemas.triffid_params import JulesTriffid
 from julesconf.schemas.urban import JulesUrban
 
 
@@ -226,6 +232,14 @@ def test_block_level_fail_if(model_cls, kwargs, message):
             {"npft": 5, "nnvg": 4, "usr_type": [0]},
             r"usr_type\[0\]: Pseudo level must be greater than or equal to 1",
         ),
+        (
+            {"npft": 5, "nnvg": 4, "elev_ice": [7, 10]},
+            r"elev_ice\[1\]: Pseudo level must be less than or equal to npft\+nnvg",
+        ),
+        (
+            {"npft": 5, "nnvg": 4, "elev_rock": [7, 3]},
+            r"elev_rock\[1\]: PFTs must be grouped together first",
+        ),
     ],
 )
 def test_surface_type_pseudo_levels(kwargs, message):
@@ -241,7 +255,18 @@ def test_valid_surface_type_layout_is_accepted():
 
 
 def test_elevated_types_accept_the_minus_one_sentinel():
-    JulesSurfaceTypes(npft=5, nnvg=4, elev_ice=-1, elev_rock=-1)
+    config = JulesSurfaceTypes.model_validate(
+        {"npft": 5, "nnvg": 4, "elev_ice": -1, "elev_rock": -1}
+    )
+    assert config.elev_ice == [-1]
+    assert config.elev_rock == [-1]
+
+
+def test_elevated_types_are_arrays_of_positions():
+    """`elev_ice` and `elev_rock` are `integer, length=:`: one per elevation band."""
+    config = JulesSurfaceTypes(npft=5, nnvg=8, elev_ice=[6, 7, 8], elev_rock=[9, 10])
+    assert config.elev_ice == [6, 7, 8]
+    assert config.elev_rock == [9, 10]
 
 
 def test_usr_type_may_be_numbered_among_the_pfts():
@@ -716,3 +741,365 @@ def test_imogen_prescribed_anomalies_accept_the_switches_turned_off():
         c_emissions=False,
         include_non_co2_radf=False,
     )
+
+
+# --------------------------------------------------------------------------
+# the rules recovered from the disposition backlog
+# --------------------------------------------------------------------------
+
+
+def inactive_config(**overrides) -> list[str]:
+    """Return the inactive-member messages a whole-config validation emits.
+
+    `build` silences warnings so the `fail-if` tests are not drowned in them;
+    this is the same construction with the filters left alone.
+    """
+    data = minimal_valid()
+    for namelist, blocks in overrides.items():
+        target = data.setdefault(namelist, {})
+        for block, members in blocks.items():
+            target.setdefault(block, {}).update(members)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        JulesNamelists.model_validate(data)
+    return [
+        str(record.message)
+        for record in caught
+        if issubclass(record.category, InactiveNamelistKeyWarning)
+    ]
+
+
+def test_is_specified_ignores_a_per_element_default():
+    """A `PerElementDefault` field written out in full is still unspecified.
+
+    `to_namelist_dict` expands `ag_expand_io` to `[0] * nnpft` because Fortran
+    does not broadcast a scalar. Reading that back must not look like a
+    deliberate choice, or every round-tripped config would warn.
+    """
+    assert not is_specified(JulesTriffid(ag_expand_io=[0, 0, 0, 0, 0]), "ag_expand_io")
+    assert is_specified(JulesTriffid(ag_expand_io=[0, 0, 0, 0, 1]), "ag_expand_io")
+
+
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        ({"jules_surface": {"jules_surface": {"formdrag": 1}}}, "formdrag should be 0"),
+        (
+            {"jules_surface": {"jules_surface": {"i_modiscopt": 1}}},
+            "i_modiscopt should be 0",
+        ),
+        (
+            {"jules_surface": {"jules_surface": {"srf_ex_cnv_gust": 1}}},
+            "not currently available to standalone",
+        ),
+        (
+            {"jules_surface": {"jules_surface": {"l_vary_z0m_soil": True}}},
+            "Variable roughness length of bare soil",
+        ),
+        (
+            {"jules_radiation": {"jules_radiation": {"l_sea_alb_var_chl": True}}},
+            "not currently available to standalone",
+        ),
+        (
+            {"jules_vegetation": {"jules_vegetation": {"l_trif_init_accum": True}}},
+            "only applicable to the UM",
+        ),
+    ],
+)
+def test_standalone_only_fail_if(overrides, message):
+    """Options JULES implements only for its UM coupling."""
+    with pytest.raises(ValidationError, match=message):
+        build(**overrides)
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"jules_surface": {"jules_surface": {"formdrag": 1}}},
+        {"jules_surface": {"jules_surface": {"i_modiscopt": 1}}},
+        {"jules_surface": {"jules_surface": {"srf_ex_cnv_gust": 1}}},
+        {"jules_surface": {"jules_surface": {"l_vary_z0m_soil": True}}},
+        {"jules_radiation": {"jules_radiation": {"l_sea_alb_var_chl": True}}},
+        {"jules_vegetation": {"jules_vegetation": {"l_trif_init_accum": True}}},
+    ],
+)
+def test_the_um_accepts_what_standalone_refuses(overrides):
+    """The same settings are exactly what a UM-coupled run is for."""
+    build(**UM, **overrides)
+
+
+def deposition(**members) -> dict:
+    """Overrides switching deposition on with `members` set."""
+    return {"jules_deposition": {"jules_deposition": {"l_deposition": True, **members}}}
+
+
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        (
+            deposition(l_deposition_from_ukca=True),
+            "cannot be true in JULES standalone",
+        ),
+        (
+            deposition(l_ukca_ddepo3_ocean=True),
+            "requires >75% open water fraction",
+        ),
+        (
+            deposition(l_ukca_dry_dep_so2wet=True),
+            "not fully implemented in JULES standalone",
+        ),
+    ],
+)
+def test_standalone_deposition_fail_if(overrides, message):
+    with pytest.raises(ValidationError, match=message):
+        build(**overrides)
+
+
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        (
+            deposition(l_deposition_from_ukca=False),
+            "only the call to the deposition routines from the UKCA",
+        ),
+        (
+            deposition(l_deposition_from_ukca=True, dep_h2_soil_scheme=2),
+            "Paulot et al. H2 scheme",
+        ),
+        (
+            deposition(l_deposition_from_ukca=True, l_deposition_gc_corr=True),
+            "stomatal conductance corrected for bare soil evaporation",
+        ),
+    ],
+)
+def test_um_deposition_fail_if(overrides, message):
+    with pytest.raises(ValidationError, match=message):
+        build(**UM, **overrides)
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        # trap 1: the block is inert with deposition off, so none of the
+        # parent-compatibility rules applies to it
+        {
+            "jules_deposition": {
+                "jules_deposition": {
+                    "l_ukca_ddepo3_ocean": True,
+                    "l_ukca_dry_dep_so2wet": True,
+                }
+            }
+        },
+        deposition(),
+    ],
+)
+def test_standalone_deposition_shapes_that_are_legal(overrides):
+    build(**overrides)
+
+
+def test_um_deposition_shapes_that_are_legal():
+    build(**UM)
+    build(**UM, **deposition(l_deposition_from_ukca=True))
+
+
+SURFACE_HEIGHT_MESSAGE = "expected nsurft=9"
+
+
+@pytest.mark.parametrize(
+    ("surf_hgt", "z_land"),
+    [
+        ({"zero_height": False, "l_elev_absolute_height": [False, False]}, {}),
+        ({"use_file": False, "surf_hgt_io": [0.0, 0.0]}, {}),
+        (
+            {"zero_height": False, "l_elev_absolute_height": [True] * 9},
+            {"surf_hgt_band": [0.0, 0.0]},
+        ),
+    ],
+)
+def test_surface_height_arrays_must_be_nsurft_long(surf_hgt, z_land):
+    with pytest.raises(ValidationError, match=SURFACE_HEIGHT_MESSAGE):
+        build(model_grid={"jules_surf_hgt": surf_hgt, "jules_z_land": z_land})
+
+
+def test_aggregated_tiles_want_a_single_surface_height():
+    build(
+        jules_surface={"jules_surface": {"l_aggregate": True}},
+        model_grid={
+            "jules_surf_hgt": {"zero_height": False, "l_elev_absolute_height": [True]}
+        },
+    )
+    with pytest.raises(ValidationError, match="expected nsurft=1"):
+        build(
+            jules_surface={"jules_surface": {"l_aggregate": True}},
+            model_grid={
+                "jules_surf_hgt": {
+                    "zero_height": False,
+                    "l_elev_absolute_height": [True] * 9,
+                }
+            },
+        )
+
+
+@pytest.mark.parametrize(
+    "surf_hgt",
+    [
+        # `zero_height` deactivates `l_elev_absolute_height`, and `use_file`
+        # deactivates `surf_hgt_io`; a `fail-if` is not applied to a setting
+        # its own `trigger` has switched off (UPSTREAM.md 4.1)
+        {"zero_height": True, "l_elev_absolute_height": [False, False]},
+        {"use_file": True, "surf_hgt_io": [0.0, 0.0]},
+    ],
+)
+def test_a_deactivated_surface_height_array_is_not_length_checked(surf_hgt):
+    build(model_grid={"jules_surf_hgt": surf_hgt})
+
+
+@pytest.mark.parametrize(
+    ("model_cls", "kwargs", "member"),
+    [
+        (JulesSurfHgt, {"surf_hgt_io": [1.0]}, "surf_hgt_io"),
+        (JulesSurfHgt, {"use_file": False, "file": "hgt.nc"}, "file"),
+        (JulesSurfHgt, {"use_file": False, "surf_hgt_name": "h"}, "surf_hgt_name"),
+        (JulesZLand, {"z_land_io": 12.0}, "z_land_io"),
+        (JulesZLand, {"use_file": False, "file": "z.nc"}, "file"),
+        (JulesZLand, {"use_file": False, "z_land_name": "z"}, "z_land_name"),
+        (JulesTriffid, {"harvest_freq_io": [1, 1]}, "harvest_freq_io"),
+        (JulesTriffid, {"harvest_ht_io": [3.0, 0.1]}, "harvest_ht_io"),
+    ],
+)
+def test_recovered_trigger_warns(model_cls, kwargs, member):
+    messages = inactive(model_cls, **kwargs)
+    assert any(f"'{member}'" in message for message in messages), messages
+
+
+@pytest.mark.parametrize(
+    ("model_cls", "kwargs"),
+    [
+        (JulesSurfHgt, {"use_file": False, "surf_hgt_io": [1.0]}),
+        (JulesSurfHgt, {"use_file": True, "file": "hgt.nc"}),
+        (JulesZLand, {"use_file": False, "z_land_io": 12.0}),
+        (JulesZLand, {"use_file": True, "file": "z.nc"}),
+        (JulesTriffid, {"harvest_type_io": [0, 2], "harvest_freq_io": [1, 1]}),
+        (JulesTriffid, {"harvest_type_io": [0, 2], "harvest_ht_io": [3.0, 0.1]}),
+    ],
+)
+def test_recovered_trigger_is_silent_when_the_member_is_active(model_cls, kwargs):
+    assert inactive(model_cls, **kwargs) == []
+
+
+def test_recovered_trigger_blocks_are_silent_by_default():
+    """The `is_specified` contract, on the blocks these rules touch."""
+    for model_cls in (JulesSurfHgt, JulesZLand, JulesTriffid, ModelGridNamelist):
+        assert inactive(model_cls) == [], model_cls.__name__
+
+
+def test_z_land_is_inactive_without_an_absolute_elevation():
+    messages = inactive(ModelGridNamelist, jules_z_land={"surf_hgt_band": [0.0, 0.0]})
+    assert any("'surf_hgt_band'" in message for message in messages), messages
+
+
+def test_surf_hgt_use_file_is_inactive_with_an_absolute_elevation():
+    messages = inactive(
+        ModelGridNamelist,
+        jules_surf_hgt={
+            "zero_height": False,
+            "l_elev_absolute_height": [True],
+            "use_file": False,
+        },
+    )
+    assert any("'use_file'" in message for message in messages), messages
+
+
+def test_z_land_is_active_with_an_absolute_elevation():
+    assert (
+        inactive(
+            ModelGridNamelist,
+            jules_surf_hgt={"zero_height": False, "l_elev_absolute_height": [True]},
+            jules_z_land={"surf_hgt_band": [0.0, 0.0]},
+        )
+        == []
+    )
+
+
+@pytest.mark.parametrize(
+    ("overrides", "member"),
+    [
+        (
+            {
+                "jules_vegetation": {"jules_vegetation": {"photo_acclim_model": 1}},
+                "pft_params": {"jules_pftparm": {"ds_jmax_io": [0.1] * 5}},
+            },
+            "ds_jmax_io",
+        ),
+        (
+            {
+                "jules_vegetation": {"jules_vegetation": {"photo_acclim_model": 1}},
+                "pft_params": {"jules_pftparm": {"ds_vcmax_io": [0.1] * 5}},
+            },
+            "ds_vcmax_io",
+        ),
+        (
+            {
+                "jules_vegetation": {
+                    "jules_vegetation": {
+                        "photo_acclim_model": 2,
+                        "photo_act_model": 2,
+                    }
+                },
+                "pft_params": {"jules_pftparm": {"act_jmax_io": [1.0] * 5}},
+            },
+            "act_jmax_io",
+        ),
+        (
+            {
+                "jules_vegetation": {
+                    "jules_vegetation": {
+                        "photo_acclim_model": 2,
+                        "photo_act_model": 2,
+                    }
+                },
+                "pft_params": {"jules_pftparm": {"act_vcmax_io": [1.0] * 5}},
+            },
+            "act_vcmax_io",
+        ),
+        (
+            {
+                "ancillaries": {
+                    "jules_vegetation_props": {"nvars": 1, "var": ["t_home_gb"]}
+                }
+            },
+            "nvars",
+        ),
+        (
+            {"triffid_params": {"jules_triffid": {"ag_expand_io": [1, 0, 0, 0, 0]}}},
+            "ag_expand_io",
+        ),
+    ],
+)
+def test_recovered_cross_namelist_trigger_warns(overrides, member):
+    messages = inactive_config(**overrides)
+    assert any(f"'{member}'" in message for message in messages), messages
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        # the acclimation models that do read the per-PFT entropy factors
+        {"pft_params": {"jules_pftparm": {"ds_jmax_io": [0.1] * 5}}},
+        {
+            "jules_vegetation": {"jules_vegetation": {"photo_acclim_model": 2}},
+            "pft_params": {"jules_pftparm": {"act_jmax_io": [1.0] * 5}},
+        },
+        # thermal adaptation is what `jules_vegetation_props` exists for
+        {
+            "jules_vegetation": {"jules_vegetation": {"photo_acclim_model": 1}},
+            "ancillaries": {
+                "jules_vegetation_props": {"nvars": 1, "var": ["t_home_gb"]}
+            },
+        },
+        # a per-element default written out in full is not a deliberate choice
+        {"triffid_params": {"jules_triffid": {"ag_expand_io": [0, 0, 0, 0, 0]}}},
+    ],
+)
+def test_recovered_cross_namelist_trigger_is_silent(overrides):
+    assert inactive_config(**overrides) == []

@@ -10,7 +10,7 @@ from typing import Annotated, ClassVar
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas._conditional import fail_if, warn_inactive
+from julesconf.schemas._conditional import fail_if, warn_discouraged, warn_inactive
 from julesconf.schemas.constraints import name_or_value
 
 __all__ = [
@@ -167,6 +167,15 @@ class JulesSoilBiogeochem(NamelistModel):
         fail_if(
             self.l_ch4_interactive and not self.l_ch4_tlayered,
             "l_ch4_interactive requires l_ch4_tlayered = TRUE",
+        )
+        return self
+
+    @model_validator(mode="after")
+    def _warn_microbe_substrate(self) -> "JulesSoilBiogeochem":
+        """The microbial methane scheme is only tuned for soil carbon."""
+        warn_discouraged(
+            self.l_ch4_microbe and self.ch4_substrate != Ch4Substrate.soil_carbon,
+            "microbial model only tuned for ch4_substrate=1",
         )
         return self
 
