@@ -16,6 +16,8 @@ from pydantic import ValidationError
 
 from julesconf.schemas import InactiveNamelistKeyWarning, JulesNamelists
 from julesconf.schemas._conditional import is_specified
+from julesconf.schemas.ancillaries import JulesRiversProps
+from julesconf.schemas.imogen import ChangeMetdataMethod, ImogenRunList
 from julesconf.schemas.jules_hydrology import JulesHydrology
 from julesconf.schemas.jules_irrig import JulesIrrig
 from julesconf.schemas.jules_radiation import JulesRadiation
@@ -134,6 +136,43 @@ def test_is_specified_is_false_for_an_unknown_member():
         (JulesVegetation, {"stomata_model": 3, "can_rad_mod": 4}, "can_rad_mod"),
         (JulesUrban, {"l_urban_empirical": True}, "l_urban_empirical"),
         (JulesModelEnvironment, {"lsm_id": 2, "l_jules_parent": 1}, "CABLE"),
+        (
+            JulesRiversProps,
+            {"coordinate_file": "rivers_%vv.nc"},
+            "Coordinate file cannot contain variable name template",
+        ),
+        (
+            JulesRiversProps,
+            {"file": "rivers_%vv.nc"},
+            "file to read coordinates from must be specified",
+        ),
+        (
+            JulesRiversProps,
+            {"read_list": True, "file": "rivers_%vv.nc", "coordinate_file": "grid.nc"},
+            "Cannot use variable name templating while reading a list of files",
+        ),
+        (
+            JulesRiversProps,
+            {"read_list": True, "file": "files.txt"},
+            "file to read coordinates from must be specified",
+        ),
+        (
+            JulesRiversProps,
+            {"read_list": True, "coordinate_file": "grid.nc"},
+            "there has to be a file specified to read",
+        ),
+        (
+            ImogenRunList,
+            {"change_metdata_method": 2, "land_feed_co2": True},
+            "land_feed_co2 is not available when change_metdata_method is"
+            " prescribed_anomalies",
+        ),
+        (
+            ImogenRunList,
+            {"change_metdata_method": 3, "c_emissions": True},
+            "c_emissions is not available when change_metdata_method is"
+            " global_temperature_patterns",
+        ),
     ],
 )
 def test_block_level_fail_if(model_cls, kwargs, message):
@@ -555,3 +594,43 @@ def test_cross_namelist_trigger_warns():
         if issubclass(record.category, InactiveNamelistKeyWarning)
     ]
     assert any("'ch4_substrate'" in message for message in messages), messages
+
+
+# --------------------------------------------------------------------------
+# the shapes the new river-routing and IMOGEN rules must *not* reject
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        # the shape every real routing app uses: one file, no templating
+        {"file": "rivers.nc", "coordinate_file": "rivers.nc", "nvars": 0},
+        # a list of files, with the coordinates named separately
+        {"read_list": True, "file": "file_list.txt", "coordinate_file": "grid.nc"},
+        # templating, with the coordinates named separately
+        {"file": "rivers_%vv.nc", "coordinate_file": "grid.nc"},
+    ],
+)
+def test_river_props_file_sources_that_are_legal(kwargs):
+    JulesRiversProps(**kwargs)
+
+
+def test_imogen_feedbacks_are_legal_with_the_analogue_model():
+    """Method 1 is the one that supports every feedback."""
+    ImogenRunList(
+        change_metdata_method=ChangeMetdataMethod.analogue_patterns,
+        land_feed_co2=True,
+        land_feed_ch4=True,
+        ocean_feed=True,
+        c_emissions=True,
+        include_non_co2_radf=True,
+    )
+
+
+def test_imogen_prescribed_anomalies_accept_the_switches_turned_off():
+    ImogenRunList(
+        change_metdata_method=ChangeMetdataMethod.prescribed_anomalies,
+        c_emissions=False,
+        include_non_co2_radf=False,
+    )

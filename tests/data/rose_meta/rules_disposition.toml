@@ -520,142 +520,142 @@ hash = "13a5e641476a62a1"
 
 ["namelist:imogen_run_list=c_emissions#trigger#1"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=c_emissions"
+reason = "not yet implemented"
 hash = "039c37d72f741a52"
 
 ["namelist:imogen_run_list=c_emissions#trigger#2"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=c_emissions"
+reason = "not yet implemented"
 hash = "595ba386cd49c329"
 
 ["namelist:imogen_run_list=c_emissions#trigger#3"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=c_emissions"
+reason = "not yet implemented"
 hash = "2b389eb1e51616c1"
 
 ["namelist:imogen_run_list=c_emissions#trigger#4"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=c_emissions"
+reason = "not yet implemented"
 hash = "7d85564e9acf51b5"
 
 ["namelist:imogen_run_list=c_emissions#trigger#5"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=c_emissions"
+reason = "not yet implemented"
 hash = "005cc3f1cffce92c"
 
 ["namelist:imogen_run_list=change_metdata_method#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model imogen_run_list=change_metdata_method"
+status = "implemented"
+where = "imogen.ImogenRunList._check_metdata_method_feedbacks"
 hash = "bdbb2dcf3384e727"
 
 ["namelist:imogen_run_list=change_metdata_method#fail-if#10"]
-status = "todo"
-reason = "julesconf does not model imogen_run_list=change_metdata_method"
+status = "implemented"
+where = "imogen.ImogenRunList._check_metdata_method_feedbacks"
 hash = "0a53edfae4b8315c"
 
 ["namelist:imogen_run_list=change_metdata_method#fail-if#2"]
-status = "todo"
-reason = "julesconf does not model imogen_run_list=change_metdata_method"
+status = "implemented"
+where = "imogen.ImogenRunList._check_metdata_method_feedbacks"
 hash = "9f5b7463e60596a9"
 
 ["namelist:imogen_run_list=change_metdata_method#fail-if#3"]
-status = "todo"
-reason = "julesconf does not model imogen_run_list=change_metdata_method"
+status = "implemented"
+where = "imogen.ImogenRunList._check_metdata_method_feedbacks"
 hash = "c032a2da0e7bc354"
 
 ["namelist:imogen_run_list=change_metdata_method#fail-if#4"]
-status = "todo"
-reason = "julesconf does not model imogen_run_list=change_metdata_method"
+status = "implemented"
+where = "imogen.ImogenRunList._check_metdata_method_feedbacks"
 hash = "99434589bdd73b74"
 
 ["namelist:imogen_run_list=change_metdata_method#fail-if#5"]
-status = "todo"
-reason = "julesconf does not model imogen_run_list=change_metdata_method"
+status = "implemented"
+where = "imogen.ImogenRunList._check_metdata_method_feedbacks"
 hash = "4003dde9e2f04492"
 
 ["namelist:imogen_run_list=change_metdata_method#fail-if#6"]
-status = "todo"
-reason = "julesconf does not model imogen_run_list=change_metdata_method"
+status = "implemented"
+where = "imogen.ImogenRunList._check_metdata_method_feedbacks"
 hash = "51e7bb40e99c4143"
 
 ["namelist:imogen_run_list=change_metdata_method#fail-if#7"]
-status = "todo"
-reason = "julesconf does not model imogen_run_list=change_metdata_method"
+status = "implemented"
+where = "imogen.ImogenRunList._check_metdata_method_feedbacks"
 hash = "7b0b34b6860b8b77"
 
 ["namelist:imogen_run_list=change_metdata_method#fail-if#8"]
-status = "todo"
-reason = "julesconf does not model imogen_run_list=change_metdata_method"
+status = "implemented"
+where = "imogen.ImogenRunList._check_metdata_method_feedbacks"
 hash = "84e570a3baa21101"
 
 ["namelist:imogen_run_list=change_metdata_method#fail-if#9"]
-status = "todo"
-reason = "julesconf does not model imogen_run_list=change_metdata_method"
+status = "implemented"
+where = "imogen.ImogenRunList._check_metdata_method_feedbacks"
 hash = "67e15770ed7a2a38"
 
 ["namelist:imogen_run_list=include_co2#trigger#1"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=include_co2"
+reason = "not yet implemented"
 hash = "fdd031af69e36368"
 
 ["namelist:imogen_run_list=include_non_co2_radf#trigger#1"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=include_non_co2_radf"
+reason = "not yet implemented"
 hash = "6029511350a6f463"
 
 ["namelist:imogen_run_list=include_non_co2_radf#trigger#2"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=include_non_co2_radf"
+reason = "not yet implemented"
 hash = "43f40c72d86e5b16"
 
 ["namelist:imogen_run_list=initialise_from_dump#trigger#1"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=initialise_from_dump"
+reason = "not yet implemented"
 hash = "883036fee9ae594e"
 
 ["namelist:imogen_run_list=l_change_metdata#trigger#1"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=l_change_metdata"
+reason = "not yet implemented"
 hash = "60ba464acf400642"
 
 ["namelist:imogen_run_list=land_feed_ch4#trigger#1"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=land_feed_ch4"
+reason = "not yet implemented"
 hash = "92dc5b1162af1fd0"
 
 ["namelist:imogen_run_list=land_feed_ch4#trigger#2"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=land_feed_ch4"
+reason = "not yet implemented"
 hash = "ef18c993dc81c0a2"
 
 ["namelist:imogen_run_list=land_feed_ch4#trigger#3"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=land_feed_ch4"
+reason = "not yet implemented"
 hash = "a4ce1cd95ae388f3"
 
 ["namelist:imogen_run_list=land_feed_ch4#trigger#4"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=land_feed_ch4"
+reason = "not yet implemented"
 hash = "d564aab82799e700"
 
 ["namelist:imogen_run_list=land_feed_ch4#trigger#5"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=land_feed_ch4"
+reason = "not yet implemented"
 hash = "57481b13b547ff52"
 
 ["namelist:imogen_run_list=land_feed_ch4#trigger#6"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=land_feed_ch4"
+reason = "not yet implemented"
 hash = "45cfa2e7d77031c6"
 
 ["namelist:imogen_run_list=land_feed_ch4#trigger#7"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=land_feed_ch4"
+reason = "not yet implemented"
 hash = "2ccc4a86b9341f03"
 
 ["namelist:imogen_run_list=ocean_feed#trigger#1"]
 status = "todo"
-reason = "julesconf does not model imogen_run_list=ocean_feed"
+reason = "not yet implemented"
 hash = "d12254f9d6eb9b91"
 
 ["namelist:jules_agric=zero_agric#trigger#1"]
@@ -4559,118 +4559,118 @@ reason = "rose does not apply fail-if to a trigger-ignored setting; taken litera
 hash = "f5dafb600d563ada"
 
 ["namelist:jules_rivers_props=const_val#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_rivers_props=const_val"
+status = "covered-by-listlen"
+where = "ListLen('nvars')"
 hash = "7c14af2339b003e0"
 
 ["namelist:jules_rivers_props=coordinate_file#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_rivers_props=coordinate_file"
+status = "implemented"
+where = "ancillaries.JulesRiversProps._check_file_sources"
 hash = "387003248020aa8c"
 
 ["namelist:jules_rivers_props=file#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_rivers_props=file"
+status = "implemented"
+where = "ancillaries.JulesRiversProps._check_file_sources"
 hash = "480522343e6739ed"
 
 ["namelist:jules_rivers_props=file#trigger#1"]
 status = "todo"
-reason = "julesconf does not model jules_rivers_props=file"
+reason = "not yet implemented"
 hash = "85d03212baf45567"
 
 ["namelist:jules_rivers_props=file#trigger#2"]
 status = "todo"
-reason = "julesconf does not model jules_rivers_props=file"
+reason = "not yet implemented"
 hash = "7816904d9e489684"
 
 ["namelist:jules_rivers_props=l_find_grid#trigger#1"]
 status = "todo"
-reason = "julesconf does not model jules_rivers_props=l_find_grid"
+reason = "not yet implemented"
 hash = "d1da09e798fb1795"
 
 ["namelist:jules_rivers_props=l_find_grid#trigger#2"]
 status = "todo"
-reason = "julesconf does not model jules_rivers_props=l_find_grid"
+reason = "not yet implemented"
 hash = "db2cc481719e958d"
 
 ["namelist:jules_rivers_props=l_find_grid#trigger#3"]
 status = "todo"
-reason = "julesconf does not model jules_rivers_props=l_find_grid"
+reason = "not yet implemented"
 hash = "f07d53ebf9ca22b3"
 
 ["namelist:jules_rivers_props=l_find_grid#trigger#4"]
 status = "todo"
-reason = "julesconf does not model jules_rivers_props=l_find_grid"
+reason = "not yet implemented"
 hash = "173ffeac42afbf87"
 
 ["namelist:jules_rivers_props=nvars#trigger#1"]
 status = "todo"
-reason = "julesconf does not model jules_rivers_props=nvars"
+reason = "not yet implemented"
 hash = "a60ecb9c0cab9c90"
 
 ["namelist:jules_rivers_props=nvars#trigger#2"]
 status = "todo"
-reason = "julesconf does not model jules_rivers_props=nvars"
+reason = "not yet implemented"
 hash = "2aa9125a9ca1caf4"
 
 ["namelist:jules_rivers_props=read_list#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_rivers_props=read_list"
+status = "implemented"
+where = "ancillaries.JulesRiversProps._check_file_sources"
 hash = "cb78797cc2a14f5c"
 
 ["namelist:jules_rivers_props=read_list#fail-if#2"]
-status = "todo"
-reason = "julesconf does not model jules_rivers_props=read_list"
+status = "implemented"
+where = "ancillaries.JulesRiversProps._check_file_sources"
 hash = "5ab93e2c47d1ad32"
 
 ["namelist:jules_rivers_props=read_list#fail-if#3"]
-status = "todo"
-reason = "julesconf does not model jules_rivers_props=read_list"
+status = "implemented"
+where = "ancillaries.JulesRiversProps._check_file_sources"
 hash = "83c5306f2afae295"
 
 ["namelist:jules_rivers_props=rivers_regrid#fail-if#1"]
 status = "todo"
-reason = "julesconf does not model jules_rivers_props=rivers_regrid"
+reason = "not yet implemented"
 hash = "a868e958507fd538"
 
 ["namelist:jules_rivers_props=tpl_name#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_rivers_props=tpl_name"
+status = "covered-by-listlen"
+where = "ListLen('nvars')"
 hash = "7c14af2339b003e0"
 
 ["namelist:jules_rivers_props=use_file#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_rivers_props=use_file"
+status = "covered-by-listlen"
+where = "ListLen('nvars')"
 hash = "7c14af2339b003e0"
 
 ["namelist:jules_rivers_props=use_file#trigger#1"]
 status = "todo"
-reason = "julesconf does not model jules_rivers_props=use_file"
+reason = "not yet implemented"
 hash = "32ea5ca17ed5da27"
 
 ["namelist:jules_rivers_props=use_file#trigger#2"]
 status = "todo"
-reason = "julesconf does not model jules_rivers_props=use_file"
+reason = "not yet implemented"
 hash = "7facf9c46702cff2"
 
 ["namelist:jules_rivers_props=use_file#trigger#3"]
 status = "todo"
-reason = "julesconf does not model jules_rivers_props=use_file"
+reason = "not yet implemented"
 hash = "9b7f85257d099e4f"
 
 ["namelist:jules_rivers_props=var#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_rivers_props=var"
+status = "covered-by-listlen"
+where = "ListLen('nvars')"
 hash = "7c14af2339b003e0"
 
 ["namelist:jules_rivers_props=var#trigger#1"]
 status = "todo"
-reason = "julesconf does not model jules_rivers_props=var"
+reason = "not yet implemented"
 hash = "eb1439c2536eb7cc"
 
 ["namelist:jules_rivers_props=var_name#fail-if#1"]
-status = "todo"
-reason = "julesconf does not model jules_rivers_props=var_name"
+status = "covered-by-listlen"
+where = "ListLen('nvars')"
 hash = "7c14af2339b003e0"
 
 ["namelist:jules_snow=can_clump#fail-if#1"]

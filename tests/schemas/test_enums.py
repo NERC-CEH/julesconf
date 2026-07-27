@@ -3,6 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
+from julesconf.schemas.imogen import ChangeMetdataMethod, ImogenRunList
 from julesconf.schemas.jules_irrig import IrrCrop, JulesIrrig
 from julesconf.schemas.jules_rivers import JulesRivers, RiverRoutingAlgorithm
 from julesconf.schemas.jules_soil import JulesSoil, SoilhcMethod
@@ -44,6 +45,12 @@ from julesconf.schemas.model_environment import (
         (JulesVegetation, "can_model", CanModel, [4, "radiative_snow"]),
         (JulesModelEnvironment, "l_jules_parent", JulesParent, [0, "standalone"]),
         (JulesModelEnvironment, "lsm_id", LsmId, [1, "jules"]),
+        (
+            ImogenRunList,
+            "change_metdata_method",
+            ChangeMetdataMethod,
+            [1, "analogue_patterns"],
+        ),
     ],
 )
 def test_enum_field_accepts_int_and_name(model_cls, field_name, enum_cls, valid_values):
@@ -60,6 +67,7 @@ def test_enum_field_accepts_int_and_name(model_cls, field_name, enum_cls, valid_
         (JulesRivers, "i_river_vn", 99),
         (JulesIrrig, "irr_crop", "not_a_crop"),
         (JulesModelEnvironment, "l_jules_parent", "unknown"),
+        (ImogenRunList, "change_metdata_method", 4),
     ],
 )
 def test_enum_field_rejects_invalid_value(model_cls, field_name, invalid_value):
