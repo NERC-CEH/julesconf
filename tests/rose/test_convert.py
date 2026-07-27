@@ -370,7 +370,7 @@ KNOWN_UNKNOWN_MEMBERS = [
 Each entry is `Model.member`. This is the schema-gap tracker: shrinking it
 is the point, growing it without noticing is the risk. It stood at 97 entries
 when the corpus was first vendored and fell to 4 in Phase 4; see
-`notes/schema_gap_inventory.md` for the classification of the rest of the
+`notes/logs/schema_gap_inventory.md` for the classification of the rest of the
 vn7.9 gap.
 
 Phase 9 took it to 75 by vendoring four more apps. That was the tracker

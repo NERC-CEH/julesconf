@@ -1,6 +1,6 @@
 """Phase 1 gates: the TOML front-end and the explicit-defaults guarantee.
 
-See the "Test suite" section of `notes/toml_config.md`.
+See the "Test suite" section of `notes/plans/done/toml_config.md`.
 """
 
 import warnings
