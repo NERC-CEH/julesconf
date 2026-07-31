@@ -560,7 +560,7 @@ class TestFormat:
     def test_no_destination_is_a_usage_error(self, cwd, config_toml):
         result = runner.invoke(app, ["format", str(config_toml)])
         assert result.exit_code == 2
-        assert "--in-place" in result.output
+        assert "--in-place" in re.sub(r"\x1b\[[0-9;]*m", "", result.output)
 
     def test_both_destinations_is_a_usage_error(self, cwd, config_toml):
         result = runner.invoke(
