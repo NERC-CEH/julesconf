@@ -51,8 +51,19 @@ def test_correct_lengths_validate():
             "t_bse_io": [273.15],
         }
     }
+    # `cansnowpft` and `rsurf_std_io` are each read by one option only; the
+    # gates go in so the lengths are checked without an inactive-key warning.
+    data["jules_vegetation"]["jules_vegetation"]["can_model"] = "radiative_snow"
     data["jules_snow"] = {"jules_snow": {"cansnowpft": [True, False, True]}}
-    data["jules_deposition"] = {"jules_deposition_species": {"rsurf_std_io": [1.0] * 5}}
+    # A repeated group: always a list, and its count member must agree.
+    data["jules_deposition"] = {
+        "jules_deposition": {
+            "l_deposition": True,
+            "dry_dep_model": "flexible_ukca",
+            "ndry_dep_species": 1,
+        },
+        "jules_deposition_species": [{"rsurf_std_io": [1.0] * 5}],
+    }
     JulesNamelists.model_validate(data)
 
 
@@ -106,6 +117,7 @@ def test_crop_cfrac_s_io_wrong_npft():
 
 def test_snow_npft_wrong():
     data = _minimal_valid()
+    data["jules_vegetation"]["jules_vegetation"]["can_model"] = "radiative_snow"
     data["jules_snow"] = {"jules_snow": {"cansnowpft": [True] * 4}}
     with pytest.raises(ValidationError, match=r"jules_snow\.jules_snow\.cansnowpft"):
         JulesNamelists.model_validate(data)
@@ -113,10 +125,17 @@ def test_snow_npft_wrong():
 
 def test_deposition_ntype_wrong():
     data = _minimal_valid()
-    data["jules_deposition"] = {"jules_deposition_species": {"rsurf_std_io": [1.0] * 8}}
+    data["jules_deposition"] = {
+        "jules_deposition": {
+            "l_deposition": True,
+            "dry_dep_model": "flexible_ukca",
+            "ndry_dep_species": 1,
+        },
+        "jules_deposition_species": [{"rsurf_std_io": [1.0] * 8}],
+    }
     with pytest.raises(
         ValidationError,
-        match=r"jules_deposition\.jules_deposition_species\.rsurf_std_io",
+        match=r"jules_deposition\.jules_deposition_species\(1\)\.rsurf_std_io",
     ):
         JulesNamelists.model_validate(data)
 
@@ -234,6 +253,40 @@ def test_tolerated_length_is_written_back_unchanged():
 
     written = JulesNamelists.model_validate(data).to_namelist_dict()
     assert written["triffid_params"]["jules_triffid"]["g_area_io"] == supplied
+
+
+def test_cfrac_s_io_follows_the_metadata_and_tolerates_the_user_guide_dim():
+    """The one upstream contradiction in `JULES_CROPPARM`.
+
+    `crop_params.nml.rst` documents `cfrac_s_io` as `real(npft)` while every
+    sibling is `real(ncpft)`, the rose metadata says `ncpft`, and every real
+    crop configuration supplies `ncpft` values. julesconf takes `ncpft` as
+    canonical — so the parameter groups under `[[crop_pft]]` with its
+    siblings, and a crop config round-trips through the grouped TOML form —
+    but tolerates the `npft` length the reference documents.
+    """
+    data = _minimal_valid(npft=5, nnvg=4, ncpft=2)
+    crop = data.setdefault("crop_params", {}).setdefault("jules_cropparm", {})
+
+    crop["cfrac_s_io"] = [0.5] * 2
+    JulesNamelists.model_validate(data)
+
+    crop["cfrac_s_io"] = [0.5] * 5
+    JulesNamelists.model_validate(data)
+
+    crop["cfrac_s_io"] = [0.5] * 3
+    with pytest.raises(ValidationError, match=r"expected ncpft=2 or npft=5"):
+        JulesNamelists.model_validate(data)
+
+
+def test_delta_io_accepts_the_negative_jules_defaults():
+    """`delta_io` is the SLA exponent and is negative in every real config."""
+    data = _minimal_valid(npft=5, nnvg=4, ncpft=2)
+    data.setdefault("crop_params", {}).setdefault("jules_cropparm", {})["delta_io"] = [
+        -0.0507,
+        -0.1451,
+    ]
+    JulesNamelists.model_validate(data)
 
 
 def test_list_len_rejects_unknown_tolerated_dim():

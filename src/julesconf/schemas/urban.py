@@ -4,9 +4,10 @@ Reference: JULES user guide v7.9,
 `jules-lsm.github.io/user_guide/doc/source/namelists/urban.nml.rst`
 """
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._conditional import fail_if
 
 __all__ = ["JulesUrban", "UrbanNamelist"]
 
@@ -30,6 +31,15 @@ class JulesUrban(NamelistModel):
     """Switch to use MacDonald et al. (1998) formulations for roughness length and displacement height from urban geometry."""
     l_urban_empirical: bool = False
     """Switch to use empirical relationships for urban geometry (W/R, H/W, H) based on total urban fraction."""
+
+    @model_validator(mode="after")
+    def _check_macdonald(self) -> "JulesUrban":
+        """Empirical urban morphology implies the MacDonald parametrisation."""
+        fail_if(
+            self.l_urban_empirical and not self.l_moruses_macdonald,
+            "Must be true if l_urban_empirical is true",
+        )
+        return self
 
 
 class UrbanNamelist(NamelistModel):

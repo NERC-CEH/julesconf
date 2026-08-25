@@ -7,6 +7,7 @@ Reference: JULES user guide v7.9,
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._conditional import fail_if, warn_inactive
 
 __all__ = ["JulesHydrology", "JulesHydrologyNamelist"]
 
@@ -55,6 +56,38 @@ class JulesHydrology(NamelistModel):
             for name in ("zw_max", "ti_max", "ti_wetl", "nfita"):
                 if getattr(self, name) is None:
                     raise ValueError(f"{name} is required when l_top=True")
+        return self
+
+    @model_validator(mode="after")
+    def _check_runoff_schemes(self) -> "JulesHydrology":
+        """TOPMODEL and PDM are alternatives, and `l_spdmvar` belongs to PDM."""
+        fail_if(self.l_top and self.l_pdm, "Can't have TOPMODEL and PDM together")
+        fail_if(
+            self.l_spdmvar and not self.l_pdm,
+            "clarify that l_spdmvar=T can only be used with l_pdm=T",
+        )
+        return self
+
+    @model_validator(mode="after")
+    def _warn_inactive_members(self) -> "JulesHydrology":
+        """Warn about runoff parameters the selected schemes make inactive."""
+        if not self.l_hydrology:
+            warn_inactive(
+                self,
+                ("l_var_rainfrac", "l_top", "l_pdm", "l_limit_gsoil"),
+                because="l_hydrology is false",
+            )
+            return self
+        if not self.l_top:
+            warn_inactive(
+                self,
+                ("zw_max", "ti_max", "ti_wetl", "nfita", "l_wetland_unfrozen"),
+                because="l_top is false",
+            )
+        if not self.l_pdm:
+            warn_inactive(
+                self, ("b_pdm", "dz_pdm", "l_spdmvar"), because="l_pdm is false"
+            )
         return self
 
 

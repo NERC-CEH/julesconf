@@ -1,89 +1,50 @@
 # julesconf
 
-Python configuration management for the JULES land surface model.
-
-## Quick start
-
 ```
-uv sync --group dev --locked
-just
+uv sync --group dev --locked && just
 ```
 
-## Commands
+## Gotchas
 
-| `just` (default) | lint + typecheck + test + docs |
-|---|---|
-| `just lint` | `ruff format && ruff check --fix` |
-| `just lint-check` | `ruff format --check && ruff check` (CI-safe, no writes) |
-| `just test` | `pytest` |
-| `just test-cov` | `pytest --cov=julesconf --cov-report=term-missing --cov-fail-under=90` |
-| `just typecheck` | `pyright` |
-| `just docs` | `zensical build` |
+- Two upstream sources (RST docs + rose metadata) can contradict. No blanket rule — decide on evidence, record in `notes/UPSTREAM.md`. `reference/` is gitignored; use the committed extract (`tests/data/rose_meta/vn7.9.json`), not raw rose-meta.
+- `jules_soil_ecosse`, `cable_*`, `oasis_rivers`, `red_params` are deliberately NOT modelled (scope decisions). Don't add schemas. `jules_deposition_species_specific` IS a backlog gap (safe to add).
+- Repeated groups: no scalar-or-list coercion for blocks. Too many blocks is legal (surplus = `InactiveNamelistKeyWarning`). Sibling dims per-element. Fields inside repeated groups can't pivot to grouped TOML.
+- `ListLen` must sit on the outermost `Annotated`. Wrong spelling is silently invisible to `FieldInfo.metadata`.
+- Don't depend on `metomi-rose` — GPL-3, julesconf is MIT. Rose format parser is hand-written.
+- Don't propose replacing the pydantic schemas with a generated JSON Schema per JULES version. Settled: `rose-meta` has no `default=` key anywhere, so defaults exist only in the upgrade macros and a generated schema can't produce a complete config. JSON Schema also can't do sibling dims, derived defaults, cross-namelist validators or the three warning severities. The single-version pin is caused by import-time global state, not by pydantic.
+- CLI is a thin shell: no validation/path logic in `cli.py`. `markup=False` on rich output.
+- `warn_inactive` compares value to schema default, not `model_fields_set`.
+- Tests: must `chdir` into `tmp_path`. Loobos has no crops/TRIFFID — use synthetic fixtures for those.
+- Docs: `zensical` (mkdocs-material), NOT sphinx — no `:class:`, `.. note::`, double-backtick, etc.
 
-## Key locations
+## `notes/`
 
-| `src/julesconf/config.py` | DirConfig classes (NamelistConfig, InputFilesConfig, JulesConfig) + 3 file handlers |
-|---|---|
-| `src/julesconf/schemas/` | Pydantic v2 models for 29 JULES namelists (pinned to v7.9) |
-| `src/julesconf/schemas/_namelists.py` | Top-level `JulesNamelists` combining all 29 + cross-namelist checks |
-| `src/julesconf/schemas/constraints.py` | Public field vocabulary: `Fraction`, `NonNegFloat`, `ZeroOne`, `SentinelOrFraction`, `ListLen`, `name_or_value` |
-| `src/julesconf/schemas/_grouped.py` | Grouped TOML form: generated `Pft`/`CropPft`/`Nvg` models + `assemble`/`disassemble` |
-| `tests/test_config.py` | Handler + DirConfig tests (hypothesis property-based) |
-| `tests/schemas/` | Schema tests grouped by concern (`test_bounds`, `test_enums`, `test_cross_namelist`, `test_constraints`, `test_extra_keys`, `test_namelists`, `test_grouped_models`) |
-| `tests/test_toml_grouped.py` | Phase 2 gates. The **only** cover for crop PFTs — Loobos has `ncpft = 0` |
-| `examples/loobos/` | Real Loobos config (29 `.nml` files + input data). Used by `examples/101.py`, **not** by the test suite |
+Design and decision records. **Gitignored** — local to the maintainer's checkout, so never
+cite them from shipped code, docs or commit messages; quote the reasoning inline instead.
+Layout: `plans/done/` is design reasoning for work that shipped, `logs/` is what happened.
+Every file carries a status banner; trust that over anything below.
 
-## Reference docs (ground truth)
+**Outstanding work is not tracked in this repo.** As of 2026-08-25 it lives in GitHub issues
+and in the maintainer's own notes, so do not look for a to-do list here and do not add one.
+`TODO.md` and the unbuilt `plans/` tree are gone; what is left is the record of decisions
+already taken. Issue #5 is the live one: multi-version support, JULES v8+ only.
 
-`reference/jules-lsm.github.io/user_guide/doc/source/namelists/` — official JULES v7.9 RST docs for every namelist. This is the authoritative source for schema field definitions, types, and bounds. `reference/.../input/` documents the ASCII/NetCDF input data format.
+Top level:
 
-### Postponed namelists
+- `UPSTREAM.md` — JULES upstream defects: RST-vs-metadata contradictions, malformed rules, enums missing values still in use. Add to it whenever the two sources disagree.
 
-`cable_*`, `oasis_rivers` and `red_params` have reference docs but **deliberately have no schemas**. They configure rarely-used JULES extensions (the CABLE land surface scheme, OASIS river coupling, and the RED vegetation demography model) that would add substantial modelling complexity for very few users. This is a scoping decision, not a gap to be filled — do not add schemas for them without discussing it first.
+`plans/done/` — designs whose work has shipped, kept for the reasoning:
 
-Consequences to be aware of:
+- `plans/done/toml_config.md` — why TOML, the defaults policy, and the grouped `[[pft]]` form. Explains `PerElementDefault` and the all-or-none rule better than the code does.
+- `plans/done/rose_converter.md` — pre-implementation design for rose→namelist. Still authoritative on the rose *file format* (§2) and on why rose ships no such converter itself (§1).
+- `plans/done/rose_meta.md` — what the `rose-meta` tree contains and how the conditional-validation half was built. Track A (the version-upgrade generator) was never built and moved out; the stub that replaces it keeps the three findings worth not re-deriving.
+- `plans/done/enum_migration.md` — the `int` → `IntEnum` conversion, fully implemented. Kept for the member-naming rationale and the `model_dump(mode="json")` serialization note.
+- `plans/done/roadmap.md` — the old work register; retains the CLI error-format sketch the formatter was built to.
+- `plans/done/docs_reorg.md` — the Diátaxis restructure of `docs/`, fully implemented. Consult §4 for where a new page belongs.
 
-- Coverage figures must be computed over the 29 schema'd namelists only. Counting members across all `*.nml.rst` includes the postponed ones and overstates the gap.
-- A config using these namelists is out of scope, and julesconf should say so rather than appear to support it. Intended behaviour: **emit a warning when a postponed namelist is detected** (not yet implemented — see `notes/toml_config.md`).
+`logs/` — records of work carried out:
 
-## Architecture
-
-- `NamelistFileHandler` converts `f90nml` OrderedDict → plain dict via json round-trip
-- `AsciiFileHandler` / `NetcdfFileHandler` use `@dirconf.filter` + `@dirconf.filter_missing` — require relative paths, handle missing files gracefully; `__module__` is patched manually after the decorator (dirconf bug)
-- Handlers registered via `register_handler("ascii", ...)` / `register_handler("netcdf", ...)` for extension-based dispatch
-- `NamelistModel` base uses `extra="ignore"` + `_warn_unknown_keys` — unknown keys produce `UnknownNamelistKeyWarning`, not errors (escalate with `warnings.simplefilter("error", ...)`)
-- `ListLen` metadata on fields enables cross-namelist dimension validation in `JulesNamelists._check_list_lengths`, which walks the whole model tree via `find_list_len`
-- `ListLen` must sit on the **outermost** `Annotated`: `Annotated[list[X] | None, ListLen("npft")]`. The other spelling hides it from `FieldInfo.metadata`; `test_cross_namelist.py::test_every_list_len_uses_canonical_spelling` enforces this
-- Enum fields accept int value OR string name via `name_or_value()` validator
-- Module naming rule: public modules in `schemas/` are named after `.nml` files, one-to-one. Everything else is either `_`-prefixed (`_base.py`, `_namelists.py`) or the shared `constraints.py`, and is re-exported from `schemas/__init__.py`
-- Each namelist module's `__all__` lists its top-level `*Namelist` model **and** its per-block models (`JulesPftparm`, …) — both are public
-- TOML has two forms. Flat mirrors the namelists one-to-one; grouped pivots the `ListLen` fields into `[[pft]]`/`[[crop_pft]]`/`[[nvg]]` arrays of tables. `to_toml` writes **grouped by default**; `from_toml` auto-detects. `grouped=False` is the escape hatch, and is required to preserve a TRIFFID array supplied at the tolerated `npft` length
-- `Pft`/`CropPft`/`Nvg` are **generated** from `ListLen` metadata via `create_model`, never hand-written. `test_grouped_models.py::test_generated_model_covers_exactly_its_dims` is the anti-drift guard that makes this safe; it deliberately uses a second, independent model walk (`tests/conftest.py::walk_fields`) so a bug in `_base.iter_leaf_fields` cannot hide from it
-- `CONTRIBUTORS` in `_grouped.py` is the single source of truth for both group membership and array ordering (natural PFTs, then crop PFTs, then non-vegetated)
-- `NamelistModel` sets `use_attribute_docstrings=True`, so the `"""…"""` under each field becomes its `FieldInfo.description` and carries into the generated models and the API docs
-
-## Testing quirks
-
-- Tests **must `chdir` into tmp_path** because handlers filter absolute paths
-- Hypothesis + `tmp_path` fixtures need `suppress_health_check=[HealthCheck.function_scoped_fixture]`
-- Tests build their own synthetic namelist dicts (`minimal_valid()` / `minimal_grouped()` in `tests/conftest.py`) rather than reading `examples/loobos/`. Commit `4e0678d` decoupled them deliberately; `tests/test_integration_loobos.py` is the single sanctioned exception
-- **Loobos does not exercise crops or TRIFFID.** `crop_params.nml` and `triffid_params.nml` are empty and `ncpft` is unset, so `nnpft == npft`. Anything touching `[[crop_pft]]`, `nnpft` ordering or `ListLen.tolerates` needs a synthetic fixture — the integration test will pass regardless
-
-## Toolchain quirks
-
-- `uv` (not pip/poetry) — always use `--locked` for reproducible installs
-- Python 3.12+ only
-- `just` task runner
-- `ruff` with Google-style docstrings, line-length 88
-- Per-file ruff exemptions: `tests/` → no D rules; `schemas/` → E501 allowed; `examples/*/notebook.py` → B018, E501, F841, RUF001
-- `pyright` type-checking venv at `./.venv`
-- `uv` config: `exclude-newer = "1 week"`
-- Documentation uses `zensical` (mkdocs-material), NOT sphinx — no RST roles (`:class:`, `:meth:`, etc.), no double-backtick syntax, no `.. note::` directives
-
-## CI flow
-
-```
-lint job:   lint-check → typecheck
-test job:   test-cov across Python 3.12, 3.13, 3.14
-docs job:   docs → deploy to GitHub Pages (currently commented out in workflow)
-```
+- `logs/rose_implementation_log.md` — the rose integration, phase by phase, with findings and plan deviations; also holds the PR-message draft. The record of what was actually built and why.
+- `logs/schema_gap_inventory.md` — triage of the 290 vn7.9 members julesconf once lacked. The gap is now zero; keep it for the add/defer/out-of-scope reasoning.
+- `logs/none_defaults_inventory.md` — the 459 fields defaulting to `None`, triaged into those that could take a real default and the 38 that must not.
+- `logs/alpha_prep_log.md` — what closing the enum, conditional-validation, CLI and schema-fix items involved, and the decisions taken.

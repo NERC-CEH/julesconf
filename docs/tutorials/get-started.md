@@ -50,7 +50,7 @@ The model is typed, so you reach parameters by attribute, and edits are
 re-validated:
 
 ```python
-config.timesteps.jules_time.timestep_len = 3600   # an hourly timestep
+config.timesteps.jules_time.timestep_len = 3600  # an hourly timestep
 ```
 
 An out-of-range value raises a `ValidationError` naming the field — try

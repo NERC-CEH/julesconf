@@ -5,6 +5,7 @@ the integration round-trip exercises none of the `[[crop_pft]]` or `nnpft`
 machinery. The synthetic crop fixtures here are the only cover for it.
 """
 
+import copy
 import warnings
 
 import pytest
@@ -14,7 +15,11 @@ from hypothesis import strategies as st
 
 from julesconf.schemas import JulesNamelists, UnknownNamelistKeyWarning
 from julesconf.schemas._grouped import (
+    SPECS_BY_DIM,
+    CropPft,
     GroupedConfigError,
+    Nvg,
+    Pft,
     ToleratedLengthWarning,
     assemble,
     disassemble,
@@ -129,14 +134,54 @@ def test_multiple_violations_are_reported_together():
 # ---------------------------------------------------------------------------
 
 
-def test_ntype_fields_concatenate_pfts_then_non_veg():
+def test_ntype_pivots_tile_map_ids_but_not_the_repeated_rsurf_std():
+    """Every pivotable `ntype` member pivots, and `rsurf_std_io` is not one.
+
+    `JULES_DEPOSITION_SPECIES` is a repeated group, so each species carries its
+    own `ntype`-long surface-resistance array and there is no single value a
+    `[[pft]]` entry could hold; it stays in the flat form.
+    `JULES_DEPOSITION_SPECIES_SPECIFIC` is read once, so its four `ntype`
+    arrays pivot like `tile_map_ids` does, onto every group in turn.
+    """
+    assert {spec.member for spec in SPECS_BY_DIM["ntype"]} == {
+        "tile_map_ids",
+        "ch4_up_flux_io",
+        "h2dd_c_io",
+        "h2dd_m_io",
+        "h2dd_q_io",
+    }
+    assert "rsurf_std" not in set(Pft.model_fields) | set(Nvg.model_fields)
+    for model in (Pft, CropPft, Nvg):
+        assert "tile_map_ids" in model.model_fields
+
+
+def test_ntype_member_concatenates_across_all_three_groups():
+    """An `ntype` field spans natural PFTs, then crops, then non-vegetated."""
     data = minimal_grouped(n_pft=2, n_crop=1, n_nvg=2)
     for i, entry in enumerate(data["pft"] + data["crop_pft"] + data["nvg"]):
-        entry["rsurf_std"] = float(i)
+        entry["tile_map_ids"] = i + 1
 
     config = JulesNamelists.model_validate(assemble(data))
-    species = config.jules_deposition.jules_deposition_species
-    assert species.rsurf_std_io == [0.0, 1.0, 2.0, 3.0, 4.0]
+    assert config.jules_surface_types.jules_surface_types.tile_map_ids == [
+        1,
+        2,
+        3,
+        4,
+        5,
+    ]
+
+
+def test_dimension_fields_concatenate_pfts_then_non_veg():
+    """Order across groups: natural PFTs, then crops, then non-vegetated."""
+    data = minimal_grouped(n_pft=2, n_crop=1, n_nvg=2)
+    for i, entry in enumerate(data["pft"] + data["crop_pft"]):
+        entry["canht_ft"] = float(i)
+    for i, entry in enumerate(data["nvg"]):
+        entry["albsnc_nvg"] = float(i)
+
+    config = JulesNamelists.model_validate(assemble(data))
+    assert config.pft_params.jules_pftparm.canht_ft_io == [0.0, 1.0, 2.0]
+    assert config.nveg_params.jules_nvegparm.albsnc_nvg_io == [0.0, 1.0]
 
 
 # ---------------------------------------------------------------------------
@@ -238,6 +283,46 @@ def test_usr_type_is_accepted_in_either_group():
     assert assemble(data)
 
 
+def test_elevated_ice_may_claim_several_positions():
+    """`elev_ice` is an array too: one entry per elevation band."""
+    data = minimal_grouped(n_pft=2, n_nvg=3)
+    data["nvg"][1]["type"] = "elev_ice"
+    data["nvg"][2]["type"] = "elev_ice"
+
+    flat = assemble(data)
+    assert flat["jules_surface_types"]["jules_surface_types"]["elev_ice"] == [4, 5]
+
+
+def test_a_multi_band_elev_ice_round_trips_through_the_grouped_form():
+    data = minimal_grouped(n_pft=2, n_nvg=3)
+    data["nvg"][1]["type"] = "elev_ice"
+    data["nvg"][2]["type"] = "elev_ice"
+    expected = copy.deepcopy(data["nvg"])
+
+    assert disassemble(assemble(data))["nvg"] == expected
+
+
+def test_usr_type_may_claim_several_positions():
+    """It is the one identifier JULES holds as an array, not a scalar."""
+    data = minimal_grouped(n_pft=2, n_nvg=2)
+    data["pft"][1]["type"] = "usr_type"
+    data["nvg"][1]["type"] = "usr_type"
+
+    flat = assemble(data)
+    assert flat["jules_surface_types"]["jules_surface_types"]["usr_type"] == [2, 4]
+
+
+def test_a_multi_position_usr_type_round_trips_through_the_grouped_form():
+    data = minimal_grouped(n_pft=2, n_nvg=2)
+    data["pft"][1]["type"] = "usr_type"
+    data["nvg"][1]["type"] = "usr_type"
+    expected = {group: copy.deepcopy(data[group]) for group in ("pft", "nvg")}
+    regrouped = disassemble(assemble(data))
+
+    assert regrouped["pft"] == expected["pft"]
+    assert regrouped["nvg"] == expected["nvg"]
+
+
 def test_crop_identifier_is_allowed_on_a_natural_pft():
     """Surface type identity and the crop model are independent in JULES."""
     data = minimal_grouped(n_pft=2, n_nvg=1)
@@ -296,15 +381,16 @@ def test_disassemble_inverts_assemble():
 def test_assemble_disassemble_is_a_round_trip(n_pft, n_crop, n_nvg, values):
     """Property: the grouped form survives a trip through the flat one.
 
-    `canht_ft` is set on every PFT contributor and `rsurf_std` on every surface
-    type, so both a `npft` and an `ntype` field are exercised at each shape.
+    `canht_ft` is set on every PFT contributor and `catch_nvg` on every
+    non-vegetated one, so both a `npft` and an `nnvg` field are exercised at
+    each shape.
     """
     data = minimal_grouped(n_pft=n_pft, n_crop=n_crop, n_nvg=n_nvg)
     pfts = data["pft"] + data.get("crop_pft", [])
     for i, entry in enumerate(pfts):
         entry["canht_ft"] = values[i % len(values)]
-    for i, entry in enumerate(pfts + data["nvg"]):
-        entry["rsurf_std"] = values[i % len(values)]
+    for i, entry in enumerate(data["nvg"]):
+        entry["catch_nvg"] = values[i % len(values)]
 
     original = {
         group: [dict(e) for e in data[group]]
@@ -418,6 +504,8 @@ def test_per_element_default_still_expands_under_the_grouped_form():
 
 def test_explicit_per_element_values_from_entries_are_preserved():
     data = minimal_grouped(n_pft=2, n_nvg=2)
+    # `cansnowpft` is only read by the canopy model that carries snow.
+    data["jules_vegetation"]["jules_vegetation"]["can_model"] = "radiative_snow"
     for entry in data["pft"]:
         entry["cansnowpft"] = True
 

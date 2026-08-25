@@ -9,7 +9,7 @@ from typing import Annotated
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas.constraints import PerElementDefault
+from julesconf.schemas.constraints import ListLen, PerElementDefault
 
 __all__ = ["InitialConditionsNamelist", "JulesInitial"]
 
@@ -28,14 +28,25 @@ class JulesInitial(NamelistModel):
 
     nvars: int = Field(default=0, ge=0)
     """The number of initial condition variables that will be provided."""
-    var: list[str] | None = None
+    var: Annotated[list[str] | None, ListLen("nvars")] = None
     """List of initial condition variable names as recognised by JULES."""
-    use_file: Annotated[list[bool] | None, PerElementDefault(True, "nvars")] = None
+    use_file: Annotated[
+        list[bool] | None, ListLen("nvars"), PerElementDefault(True, "nvars")
+    ] = None
     """For each JULES variable, indicates if it should be read from file or use a constant value."""
-    const_val: list[float] | None = None
+    const_val: Annotated[list[float] | None, ListLen("nvars")] = None
     """For each variable not read from file, a constant value to set at every point in every layer."""
-    var_name: Annotated[list[str] | None, PerElementDefault("", "nvars")] = None
+    var_name: Annotated[
+        list[str] | None, ListLen("nvars"), PerElementDefault("", "nvars")
+    ] = None
     """For each variable read from file, this is the name of the variable in the file."""
+    tpl_name: Annotated[
+        list[str] | None, ListLen("nvars"), PerElementDefault("", "nvars")
+    ] = None
+    """For each variable, the string to substitute into a templated file name.
+
+    Not used when `file` does not use variable name templating.
+    """
 
     @model_validator(mode="after")
     def _check_var_lists(self) -> "JulesInitial":

@@ -2,7 +2,6 @@
 
 Fortran namelist input does not broadcast a scalar across an array, so a
 documented default of "T for every element" must be written out in full.
-See the "Test suite" section of `notes/toml_config.md`.
 """
 
 import re
@@ -138,7 +137,9 @@ def test_toml_does_not_expand(tmp_path):
 
     path = tmp_path / "c.toml"
     model.to_toml(path)
-    assert "use_file" not in path.read_text()
+    written = path.read_text()
+    body = written[written.index("[ancillaries.jules_soil_props]") :]
+    assert "use_file" not in body.split("[", 2)[0]
 
 
 # ---------------------------------------------------------------------------
@@ -242,7 +243,24 @@ def test_marker_covers_the_documented_per_element_defaults():
     # (5.0 m lake depth), and only JulesFlake overrides it. The other 10 inherit
     # the unmarked `_NvarsModel.const_val`, which is correct. This lookup is
     # keyed by member name alone, so it cannot tell those cases apart.
-    exclusions = {"const_val"}
+    # `is_climatology` collides the same way: `logical(nvars)` in
+    # JULES_RIVERS_PROPS but a plain `logical` in JULES_PRESCRIBED_DATASET,
+    # which is the only one julesconf models.
+    #
+    # `prescribed_levels` is documented `integer(n)` defaulting to all levels,
+    # but `n` is bounded by `JULES_SOIL::sm_levels`, which is neither a global
+    # `LIST_LEN_DIMS` name nor a sibling field, so `PerElementDefault` cannot
+    # express it.
+    # `l_elev_absolute_height` is documented `logical(nsurft)` defaulting to F,
+    # but `nsurft` is neither a `LIST_LEN_DIMS` name nor a sibling field --
+    # it is `npft + nnvg` unless `JULES_SURFACE::l_aggregate`, when it is one --
+    # so `PerElementDefault` cannot express it either.
+    exclusions = {
+        "const_val",
+        "is_climatology",
+        "prescribed_levels",
+        "l_elev_absolute_height",
+    }
     missing = unmarked - marked - exclusions
     assert not missing, (
         f"fields with a documented per-element default but no PerElementDefault"

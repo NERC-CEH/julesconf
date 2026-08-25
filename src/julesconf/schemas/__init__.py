@@ -20,7 +20,15 @@ silently ignores) without rejecting configs that contain members the
 schema does not yet cover.
 """
 
-from julesconf.schemas._base import NamelistModel, UnknownNamelistKeyWarning
+from julesconf.schemas._base import (
+    NamelistModel,
+    RepeatedNamelistGroupWarning,
+    UnknownNamelistKeyWarning,
+)
+from julesconf.schemas._conditional import (
+    DiscouragedValueWarning,
+    InactiveNamelistKeyWarning,
+)
 from julesconf.schemas._grouped import (
     CropPft,
     GroupedConfigError,
@@ -30,6 +38,7 @@ from julesconf.schemas._grouped import (
 )
 from julesconf.schemas._namelists import (
     POSTPONED_NAMELISTS,
+    REPEATABLE_GROUPS,
     JulesNamelists,
     PostponedNamelistWarning,
 )
@@ -63,13 +72,16 @@ __all__ = [
     "JULES_VERSION",
     "LIST_LEN_DIMS",
     "POSTPONED_NAMELISTS",
+    "REPEATABLE_GROUPS",
     "CanModel",
     "CanRadMod",
     "Ch4Substrate",
     "CropPft",
+    "DiscouragedValueWarning",
     "Fraction",
     "GroupedConfigError",
     "IgnitionMethod",
+    "InactiveNamelistKeyWarning",
     "IrrCrop",
     "JulesNamelists",
     "JulesParent",
@@ -82,6 +94,7 @@ __all__ = [
     "Pft",
     "PhotoModel",
     "PostponedNamelistWarning",
+    "RepeatedNamelistGroupWarning",
     "RiverRoutingAlgorithm",
     "SentinelOrFraction",
     "SoilBgcModel",

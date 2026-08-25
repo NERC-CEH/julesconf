@@ -20,6 +20,7 @@ nav = [
   { "How-to guides" = [
     { "Install julesconf" = "how-to/install.md" },
     { "Migrate a legacy config to TOML" = "how-to/migrate-to-toml.md" },
+    { "Convert a rose app to TOML" = "how-to/rose-to-toml.md" },
     { "Add a plant functional type" = "how-to/add-a-pft.md" },
     { "Enforce strict validation" = "how-to/strict-validation.md" },
     { "Validate a single namelist" = "how-to/validate-single-namelist.md" },
@@ -33,6 +34,7 @@ nav = [
     { "What julesconf covers" = "concepts/coverage.md" },
   ]},
   { "Reference" = [
+    { "Command line" = "api/cli.md" },
     { "JulesNamelists" = "api/schemas/namelists.md" },
     { "Grouped configuration" = "api/schemas/grouped.md" },
     { "Option values (enums)" = "api/schemas/enums.md" },

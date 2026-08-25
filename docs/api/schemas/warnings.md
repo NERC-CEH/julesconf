@@ -25,6 +25,53 @@ exists so the exclusion is visible rather than looking like support.
 
 ::: julesconf.schemas.PostponedNamelistWarning
 
+### `RepeatedNamelistGroupWarning`
+
+A namelist group that appeared more than once in one file, where julesconf models a
+single block of it. All but the first are dropped, so re-emitting the config loses
+them.
+
+The three groups JULES itself repeats — `jules_output_profile`,
+`jules_prescribed_dataset` and `jules_deposition_species` — are modelled as **lists
+of blocks**, one entry per occurrence, and do not raise this. In TOML they are
+arrays of tables (`[[output.jules_output_profile]]`), and each block is validated
+against its own `nvars`. So this warning now means something narrower: a group
+julesconf does not know can repeat, most likely one a JULES version newer than v7.9
+made repeatable.
+
+::: julesconf.schemas.RepeatedNamelistGroupWarning
+
+### `InactiveNamelistKeyWarning`
+
+A member that holds a non-default value JULES will never read, because a switch
+elsewhere in the config selects a different scheme, or a repeated group beyond the
+number the config asks JULES to read — `kaps` under the 4-pool soil
+carbon model, the RFM river parameters under TRIP, the bedrock parameters with
+`l_bedrock = FALSE`. These come from the `trigger` rules in the JULES rose
+metadata, which rose greys out in its config editor and JULES simply ignores.
+Not an error, but rarely what the author intended.
+
+Only a value that *differs from the schema default* is reported, so a config that
+has been through `to_namelists` — which writes every member julesconf holds a
+default for — does not warn about every inactive member of every unused scheme.
+
+::: julesconf.schemas.InactiveNamelistKeyWarning
+
+### `DiscouragedValueWarning`
+
+A value JULES accepts and acts on, but which its own authors advise against: a
+deprecated option, a scheme tuned only for some other setting, or a value with a
+physical consequence that is rarely intended. These come from the `warn-if` rules
+in the JULES rose metadata, and the message is the JULES developers' own wording.
+
+This is the one warning here that does **not** mean anything was dropped, ignored
+or truncated — the setting takes effect exactly as written. Everything else on this
+page reports a limitation of how julesconf handles your config; this one reports a
+scientific opinion about the config itself. A project with a considered reason to
+disagree can filter this category alone and keep the rest.
+
+::: julesconf.schemas.DiscouragedValueWarning
+
 ### `ToleratedLengthWarning`
 
 Emitted when writing the [grouped TOML form](grouped.md) from a config whose TRIFFID
@@ -48,7 +95,7 @@ The message names the offending entry and field.
 
 ## Escalating warnings to errors
 
-All four use the standard `warnings` machinery, so each can be turned into an error
+All of these use the standard `warnings` machinery, so each can be turned into an error
 on its own:
 
 ```python

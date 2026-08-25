@@ -10,7 +10,8 @@ from typing import Annotated
 from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas.constraints import name_or_value
+from julesconf.schemas._conditional import fail_if, warn_inactive
+from julesconf.schemas.constraints import ListLen, name_or_value
 
 __all__ = ["IrrCrop", "JulesIrrig", "JulesIrrigNamelist"]
 
@@ -38,7 +39,7 @@ class JulesIrrig(NamelistModel):
     """If TRUE, irrigation fraction is applied as specified on individual tiles; if FALSE, as a gridbox average."""
     nirrtile: int | None = Field(default=None, ge=1)
     """Number of surface tiles to irrigate; required if `frac_irrig_all_tiles` = FALSE."""
-    irrigtiles: list[int] | None = None
+    irrigtiles: Annotated[list[int] | None, ListLen("nirrtile")] = None
     """Indices of surface tiles to irrigate; required if `frac_irrig_all_tiles` = FALSE."""
     nstep_irrig: int | None = Field(default=None, ge=1)
     """Number of model timesteps between irrigation updates; defaults to once per day."""
@@ -53,6 +54,38 @@ class JulesIrrig(NamelistModel):
             raise ValueError(
                 f"irrigtiles has {len(self.irrigtiles)} element(s),"
                 f" expected nirrtile={self.nirrtile}"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _check_irrfrac_switches(self) -> "JulesIrrig":
+        """The two ways of placing the irrigated fraction are mutually exclusive."""
+        fail_if(
+            self.frac_irrig_all_tiles and self.set_irrfrac_on_irrtiles,
+            "cannot set both frac_irrig_all_tiles and set_irrfrac_on_irrtiles to TRUE",
+        )
+        return self
+
+    @model_validator(mode="after")
+    def _warn_inactive_members(self) -> "JulesIrrig":
+        """Warn about irrigation members the switches make inactive."""
+        if not self.l_irrig_dmd:
+            warn_inactive(
+                self,
+                (
+                    "irr_crop",
+                    "l_irrig_limit",
+                    "frac_irrig_all_tiles",
+                    "set_irrfrac_on_irrtiles",
+                    "nstep_irrig",
+                ),
+                because="l_irrig_dmd is false",
+            )
+        if self.frac_irrig_all_tiles:
+            warn_inactive(
+                self,
+                ("nirrtile", "irrigtiles"),
+                because="frac_irrig_all_tiles is true",
             )
         return self
 

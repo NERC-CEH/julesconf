@@ -5,18 +5,22 @@ Reference: JULES user guide v7.9,
 """
 
 from enum import IntEnum
-from typing import Annotated, Literal
+from typing import Annotated, ClassVar
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
+from julesconf.schemas._conditional import warn_inactive
 from julesconf.schemas.constraints import name_or_value
 
 __all__ = [
     "JulesOverbank",
     "JulesRivers",
     "JulesRiversNamelist",
+    "LakeWaterConserveMethod",
+    "OverbankModel",
     "RiverRoutingAlgorithm",
+    "TripGlobeShape",
 ]
 
 
@@ -26,6 +30,28 @@ class RiverRoutingAlgorithm(IntEnum):
     um_trip = 1
     rfm = 2
     standalone_trip = 3
+
+
+class LakeWaterConserveMethod(IntEnum):
+    """Field used for water conservation of lake evaporation (`lake_water_conserve_method`)."""
+
+    fqw_surft = 1
+    elake_surft = 2
+
+
+class TripGlobeShape(IntEnum):
+    """Shape of the Earth in the UM-TRIP routing scheme (`trip_globe_shape`)."""
+
+    spherical = 1
+    ellipsoidal = 2
+
+
+class OverbankModel(IntEnum):
+    """Choice of overbank inundation model (`overbank_model`)."""
+
+    simple = 1
+    simple_rosgen = 2
+    hypsometric = 3
 
 
 class JulesRivers(NamelistModel):
@@ -59,19 +85,85 @@ class JulesRivers(NamelistModel):
     """Effective river velocity (m s⁻¹); used by TRIP. Suggested: 0.4-0.5."""
     rivers_meander: float | None = Field(default=None, gt=0)
     """Ratio of actual to calculated (straight-line) river lengths; used by TRIP. Suggested: 1.4."""
-    lake_water_conserve_method: Literal[1, 2] = 1
-    """Selects the field used for lake evaporation conservation: 1 = fqw_lk, 2 = surf_roff."""
-    trip_globe_shape: Literal[1, 2] = 2
-    """Earth shape used in the UM-TRIP scheme: 1 = spherical, 2 = ellipsoidal."""
+    l_inland: bool = False
+    """Re-route inland basin water back into soil moisture."""
+    l_riv_overbank: bool = False
+    """Switch for enabling river overbank inundation.
+
+    Only used with `l_rivers` = TRUE; when FALSE the optional `JULES_OVERBANK`
+    namelist is not required. The user guide documents this member under both
+    `JULES_RIVERS` and `JULES_OVERBANK`; the rose metadata and every shipped
+    configuration put it on `JULES_RIVERS`.
+    """
+    lake_water_conserve_method: Annotated[
+        LakeWaterConserveMethod, name_or_value(LakeWaterConserveMethod)
+    ] = LakeWaterConserveMethod.fqw_surft
+    """Selects the field used for lake evaporation conservation: `fqw_surft` (1), `elake_surft` (2)."""
+    trip_globe_shape: Annotated[TripGlobeShape, name_or_value(TripGlobeShape)] = (
+        TripGlobeShape.ellipsoidal
+    )
+    """Earth shape used in the UM-TRIP scheme: `spherical` (1), `ellipsoidal` (2)."""
+
+    _ROUTING_ONLY: ClassVar[dict[str, tuple[RiverRoutingAlgorithm, ...]]] = {
+        "cland": (RiverRoutingAlgorithm.rfm,),
+        "criver": (RiverRoutingAlgorithm.rfm,),
+        "cbland": (RiverRoutingAlgorithm.rfm,),
+        "cbriver": (RiverRoutingAlgorithm.rfm,),
+        "retl": (RiverRoutingAlgorithm.rfm,),
+        "retr": (RiverRoutingAlgorithm.rfm,),
+        "a_thresh": (RiverRoutingAlgorithm.rfm,),
+        "runoff_factor": (RiverRoutingAlgorithm.rfm,),
+        "rivers_speed": (
+            RiverRoutingAlgorithm.um_trip,
+            RiverRoutingAlgorithm.standalone_trip,
+        ),
+        "rivers_meander": (
+            RiverRoutingAlgorithm.um_trip,
+            RiverRoutingAlgorithm.standalone_trip,
+        ),
+        "lake_water_conserve_method": (RiverRoutingAlgorithm.um_trip,),
+        "trip_globe_shape": (RiverRoutingAlgorithm.um_trip,),
+    }
+    """Which routing algorithms read each scheme-specific parameter.
+
+    Transcribed from the `namelist:jules_rivers=i_river_vn` `trigger` rules in
+    the JULES vn7.9 rose metadata.
+    """
+
+    @model_validator(mode="after")
+    def _warn_inactive_members(self) -> "JulesRivers":
+        """Warn about routing parameters the selected scheme does not read."""
+        if not self.l_rivers:
+            warn_inactive(
+                self,
+                (
+                    "i_river_vn",
+                    "nstep_rivers",
+                    "l_inland",
+                    "l_riv_overbank",
+                    *self._ROUTING_ONLY,
+                ),
+                because="l_rivers is false",
+            )
+            return self
+        if self.i_river_vn is not None:
+            warn_inactive(
+                self,
+                [
+                    member
+                    for member, algorithms in self._ROUTING_ONLY.items()
+                    if self.i_river_vn not in algorithms
+                ],
+                because=f"i_river_vn is {self.i_river_vn.name}",
+            )
+        return self
 
 
 class JulesOverbank(NamelistModel):
     """`JULES_OVERBANK` namelist members."""
 
-    l_riv_overbank: bool = False
-    """Switch for enabling river overbank inundation."""
-    overbank_model: Literal[1, 2, 3] | None = None
-    """Choice of overbank inundation model: 1 = simple, 2 = LISFLOOD, 3 = probability."""
+    overbank_model: Annotated[OverbankModel, name_or_value(OverbankModel)] | None = None
+    """Choice of overbank inundation model: `simple` (1, allometric river width), `simple_rosgen` (2, allometric width and depth with the Rosgen entrenchment ratio), `hypsometric` (3, hypsometric integral; recommended)."""
     riv_c: float | None = Field(default=None, ge=0)
     """Coefficient in river depth allometry (dimensionless). Suggested: 0.27."""
     riv_f: float | None = Field(default=None, ge=0)
@@ -93,3 +185,14 @@ class JulesRiversNamelist(NamelistModel):
 
     jules_rivers: JulesRivers = JulesRivers()
     jules_overbank: JulesOverbank = JulesOverbank()
+
+    @model_validator(mode="after")
+    def _warn_inactive_overbank(self) -> "JulesRiversNamelist":
+        """`JULES_OVERBANK` is only read when the switch on `JULES_RIVERS` is set."""
+        if not self.jules_rivers.l_riv_overbank:
+            warn_inactive(
+                self.jules_overbank,
+                ("overbank_model",),
+                because="jules_rivers l_riv_overbank is false",
+            )
+        return self

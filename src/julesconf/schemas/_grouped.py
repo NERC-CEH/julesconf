@@ -39,6 +39,7 @@ from pydantic import create_model, model_validator
 from pydantic.fields import FieldInfo
 
 from julesconf.schemas._base import (
+    REPEATED_GROUP_MARK,
     NamelistModel,
     UnknownNamelistKeyWarning,
     iter_leaf_fields,
@@ -129,6 +130,15 @@ NVG_TYPE_IDS = frozenset(
 SHARED_TYPE_IDS = frozenset({"usr_type"})
 """Surface type identifiers valid at any position (`1:ntype`)."""
 
+ARRAY_TYPE_IDS = frozenset({"usr_type", "elev_ice", "elev_rock"})
+"""Surface type identifiers JULES holds as arrays rather than single indices.
+
+A configuration may define several user types, several elevated ice bands and
+several elevated bedrock bands, so these three identifiers may each be claimed
+by any number of grouped entries. Every other identifier names exactly one
+surface type and so may appear at most once.
+"""
+
 DIM_MEMBERS = ("npft", "nnvg", "ncpft")
 """`jules_surface_types` members the grouped form derives rather than reads."""
 
@@ -218,14 +228,22 @@ def _build_specs() -> tuple[FieldSpec, ...]:
     specs = []
     for path, name, info in iter_leaf_fields(JulesNamelists):
         meta = find_list_len(info)
-        if meta is None:
+        if meta is None or meta.dim not in LIST_LEN_DIMS:
+            # `ListLen` also marks namelist-local lengths (`nvars`), which are
+            # not surface-type dimensions and have no place in a grouped entry.
+            continue
+        if any(part.endswith(REPEATED_GROUP_MARK) for part in path):
+            # A field inside a repeated group cannot be pivoted onto a surface
+            # type: with N groups there are N independent arrays of it, and a
+            # single [[pft]] entry has room for one value. JULES_DEPOSITION_
+            # SPECIES::rsurf_std_io is the only case — one ntype-length surface
+            # resistance array *per species*. It stays in the flat form, where
+            # each species keeps its own, and is still length-checked per
+            # species by JulesNamelists._check_model_list_lengths.
             continue
         if len(path) != 2:
-            # A ListLen field reached through anything other than
-            # namelist -> block would break the flat-dict indexing in
-            # assemble/disassemble. JULES_DEPOSITION_SPECIES is the live risk:
-            # JULES repeats it per species, and if the schema is ever fixed to
-            # model that, this must be revisited rather than silently skewed.
+            # A ListLen field reached through anything else would break the
+            # flat-dict indexing in assemble/disassemble.
             raise GroupedConfigError(
                 f"{'.'.join((*path, name))} carries ListLen but is not a "
                 "namelist.block.member field; the grouped form cannot index it"
@@ -251,6 +269,19 @@ SPECS = _build_specs()
 SPECS_BY_DIM: dict[str, tuple[FieldSpec, ...]] = {
     dim: tuple(s for s in SPECS if s.dim == dim) for dim in CONTRIBUTORS
 }
+
+PIVOTED_SURFACE_MEMBERS = frozenset(
+    spec.member for spec in SPECS if spec.block == "jules_surface_types"
+)
+"""`jules_surface_types` members that are pivoted arrays, not type identifiers.
+
+`JULES_SURFACE_TYPES` holds mostly single indices naming a surface type, which
+the grouped form reconstructs from each entry's position. `tile_map_ids` is
+different: it is an `ntype`-length parameter array like any other, so it is
+pivoted onto the entries and must be kept out of the identifier scan, where a
+list of small integers would otherwise be read as a set of type positions.
+Derived from `SPECS` so a second such member needs no further change.
+"""
 
 if set(SPECS_BY_DIM) != LIST_LEN_DIMS:
     raise GroupedConfigError(
@@ -492,6 +523,7 @@ def assemble(data: dict) -> dict:
     surface.update({"npft": npft, "nnvg": nnvg, "ncpft": ncpft})
 
     positions: dict[str, int] = {}
+    array_positions: dict[str, list[int]] = {}
     ordered = [
         (group, index, entry)
         for group in GROUPED_KEYS
@@ -500,6 +532,11 @@ def assemble(data: dict) -> dict:
     for position, (group, index, entry) in enumerate(ordered, start=1):
         type_id = entry.get("type")
         if type_id is None:
+            continue
+        if type_id in ARRAY_TYPE_IDS:
+            # The identifiers JULES holds as arrays, so each may legally be
+            # claimed by any number of positions.
+            array_positions.setdefault(type_id, []).append(position)
             continue
         if type_id in positions:
             raise GroupedConfigError(
@@ -510,6 +547,7 @@ def assemble(data: dict) -> dict:
             )
         positions[type_id] = position
         surface[type_id] = position
+    surface.update(array_positions)
 
     return data
 
@@ -583,18 +621,24 @@ def disassemble(data: dict) -> dict:
     }
 
     type_at: dict[int, str] = {}
-    for member in sorted(set(surface) - set(DIM_MEMBERS)):
-        value = surface[member]
-        if not isinstance(value, int) or not 1 <= value <= dims["ntype"]:
+    for member in sorted(set(surface) - set(DIM_MEMBERS) - PIVOTED_SURFACE_MEMBERS):
+        raw = surface[member]
+        # `ARRAY_TYPE_IDS` hold an array of positions; every other identifier
+        # holds one. Both are pivoted onto the entries the same way.
+        values = raw if isinstance(raw, list) else [raw]
+        if not values or not all(
+            isinstance(value, int) and 1 <= value <= dims["ntype"] for value in values
+        ):
             # A sentinel ("not in use"); leave it in the flat block so it
             # survives the round-trip.
             continue
-        if value in type_at:
-            raise GroupedConfigError(
-                f"surface type position {value} is claimed by both "
-                f"{type_at[value]!r} and {member!r}"
-            )
-        type_at[value] = member
+        for value in values:
+            if value in type_at:
+                raise GroupedConfigError(
+                    f"surface type position {value} is claimed by both "
+                    f"{type_at[value]!r} and {member!r}"
+                )
+            type_at[value] = member
         del surface[member]
 
     for member in DIM_MEMBERS:
@@ -661,7 +705,13 @@ def _prune_empty(data: dict) -> None:
 
 # Guard the assumption that every surface type identifier is classified, so a
 # new member added to JulesSurfaceTypes cannot silently become unusable.
-_CLASSIFIED = VEG_TYPE_IDS | NVG_TYPE_IDS | SHARED_TYPE_IDS | frozenset(DIM_MEMBERS)
+_CLASSIFIED = (
+    VEG_TYPE_IDS
+    | NVG_TYPE_IDS
+    | SHARED_TYPE_IDS
+    | frozenset(DIM_MEMBERS)
+    | PIVOTED_SURFACE_MEMBERS
+)
 if frozenset(JulesSurfaceTypes.model_fields) != _CLASSIFIED:
     raise GroupedConfigError(
         "unclassified jules_surface_types members: "

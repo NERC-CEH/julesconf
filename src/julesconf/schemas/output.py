@@ -4,14 +4,25 @@ Reference: JULES user guide v7.9,
 `jules-lsm.github.io/user_guide/doc/source/namelists/output.nml.rst`
 """
 
+from enum import IntEnum
 from typing import Annotated, Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas.constraints import PerElementDefault
+from julesconf.schemas._conditional import check_group_count
+from julesconf.schemas.constraints import ListLen, PerElementDefault, name_or_value
 
-__all__ = ["JulesOutput", "JulesOutputProfile", "OutputNamelist"]
+__all__ = ["FilePeriod", "JulesOutput", "JulesOutputProfile", "OutputNamelist"]
+
+
+class FilePeriod(IntEnum):
+    """Period covered by each output file (`file_period`)."""
+
+    daily = -3
+    annual = -2
+    monthly = -1
+    single_file = 0
 
 
 class JulesOutput(NamelistModel):
@@ -30,12 +41,20 @@ class JulesOutput(NamelistModel):
 
 
 class JulesOutputProfile(NamelistModel):
-    """`JULES_OUTPUT_PROFILE` namelist members."""
+    """`JULES_OUTPUT_PROFILE` namelist members.
+
+    JULES reads this group `JULES_OUTPUT::nprofiles` times, once per output
+    profile, so `OutputNamelist.jules_output_profile` holds a *list* of these
+    — one entry per occurrence, in file order. Each profile carries its own
+    `nvars`, and its `var` / `output_type` / `var_name` are checked against it.
+    """
 
     profile_name: str | None = None
     """The name of the output profile."""
-    file_period: int = Field(default=0, ge=-3, le=0)
-    """The period for output files, i.e. the time interval during which output goes to the same file."""
+    file_period: Annotated[FilePeriod, name_or_value(FilePeriod)] = (
+        FilePeriod.single_file
+    )
+    """The period for output files, i.e. the time interval during which output goes to the same file: `daily` (-3), `annual` (-2), `monthly` (-1), `single_file` (0)."""
     output_spinup: bool = False
     """Determines whether the profile will provide output during model spin-up."""
     output_main_run: bool = False
@@ -53,14 +72,36 @@ class JulesOutputProfile(NamelistModel):
 
     nvars: int = Field(default=0, ge=0)
     """The number of variables that the profile will provide output for."""
-    var: list[str] | None = None
+    var: Annotated[list[str] | None, ListLen("nvars")] = None
     """List of variable names to output, as recognised by JULES."""
-    output_type: Annotated[list[str] | None, PerElementDefault("S", "nvars")] = None
+    output_type: Annotated[
+        list[str] | None, ListLen("nvars"), PerElementDefault("S", "nvars")
+    ] = None
     """For each variable specified in var, this indicates the type of processing required."""
+    var_name: Annotated[list[str] | None, ListLen("nvars")] = None
+    """For each variable in `var`, the name to give it in the output files."""
+    sample_period: int | None = Field(default=None, ge=1)
+    """The sampling period, in seconds. Defaults to the model timestep."""
 
 
 class OutputNamelist(NamelistModel):
     """Top-level schema for `output.nml`."""
 
     jules_output: JulesOutput = JulesOutput()
-    jules_output_profile: JulesOutputProfile = JulesOutputProfile()
+    jules_output_profile: list[JulesOutputProfile] = Field(default_factory=list)
+    """One entry per `JULES_OUTPUT_PROFILE` group, in file order.
+
+    Defaults to empty, matching `JULES_OUTPUT::nprofiles = 0`: a config that
+    asks for no output profiles writes no profile groups.
+    """
+
+    @model_validator(mode="after")
+    def _check_profile_count(self) -> "OutputNamelist":
+        """Check the number of profile groups against `nprofiles`."""
+        check_group_count(
+            "jules_output_profile",
+            self.jules_output_profile,
+            self.jules_output.nprofiles,
+            count_member="JULES_OUTPUT::nprofiles",
+        )
+        return self

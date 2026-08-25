@@ -1,0 +1,1176 @@
+"""Tests for the conditional (`fail-if` / `trigger`) rules from the rose metadata.
+
+One test per implemented rule family. `fail-if` rules must raise; `trigger`
+rules must emit `InactiveNamelistKeyWarning` and nothing stronger.
+
+The rule ids each test covers are recorded in
+`tests/data/rose_meta/rules_disposition.toml`; `test_rose_rule_coverage.py`
+keeps that file honest against the extract.
+"""
+
+import warnings
+
+import pytest
+from conftest import minimal_valid
+from pydantic import ValidationError
+
+from julesconf.schemas import InactiveNamelistKeyWarning, JulesNamelists
+from julesconf.schemas._conditional import is_specified
+from julesconf.schemas.ancillaries import JulesAgric, JulesRiversProps
+from julesconf.schemas.imogen import ChangeMetdataMethod, ImogenRunList
+from julesconf.schemas.jules_deposition import JulesDeposition
+from julesconf.schemas.jules_hydrology import JulesHydrology
+from julesconf.schemas.jules_irrig import JulesIrrig
+from julesconf.schemas.jules_radiation import JulesRadiation
+from julesconf.schemas.jules_rivers import JulesRivers
+from julesconf.schemas.jules_snow import JulesSnow
+from julesconf.schemas.jules_soil import JulesSoil
+from julesconf.schemas.jules_soil_biogeochem import (
+    JulesSoilBiogeochem,
+    SoilBgcModel,
+)
+from julesconf.schemas.jules_surface import JulesSurface
+from julesconf.schemas.jules_surface_types import JulesSurfaceTypes
+from julesconf.schemas.jules_vegetation import JulesVegetation
+from julesconf.schemas.jules_water_resources import JulesWaterResources
+from julesconf.schemas.model_environment import JulesModelEnvironment
+from julesconf.schemas.model_grid import (
+    JulesModelGrid,
+    JulesSurfHgt,
+    JulesZLand,
+    ModelGridNamelist,
+)
+from julesconf.schemas.triffid_params import JulesTriffid
+from julesconf.schemas.urban import JulesUrban
+
+
+def inactive(model_cls, **kwargs) -> list[str]:
+    """Return the members reported inactive when building `model_cls`."""
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        model_cls(**kwargs)
+    return [
+        str(record.message)
+        for record in caught
+        if issubclass(record.category, InactiveNamelistKeyWarning)
+    ]
+
+
+def build(**overrides) -> JulesNamelists:
+    """Validate a minimal config with `{namelist: {block: {...}}}` overrides."""
+    data = minimal_valid()
+    for namelist, blocks in overrides.items():
+        target = data.setdefault(namelist, {})
+        for block, members in blocks.items():
+            target.setdefault(block, {}).update(members)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return JulesNamelists.model_validate(data)
+
+
+# --------------------------------------------------------------------------
+# is_specified
+# --------------------------------------------------------------------------
+
+
+def test_is_specified_ignores_a_value_equal_to_the_default():
+    """A round-tripped default must not look like a deliberate choice."""
+    block = JulesSoilBiogeochem(kaps=JulesSoilBiogeochem.model_fields["kaps"].default)
+    assert not is_specified(block, "kaps")
+    assert is_specified(JulesSoilBiogeochem(kaps=1.0), "kaps")
+
+
+def test_is_specified_is_false_for_an_unknown_member():
+    assert not is_specified(JulesSoilBiogeochem(), "not_a_member")
+
+
+# --------------------------------------------------------------------------
+# fail-if, within a block
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("model_cls", "kwargs", "message"),
+    [
+        (
+            JulesSoilBiogeochem,
+            {"l_ch4_interactive": True, "l_ch4_tlayered": False},
+            "l_ch4_tlayered",
+        ),
+        (JulesSoilBiogeochem, {"l_layeredc": True, "soil_bgc_model": 3}, "ecosse"),
+        (
+            JulesHydrology,
+            {
+                "l_top": True,
+                "l_pdm": True,
+                "zw_max": 6.0,
+                "ti_max": 10.0,
+                "ti_wetl": 1.5,
+                "nfita": 20,
+            },
+            "TOPMODEL and PDM",
+        ),
+        (JulesHydrology, {"l_spdmvar": True, "l_pdm": False}, "l_spdmvar"),
+        (
+            JulesRadiation,
+            {"l_snow_albedo": True, "l_spec_albedo": False},
+            "l_spec_albedo=T",
+        ),
+        (
+            JulesRadiation,
+            {"l_embedded_snow": True, "l_spec_albedo": False},
+            "l_spec_albedo must also be T",
+        ),
+        (
+            JulesRadiation,
+            {"l_embedded_snow": True, "l_spec_albedo": True, "l_snow_albedo": True},
+            "exclusive of l_snow_albedo",
+        ),
+        (
+            JulesIrrig,
+            {"frac_irrig_all_tiles": True, "set_irrfrac_on_irrtiles": True},
+            "cannot set both",
+        ),
+        (JulesSoil, {"dzsoil_elev": 0.0}, "positive value"),
+        (JulesVegetation, {"l_trif_crop": True, "l_trif_eq": True}, "l_trif_crop"),
+        (JulesVegetation, {"l_trif_fire": True, "l_trif_eq": True}, "l_trif_fire"),
+        (JulesVegetation, {"l_trif_biocrop": True}, "l_trif_biocrop"),
+        (JulesVegetation, {"l_croprotate": True}, "l_prescsow"),
+        (
+            JulesVegetation,
+            {"stomata_model": 3, "l_scale_resp_pm": True, "can_rad_mod": 1},
+            "l_scale_resp_pm",
+        ),
+        (JulesVegetation, {"stomata_model": 3, "can_rad_mod": 4}, "can_rad_mod"),
+        (JulesUrban, {"l_urban_empirical": True}, "l_urban_empirical"),
+        (JulesModelEnvironment, {"lsm_id": 2, "l_jules_parent": 1}, "CABLE"),
+        (
+            JulesRiversProps,
+            {"coordinate_file": "rivers_%vv.nc"},
+            "Coordinate file cannot contain variable name template",
+        ),
+        (
+            JulesRiversProps,
+            {"file": "rivers_%vv.nc"},
+            "file to read coordinates from must be specified",
+        ),
+        (
+            JulesRiversProps,
+            {"read_list": True, "file": "rivers_%vv.nc", "coordinate_file": "grid.nc"},
+            "Cannot use variable name templating while reading a list of files",
+        ),
+        (
+            JulesRiversProps,
+            {"read_list": True, "file": "files.txt"},
+            "file to read coordinates from must be specified",
+        ),
+        (
+            JulesRiversProps,
+            {"read_list": True, "coordinate_file": "grid.nc"},
+            "there has to be a file specified to read",
+        ),
+        (
+            ImogenRunList,
+            {"change_metdata_method": 2, "land_feed_co2": True},
+            "land_feed_co2 is not available when change_metdata_method is"
+            " prescribed_anomalies",
+        ),
+        (
+            ImogenRunList,
+            {"change_metdata_method": 3, "c_emissions": True},
+            "c_emissions is not available when change_metdata_method is"
+            " global_temperature_patterns",
+        ),
+        (
+            JulesVegetation,
+            {"l_ag_expand": True},
+            "l_ag_expand requires l_trif_biocrop = TRUE",
+        ),
+        (
+            JulesVegetation,
+            {"photo_acclim_model": 0, "photo_act_model": 2},
+            "photo_act_model must be vary_by_pft",
+        ),
+        (
+            JulesVegetation,
+            {"photo_acclim_model": 0, "photo_jv_model": 2},
+            "photo_jv_model must be jmax_only",
+        ),
+        (
+            JulesModelGrid,
+            {"x_bounds": [55.0, -5.0]},
+            "x_bounds: the lower bound must not exceed the upper bound",
+        ),
+        (
+            JulesModelGrid,
+            {"y_bounds": [70.0, -10.0]},
+            "y_bounds: the lower bound must not exceed the upper bound",
+        ),
+    ],
+)
+def test_block_level_fail_if(model_cls, kwargs, message):
+    with pytest.raises(ValidationError, match=message):
+        model_cls(**kwargs)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "message"),
+    [
+        ({"npft": 5, "nnvg": 4, "brd_leaf": 6}, "less than or equal to npft"),
+        ({"npft": 5, "nnvg": 4, "soil": 10}, "less than or equal to npft\\+nnvg"),
+        ({"npft": 5, "nnvg": 4, "soil": 3}, "grouped together first"),
+        (
+            {"npft": 5, "nnvg": 4, "urban": 6, "urban_canyon": 7, "urban_roof": 8},
+            "urban cannot be combined",
+        ),
+        ({"npft": 5, "nnvg": 4, "urban_canyon": 7}, "canyon and roof"),
+        (
+            {"npft": 5, "nnvg": 4, "usr_type": [3, 10]},
+            r"usr_type\[1\]: Pseudo level must be less than or equal to npft\+nnvg",
+        ),
+        (
+            {"npft": 5, "nnvg": 4, "usr_type": [0]},
+            r"usr_type\[0\]: Pseudo level must be greater than or equal to 1",
+        ),
+        (
+            {"npft": 5, "nnvg": 4, "elev_ice": [7, 10]},
+            r"elev_ice\[1\]: Pseudo level must be less than or equal to npft\+nnvg",
+        ),
+        (
+            {"npft": 5, "nnvg": 4, "elev_rock": [7, 3]},
+            r"elev_rock\[1\]: PFTs must be grouped together first",
+        ),
+    ],
+)
+def test_surface_type_pseudo_levels(kwargs, message):
+    with pytest.raises(ValidationError, match=message):
+        JulesSurfaceTypes(**kwargs)
+
+
+def test_valid_surface_type_layout_is_accepted():
+    """The Loobos layout: PFTs 1-5, then urban, lake, soil, ice."""
+    JulesSurfaceTypes(
+        npft=5, nnvg=4, brd_leaf=1, shrub=5, urban=6, lake=7, soil=8, ice=9
+    )
+
+
+def test_elevated_types_accept_the_minus_one_sentinel():
+    config = JulesSurfaceTypes.model_validate(
+        {"npft": 5, "nnvg": 4, "elev_ice": -1, "elev_rock": -1}
+    )
+    assert config.elev_ice == [-1]
+    assert config.elev_rock == [-1]
+
+
+def test_elevated_types_are_arrays_of_positions():
+    """`elev_ice` and `elev_rock` are `integer, length=:`: one per elevation band."""
+    config = JulesSurfaceTypes(npft=5, nnvg=8, elev_ice=[6, 7, 8], elev_rock=[9, 10])
+    assert config.elev_ice == [6, 7, 8]
+    assert config.elev_rock == [9, 10]
+
+
+def test_usr_type_may_be_numbered_among_the_pfts():
+    """The user guide permits `usr_type` the whole of `1:ntype`."""
+    JulesSurfaceTypes(npft=5, nnvg=4, usr_type=[3])
+
+
+def test_usr_type_is_an_array_of_positions():
+    """`usr_type` is `integer, length=:`, unlike every other identifier."""
+    config = JulesSurfaceTypes(npft=5, nnvg=4, usr_type=[3, 6, 9])
+    assert config.usr_type == [3, 6, 9]
+
+
+def test_a_scalar_usr_type_is_coerced_to_a_one_element_array():
+    """Fortran writes a one-element array indistinguishably from a scalar."""
+    assert JulesSurfaceTypes.model_validate(
+        {"npft": 5, "nnvg": 4, "usr_type": 3}
+    ).usr_type == [3]
+
+
+# --------------------------------------------------------------------------
+# fail-if, across namelists
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        (
+            {
+                "jules_soil_biogeochem": {
+                    "jules_soil_biogeochem": {"soil_bgc_model": 1}
+                },
+                "jules_vegetation": {"jules_vegetation": {"l_triffid": True}},
+            },
+            "1-pool with TRIFFID",
+        ),
+        (
+            {
+                "jules_soil_biogeochem": {
+                    "jules_soil_biogeochem": {"soil_bgc_model": 2}
+                },
+            },
+            "4-pool soil C without TRIFFID",
+        ),
+        (
+            {
+                "jules_soil_biogeochem": {
+                    "jules_soil_biogeochem": {"soil_bgc_model": 3}
+                },
+            },
+            "ECOSSE without TRIFFID",
+        ),
+        (
+            {
+                "jules_irrig": {"jules_irrig": {"l_irrig_dmd": True}},
+                "jules_soil": {"jules_soil": {"l_holdwater": True}},
+            },
+            "l_holdwater",
+        ),
+        (
+            {
+                "jules_irrig": {
+                    "jules_irrig": {"l_irrig_dmd": True, "l_irrig_limit": True}
+                },
+            },
+            "l_rivers must TRUE",
+        ),
+        (
+            {
+                "jules_soil": {"jules_soil": {"l_tile_soil": True}},
+                "model_environment": {"jules_model_environment": {"l_jules_parent": 1}},
+            },
+            "Not available in the UM",
+        ),
+        (
+            {
+                "jules_vegetation": {"jules_vegetation": {"l_sugar": True}},
+                "model_environment": {"jules_model_environment": {"l_jules_parent": 1}},
+            },
+            "SUGAR is not available",
+        ),
+        (
+            {"jules_rivers": {"jules_rivers": {"l_rivers": True, "i_river_vn": 1}}},
+            "UM_TRIP is not compatible with standalone",
+        ),
+        (
+            {"jules_surface": {"jules_surface": {"iscrntdiag": 2}}},
+            "preferred option in standalone",
+        ),
+        (
+            {
+                "jules_vegetation": {
+                    "jules_vegetation": {"l_triffid": True, "l_red": True}
+                },
+                "jules_soil_biogeochem": {
+                    "jules_soil_biogeochem": {"soil_bgc_model": 2}
+                },
+                "jules_surface_types": {
+                    "jules_surface_types": {"npft": 5, "nnvg": 4, "ncpft": 2}
+                },
+            },
+            "RED cannot be used with crop PFTs",
+        ),
+        (
+            {"jules_vegetation": {"jules_vegetation": {"fsmc_shape": 1}}},
+            "const_z = T and l_use_pft_psi = T",
+        ),
+        (
+            {
+                "urban": {"jules_urban": {"l_moruses_albedo": True}},
+                "jules_radiation": {"jules_radiation": {"l_cosz": False}},
+            },
+            "Requires l_cosz = TRUE",
+        ),
+        (
+            {"jules_surface": {"jules_surface": {"l_urban2t": True}}},
+            "canyon and a roof surface type",
+        ),
+        (
+            {
+                "jules_deposition": {"jules_deposition": {"l_deposition": True}},
+                "jules_surface": {"jules_surface": {"l_aggregate": True}},
+            },
+            "aggregated tile",
+        ),
+        (
+            {"imogen": {"imogen_onoff_switch": {"l_imogen": True}}},
+            "should be .true. in IMOGEN",
+        ),
+    ],
+)
+def test_cross_namelist_fail_if(overrides, message):
+    with pytest.raises(ValidationError, match=message):
+        build(**overrides)
+
+
+UM = {"model_environment": {"jules_model_environment": {"l_jules_parent": 1}}}
+
+
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        ({"jules_vegetation": {"jules_vegetation": {"l_red": True}}}, "RED is not"),
+        (
+            {"jules_vegetation": {"jules_vegetation": {"fsmc_shape": 1}}},
+            "not currently available to the UM",
+        ),
+        (
+            {"jules_vegetation": {"jules_vegetation": {"stomata_model": 3}}},
+            "sox is not available to the UM",
+        ),
+        (
+            {
+                "jules_water_resources": {
+                    "jules_water_resources": {"l_water_resources": True}
+                }
+            },
+            "Must be false in the UM",
+        ),
+        (
+            {
+                "jules_surface_types": {
+                    "jules_surface_types": {"npft": 5, "nnvg": 4, "ncpft": 2}
+                }
+            },
+            "not available to the UM",
+        ),
+        (
+            {
+                "jules_irrig": {
+                    "jules_irrig": {"l_irrig_dmd": True, "l_irrig_limit": True}
+                },
+                "jules_rivers": {"jules_rivers": {"l_rivers": True, "i_river_vn": 3}},
+                "jules_hydrology": {
+                    "jules_hydrology": {
+                        "l_hydrology": True,
+                        "l_top": True,
+                        "zw_max": 6.0,
+                        "ti_max": 10.0,
+                        "ti_wetl": 1.5,
+                        "nfita": 20,
+                    }
+                },
+            },
+            "not tested in the UM",
+        ),
+        (
+            {"jules_rivers": {"jules_rivers": {"l_rivers": True, "i_river_vn": 3}}},
+            "only options compatible with the UM",
+        ),
+    ],
+)
+def test_um_only_fail_if(overrides, message):
+    """Options JULES refuses when it is driven by the UM."""
+    with pytest.raises(ValidationError, match=message):
+        build(**UM, **overrides)
+
+
+def test_overbank_inundation_is_standalone_only():
+    with pytest.raises(ValidationError, match="Overbank inundation"):
+        build(
+            **UM,
+            jules_rivers={
+                "jules_rivers": {
+                    "l_rivers": True,
+                    "i_river_vn": 2,
+                    "l_riv_overbank": True,
+                },
+            },
+        )
+
+
+@pytest.mark.parametrize(
+    ("extra", "message"),
+    [
+        (
+            {"jules_rivers": {"jules_rivers": {"l_rivers": True, "i_river_vn": 2}}},
+            "i_river_vn must be 3",
+        ),
+        (
+            {
+                "jules_rivers": {"jules_rivers": {"l_rivers": True, "i_river_vn": 3}},
+                "jules_hydrology": {"jules_hydrology": {"l_top": False}},
+            },
+            "l_top must TRUE",
+        ),
+        (
+            {
+                "jules_rivers": {"jules_rivers": {"l_rivers": True, "i_river_vn": 3}},
+                "jules_hydrology": {
+                    "jules_hydrology": {
+                        "l_hydrology": True,
+                        "l_top": True,
+                        "zw_max": 6.0,
+                        "ti_max": 10.0,
+                        "ti_wetl": 1.5,
+                        "nfita": 20,
+                    }
+                },
+                "jules_water_resources": {
+                    "jules_water_resources": {
+                        "l_water_resources": True,
+                        "l_water_irrigation": True,
+                    }
+                },
+            },
+            "l_irrig_limit must be F",
+        ),
+    ],
+)
+def test_irrigation_limit_prerequisites(extra, message):
+    with pytest.raises(ValidationError, match=message):
+        build(
+            jules_irrig={"jules_irrig": {"l_irrig_dmd": True, "l_irrig_limit": True}},
+            **extra,
+        )
+
+
+def test_imogen_start_date_must_be_new_year():
+    with pytest.raises(ValidationError, match="00:00:00 on 1st Jan"):
+        build(
+            imogen={"imogen_onoff_switch": {"l_imogen": True}},
+            timesteps={
+                "jules_time": {
+                    "l_360": True,
+                    "main_run_start": "1997-03-01 00:00:00",
+                }
+            },
+        )
+
+
+def test_two_tile_urban_needs_urban_properties():
+    with pytest.raises(ValidationError, match="Urban properties need to be supplied"):
+        build(
+            jules_surface_types={
+                "jules_surface_types": {
+                    "npft": 5,
+                    "nnvg": 4,
+                    "urban_canyon": 6,
+                    "urban_roof": 7,
+                }
+            },
+        )
+
+
+def test_minimal_config_still_validates():
+    """The new rules must not reject a config built entirely from defaults."""
+    build()
+
+
+# --------------------------------------------------------------------------
+# trigger
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("model_cls", "kwargs", "member"),
+    [
+        (JulesSoilBiogeochem, {"soil_bgc_model": 2, "kaps": 1.0}, "kaps"),
+        (JulesSoilBiogeochem, {"soil_bgc_model": 1, "sorp": 1.0}, "sorp"),
+        (JulesSoilBiogeochem, {"k2_ch4": 1.0}, "k2_ch4"),
+        (JulesSoilBiogeochem, {"tau_ch4": 1.0}, "tau_ch4"),
+        (JulesHydrology, {"l_hydrology": True, "b_pdm": 1.0}, "b_pdm"),
+        (JulesHydrology, {"l_hydrology": True, "zw_max": 1.0}, "zw_max"),
+        (JulesRadiation, {"l_niso_direct": True}, "l_niso_direct"),
+        (JulesSoil, {"dzdeep": 1.0}, "dzdeep"),
+        (JulesIrrig, {"irr_crop": 2}, "irr_crop"),
+        (JulesIrrig, {"l_irrig_dmd": True, "nirrtile": 2}, "nirrtile"),
+        (
+            JulesIrrig,
+            {
+                "l_irrig_dmd": True,
+                "frac_irrig_all_tiles": True,
+                "nirrtile": 1,
+                "irrigtiles": [1],
+            },
+            "irrigtiles",
+        ),
+        (JulesSnow, {"snowliqcap": 0.9}, "snowliqcap"),
+        (JulesSurface, {"i_aggregate_opt": 1}, "i_aggregate_opt"),
+        (JulesSurface, {"orog_drag_param": 0.3}, "orog_drag_param"),
+        (JulesSurface, {"formdrag": 1, "fd_hill_option": 2}, "fd_hill_option"),
+        (JulesVegetation, {"stanton_leaf": 0.3}, "stanton_leaf"),
+        (JulesVegetation, {"dsj_coef": [1.0, 0.0, 0.0]}, "dsj_coef"),
+        (JulesVegetation, {"n_day_photo_acclim": 30.0}, "n_day_photo_acclim"),
+        (JulesVegetation, {"act_j_coef": [1.0, 0.0, 0.0]}, "act_j_coef"),
+        (JulesVegetation, {"n_alloc_jmax": 5.3}, "n_alloc_jmax"),
+        (JulesAgric, {"frac_agr": 0.5}, "frac_agr"),
+        (JulesAgric, {"frac_past": 0.5}, "frac_past"),
+        (JulesAgric, {"frac_biocrop": 0.5}, "frac_biocrop"),
+        (JulesDeposition, {"dzl_const": 50.0}, "dzl_const"),
+        (JulesDeposition, {"tundra_s_limit": 0.866}, "tundra_s_limit"),
+        (
+            JulesModelGrid,
+            {"use_subgrid": True, "l_bounds": True, "npoints": 14},
+            "npoints",
+        ),
+        (
+            JulesModelGrid,
+            {"use_subgrid": True, "l_bounds": True, "points_file": "p.dat"},
+            "points_file",
+        ),
+        (JulesModelGrid, {"l_bounds": True}, "l_bounds"),
+        (JulesRivers, {"l_inland": True}, "l_inland"),
+        (JulesRivers, {"l_riv_overbank": True}, "l_riv_overbank"),
+        (JulesWaterResources, {"l_water_domestic": True}, "l_water_domestic"),
+        (JulesVegetation, {"triffid_period": 10}, "triffid_period"),
+        (JulesVegetation, {"phenol_period": 10}, "phenol_period"),
+        (JulesRivers, {"cland": 0.4}, "cland"),
+        (
+            JulesRivers,
+            {"l_rivers": True, "i_river_vn": 2, "rivers_speed": 0.4},
+            "rivers_speed",
+        ),
+    ],
+)
+def test_trigger_warns_about_an_inactive_member(model_cls, kwargs, member):
+    messages = inactive(model_cls, **kwargs)
+    assert any(f"'{member}'" in message for message in messages), messages
+
+
+@pytest.mark.parametrize(
+    ("model_cls", "kwargs"),
+    [
+        (JulesSoilBiogeochem, {"soil_bgc_model": 1, "kaps": 1.0}),
+        (JulesSoilBiogeochem, {"soil_bgc_model": 2, "sorp": 1.0}),
+        (JulesHydrology, {"l_hydrology": True, "l_pdm": True, "b_pdm": 1.0}),
+        (JulesSoil, {"l_bedrock": True, "dzdeep": 1.0}),
+        (JulesIrrig, {"l_irrig_dmd": True, "irr_crop": 2}),
+        (
+            JulesIrrig,
+            {
+                "l_irrig_dmd": True,
+                "frac_irrig_all_tiles": False,
+                "nirrtile": 1,
+                "irrigtiles": [1],
+            },
+        ),
+        (JulesSnow, {"nsmax": 3, "dzsnow": [0.1, 0.2, 0.2], "snowliqcap": 0.9}),
+        (JulesRivers, {"l_rivers": True, "i_river_vn": 2, "cland": 0.4}),
+        (JulesSurface, {"formdrag": 2, "fd_hill_option": 2, "orog_drag_param": 0.3}),
+        (JulesVegetation, {"l_rsl_scalar": True, "stanton_leaf": 0.3}),
+        (
+            JulesVegetation,
+            {"photo_acclim_model": 3, "dsj_coef": [1.0, 0.0, 0.0]},
+        ),
+        (JulesVegetation, {"photo_acclim_model": 2, "n_day_photo_acclim": 30.0}),
+        (
+            JulesVegetation,
+            {
+                "photo_acclim_model": 3,
+                "photo_act_model": 2,
+                "act_j_coef": [1.0, 0.0, 0.0],
+            },
+        ),
+        (
+            JulesVegetation,
+            {"photo_acclim_model": 3, "photo_jv_model": 2, "n_alloc_jmax": 5.3},
+        ),
+        (JulesAgric, {"zero_agric": False, "frac_agr": 0.5}),
+        (JulesAgric, {"zero_biocrop": False, "frac_biocrop": 0.5}),
+        (JulesDeposition, {"l_deposition": True, "dzl_const": 50.0}),
+        (JulesModelGrid, {"use_subgrid": True, "l_bounds": False, "npoints": 14}),
+        (JulesRivers, {"l_rivers": True, "l_inland": True}),
+    ],
+)
+def test_no_warning_when_the_member_is_active(model_cls, kwargs):
+    assert inactive(model_cls, **kwargs) == []
+
+
+def test_default_values_never_warn():
+    """Every block built from its defaults alone must be silent."""
+    for model_cls in (
+        JulesSoilBiogeochem,
+        JulesHydrology,
+        JulesRadiation,
+        JulesSoil,
+        JulesIrrig,
+        JulesSnow,
+        JulesSurface,
+        JulesWaterResources,
+        JulesVegetation,
+        JulesRivers,
+        JulesAgric,
+        JulesDeposition,
+        JulesModelGrid,
+    ):
+        assert inactive(model_cls) == [], model_cls.__name__
+
+
+def test_inactive_warning_is_escalatable():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", InactiveNamelistKeyWarning)
+        with pytest.raises(InactiveNamelistKeyWarning, match="ignore it because"):
+            JulesSoilBiogeochem(soil_bgc_model=SoilBgcModel.four_pool, kaps=1.0)
+
+
+def test_cross_namelist_trigger_warns():
+    """`l_top` gates the methane members that live in another namelist."""
+    data = minimal_valid()
+    data["jules_soil_biogeochem"] = {
+        "jules_soil_biogeochem": {"ch4_substrate": 2, "soil_bgc_model": 1}
+    }
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        JulesNamelists.model_validate(data)
+    messages = [
+        str(record.message)
+        for record in caught
+        if issubclass(record.category, InactiveNamelistKeyWarning)
+    ]
+    assert any("'ch4_substrate'" in message for message in messages), messages
+
+
+def test_snow_canopy_members_are_read_by_one_canopy_model_only():
+    """`can_model` lives in `jules_vegetation`, the members it gates in `jules_snow`."""
+    messages = inactive_config(
+        jules_snow={"jules_snow": {"cansnowpft": [True] * 5}},
+    )
+    assert any("'cansnowpft'" in message for message in messages), messages
+
+
+def test_snow_canopy_members_are_silent_under_radiative_snow():
+    assert (
+        inactive_config(
+            jules_vegetation={"jules_vegetation": {"can_model": "radiative_snow"}},
+            jules_snow={"jules_snow": {"cansnowpft": [True] * 5}},
+        )
+        == []
+    )
+
+
+def deposition_species(dry_dep_model: str | None = None) -> list[str]:
+    """Inactive-member messages for one species carrying `rsurf_std_io`.
+
+    `inactive_config` cannot build this: `jules_deposition_species` is a
+    repeated group, so its value is a list of blocks rather than a dict.
+    """
+    data = minimal_valid()
+    deposition = {"l_deposition": True, "ndry_dep_species": 1}
+    if dry_dep_model is not None:
+        deposition["dry_dep_model"] = dry_dep_model
+    data["jules_deposition"] = {
+        "jules_deposition": deposition,
+        "jules_deposition_species": [{"rsurf_std_io": [1.0] * 9}],
+    }
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        JulesNamelists.model_validate(data)
+    return [
+        str(record.message)
+        for record in caught
+        if issubclass(record.category, InactiveNamelistKeyWarning)
+    ]
+
+
+def test_species_arrays_are_read_by_the_flexible_scheme_only():
+    """Every `JULES_DEPOSITION_SPECIES` member but the name needs `flexible_ukca`."""
+    messages = deposition_species()
+    assert any("'rsurf_std_io'" in message for message in messages), messages
+
+
+def test_species_arrays_are_silent_under_the_flexible_scheme():
+    assert deposition_species("flexible_ukca") == []
+
+
+# --------------------------------------------------------------------------
+# the shapes the new river-routing and IMOGEN rules must *not* reject
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        # the shape every real routing app uses: one file, no templating
+        {"file": "rivers.nc", "coordinate_file": "rivers.nc", "nvars": 0},
+        # a list of files, with the coordinates named separately
+        {"read_list": True, "file": "file_list.txt", "coordinate_file": "grid.nc"},
+        # templating, with the coordinates named separately
+        {"file": "rivers_%vv.nc", "coordinate_file": "grid.nc"},
+    ],
+)
+def test_river_props_file_sources_that_are_legal(kwargs):
+    JulesRiversProps(**kwargs)
+
+
+def test_imogen_feedbacks_are_legal_with_the_analogue_model():
+    """Method 1 is the one that supports every feedback."""
+    ImogenRunList(
+        change_metdata_method=ChangeMetdataMethod.analogue_patterns,
+        land_feed_co2=True,
+        land_feed_ch4=True,
+        ocean_feed=True,
+        c_emissions=True,
+        include_non_co2_radf=True,
+    )
+
+
+def test_imogen_prescribed_anomalies_accept_the_switches_turned_off():
+    ImogenRunList(
+        change_metdata_method=ChangeMetdataMethod.prescribed_anomalies,
+        c_emissions=False,
+        include_non_co2_radf=False,
+    )
+
+
+# --------------------------------------------------------------------------
+# the rules recovered from the disposition backlog
+# --------------------------------------------------------------------------
+
+
+def inactive_config(**overrides) -> list[str]:
+    """Return the inactive-member messages a whole-config validation emits.
+
+    `build` silences warnings so the `fail-if` tests are not drowned in them;
+    this is the same construction with the filters left alone.
+    """
+    data = minimal_valid()
+    for namelist, blocks in overrides.items():
+        target = data.setdefault(namelist, {})
+        for block, members in blocks.items():
+            target.setdefault(block, {}).update(members)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        JulesNamelists.model_validate(data)
+    return [
+        str(record.message)
+        for record in caught
+        if issubclass(record.category, InactiveNamelistKeyWarning)
+    ]
+
+
+def test_is_specified_ignores_a_per_element_default():
+    """A `PerElementDefault` field written out in full is still unspecified.
+
+    `to_namelist_dict` expands `ag_expand_io` to `[0] * nnpft` because Fortran
+    does not broadcast a scalar. Reading that back must not look like a
+    deliberate choice, or every round-tripped config would warn.
+    """
+    assert not is_specified(JulesTriffid(ag_expand_io=[0, 0, 0, 0, 0]), "ag_expand_io")
+    assert is_specified(JulesTriffid(ag_expand_io=[0, 0, 0, 0, 1]), "ag_expand_io")
+
+
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        ({"jules_surface": {"jules_surface": {"formdrag": 1}}}, "formdrag should be 0"),
+        (
+            {"jules_surface": {"jules_surface": {"i_modiscopt": 1}}},
+            "i_modiscopt should be 0",
+        ),
+        (
+            {"jules_surface": {"jules_surface": {"srf_ex_cnv_gust": 1}}},
+            "not currently available to standalone",
+        ),
+        (
+            {"jules_surface": {"jules_surface": {"l_vary_z0m_soil": True}}},
+            "Variable roughness length of bare soil",
+        ),
+        (
+            {"jules_radiation": {"jules_radiation": {"l_sea_alb_var_chl": True}}},
+            "not currently available to standalone",
+        ),
+        (
+            {"jules_vegetation": {"jules_vegetation": {"l_trif_init_accum": True}}},
+            "only applicable to the UM",
+        ),
+    ],
+)
+def test_standalone_only_fail_if(overrides, message):
+    """Options JULES implements only for its UM coupling."""
+    with pytest.raises(ValidationError, match=message):
+        build(**overrides)
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"jules_surface": {"jules_surface": {"formdrag": 1}}},
+        {"jules_surface": {"jules_surface": {"i_modiscopt": 1}}},
+        {"jules_surface": {"jules_surface": {"srf_ex_cnv_gust": 1}}},
+        {"jules_surface": {"jules_surface": {"l_vary_z0m_soil": True}}},
+        {"jules_radiation": {"jules_radiation": {"l_sea_alb_var_chl": True}}},
+        {"jules_vegetation": {"jules_vegetation": {"l_trif_init_accum": True}}},
+    ],
+)
+def test_the_um_accepts_what_standalone_refuses(overrides):
+    """The same settings are exactly what a UM-coupled run is for."""
+    build(**UM, **overrides)
+
+
+def deposition(**members) -> dict:
+    """Overrides switching deposition on with `members` set."""
+    return {"jules_deposition": {"jules_deposition": {"l_deposition": True, **members}}}
+
+
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        (
+            deposition(l_deposition_from_ukca=True),
+            "cannot be true in JULES standalone",
+        ),
+        (
+            deposition(l_ukca_ddepo3_ocean=True),
+            "requires >75% open water fraction",
+        ),
+        (
+            deposition(l_ukca_dry_dep_so2wet=True),
+            "not fully implemented in JULES standalone",
+        ),
+    ],
+)
+def test_standalone_deposition_fail_if(overrides, message):
+    with pytest.raises(ValidationError, match=message):
+        build(**overrides)
+
+
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        (
+            deposition(l_deposition_from_ukca=False),
+            "only the call to the deposition routines from the UKCA",
+        ),
+        (
+            deposition(l_deposition_from_ukca=True, dep_h2_soil_scheme=2),
+            "Paulot et al. H2 scheme",
+        ),
+        (
+            deposition(l_deposition_from_ukca=True, l_deposition_gc_corr=True),
+            "stomatal conductance corrected for bare soil evaporation",
+        ),
+    ],
+)
+def test_um_deposition_fail_if(overrides, message):
+    with pytest.raises(ValidationError, match=message):
+        build(**UM, **overrides)
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        # trap 1: the block is inert with deposition off, so none of the
+        # parent-compatibility rules applies to it
+        {
+            "jules_deposition": {
+                "jules_deposition": {
+                    "l_ukca_ddepo3_ocean": True,
+                    "l_ukca_dry_dep_so2wet": True,
+                }
+            }
+        },
+        deposition(),
+    ],
+)
+def test_standalone_deposition_shapes_that_are_legal(overrides):
+    build(**overrides)
+
+
+def test_um_deposition_shapes_that_are_legal():
+    build(**UM)
+    build(**UM, **deposition(l_deposition_from_ukca=True))
+
+
+SURFACE_HEIGHT_MESSAGE = "expected nsurft=9"
+
+
+@pytest.mark.parametrize(
+    ("surf_hgt", "z_land"),
+    [
+        ({"zero_height": False, "l_elev_absolute_height": [False, False]}, {}),
+        ({"use_file": False, "surf_hgt_io": [0.0, 0.0]}, {}),
+        (
+            {"zero_height": False, "l_elev_absolute_height": [True] * 9},
+            {"surf_hgt_band": [0.0, 0.0]},
+        ),
+    ],
+)
+def test_surface_height_arrays_must_be_nsurft_long(surf_hgt, z_land):
+    with pytest.raises(ValidationError, match=SURFACE_HEIGHT_MESSAGE):
+        build(model_grid={"jules_surf_hgt": surf_hgt, "jules_z_land": z_land})
+
+
+def test_aggregated_tiles_want_a_single_surface_height():
+    build(
+        jules_surface={"jules_surface": {"l_aggregate": True}},
+        model_grid={
+            "jules_surf_hgt": {"zero_height": False, "l_elev_absolute_height": [True]}
+        },
+    )
+    with pytest.raises(ValidationError, match="expected nsurft=1"):
+        build(
+            jules_surface={"jules_surface": {"l_aggregate": True}},
+            model_grid={
+                "jules_surf_hgt": {
+                    "zero_height": False,
+                    "l_elev_absolute_height": [True] * 9,
+                }
+            },
+        )
+
+
+@pytest.mark.parametrize(
+    "surf_hgt",
+    [
+        # `zero_height` deactivates `l_elev_absolute_height`, and `use_file`
+        # deactivates `surf_hgt_io`; a `fail-if` is not applied to a setting
+        # its own `trigger` has switched off (UPSTREAM.md 4.1)
+        {"zero_height": True, "l_elev_absolute_height": [False, False]},
+        {"use_file": True, "surf_hgt_io": [0.0, 0.0]},
+    ],
+)
+def test_a_deactivated_surface_height_array_is_not_length_checked(surf_hgt):
+    build(model_grid={"jules_surf_hgt": surf_hgt})
+
+
+@pytest.mark.parametrize(
+    ("model_cls", "kwargs", "member"),
+    [
+        (JulesSurfHgt, {"surf_hgt_io": [1.0]}, "surf_hgt_io"),
+        (JulesSurfHgt, {"use_file": False, "file": "hgt.nc"}, "file"),
+        (JulesSurfHgt, {"use_file": False, "surf_hgt_name": "h"}, "surf_hgt_name"),
+        (JulesZLand, {"z_land_io": 12.0}, "z_land_io"),
+        (JulesZLand, {"use_file": False, "file": "z.nc"}, "file"),
+        (JulesZLand, {"use_file": False, "z_land_name": "z"}, "z_land_name"),
+        (JulesTriffid, {"harvest_freq_io": [1, 1]}, "harvest_freq_io"),
+        (JulesTriffid, {"harvest_ht_io": [3.0, 0.1]}, "harvest_ht_io"),
+    ],
+)
+def test_recovered_trigger_warns(model_cls, kwargs, member):
+    messages = inactive(model_cls, **kwargs)
+    assert any(f"'{member}'" in message for message in messages), messages
+
+
+@pytest.mark.parametrize(
+    ("model_cls", "kwargs"),
+    [
+        (JulesSurfHgt, {"use_file": False, "surf_hgt_io": [1.0]}),
+        (JulesSurfHgt, {"use_file": True, "file": "hgt.nc"}),
+        (JulesZLand, {"use_file": False, "z_land_io": 12.0}),
+        (JulesZLand, {"use_file": True, "file": "z.nc"}),
+        (JulesTriffid, {"harvest_type_io": [0, 2], "harvest_freq_io": [1, 1]}),
+        (JulesTriffid, {"harvest_type_io": [0, 2], "harvest_ht_io": [3.0, 0.1]}),
+    ],
+)
+def test_recovered_trigger_is_silent_when_the_member_is_active(model_cls, kwargs):
+    assert inactive(model_cls, **kwargs) == []
+
+
+def test_recovered_trigger_blocks_are_silent_by_default():
+    """The `is_specified` contract, on the blocks these rules touch."""
+    for model_cls in (JulesSurfHgt, JulesZLand, JulesTriffid, ModelGridNamelist):
+        assert inactive(model_cls) == [], model_cls.__name__
+
+
+def test_z_land_is_inactive_without_an_absolute_elevation():
+    messages = inactive(ModelGridNamelist, jules_z_land={"surf_hgt_band": [0.0, 0.0]})
+    assert any("'surf_hgt_band'" in message for message in messages), messages
+
+
+def test_surf_hgt_use_file_is_inactive_with_an_absolute_elevation():
+    messages = inactive(
+        ModelGridNamelist,
+        jules_surf_hgt={
+            "zero_height": False,
+            "l_elev_absolute_height": [True],
+            "use_file": False,
+        },
+    )
+    assert any("'use_file'" in message for message in messages), messages
+
+
+def test_z_land_is_active_with_an_absolute_elevation():
+    assert (
+        inactive(
+            ModelGridNamelist,
+            jules_surf_hgt={"zero_height": False, "l_elev_absolute_height": [True]},
+            jules_z_land={"surf_hgt_band": [0.0, 0.0]},
+        )
+        == []
+    )
+
+
+@pytest.mark.parametrize(
+    ("overrides", "member"),
+    [
+        (
+            {
+                "jules_vegetation": {"jules_vegetation": {"photo_acclim_model": 1}},
+                "pft_params": {"jules_pftparm": {"ds_jmax_io": [0.1] * 5}},
+            },
+            "ds_jmax_io",
+        ),
+        (
+            {
+                "jules_vegetation": {"jules_vegetation": {"photo_acclim_model": 1}},
+                "pft_params": {"jules_pftparm": {"ds_vcmax_io": [0.1] * 5}},
+            },
+            "ds_vcmax_io",
+        ),
+        (
+            {
+                "jules_vegetation": {
+                    "jules_vegetation": {
+                        "photo_acclim_model": 2,
+                        "photo_act_model": 2,
+                    }
+                },
+                "pft_params": {"jules_pftparm": {"act_jmax_io": [1.0] * 5}},
+            },
+            "act_jmax_io",
+        ),
+        (
+            {
+                "jules_vegetation": {
+                    "jules_vegetation": {
+                        "photo_acclim_model": 2,
+                        "photo_act_model": 2,
+                    }
+                },
+                "pft_params": {"jules_pftparm": {"act_vcmax_io": [1.0] * 5}},
+            },
+            "act_vcmax_io",
+        ),
+        (
+            {
+                "ancillaries": {
+                    "jules_vegetation_props": {"nvars": 1, "var": ["t_home_gb"]}
+                }
+            },
+            "nvars",
+        ),
+        (
+            {"triffid_params": {"jules_triffid": {"ag_expand_io": [1, 0, 0, 0, 0]}}},
+            "ag_expand_io",
+        ),
+    ],
+)
+def test_recovered_cross_namelist_trigger_warns(overrides, member):
+    messages = inactive_config(**overrides)
+    assert any(f"'{member}'" in message for message in messages), messages
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        # the acclimation models that do read the per-PFT entropy factors
+        {"pft_params": {"jules_pftparm": {"ds_jmax_io": [0.1] * 5}}},
+        {
+            "jules_vegetation": {"jules_vegetation": {"photo_acclim_model": 2}},
+            "pft_params": {"jules_pftparm": {"act_jmax_io": [1.0] * 5}},
+        },
+        # thermal adaptation is what `jules_vegetation_props` exists for
+        {
+            "jules_vegetation": {"jules_vegetation": {"photo_acclim_model": 1}},
+            "ancillaries": {
+                "jules_vegetation_props": {"nvars": 1, "var": ["t_home_gb"]}
+            },
+        },
+        # a per-element default written out in full is not a deliberate choice
+        {"triffid_params": {"jules_triffid": {"ag_expand_io": [0, 0, 0, 0, 0]}}},
+    ],
+)
+def test_recovered_cross_namelist_trigger_is_silent(overrides):
+    assert inactive_config(**overrides) == []

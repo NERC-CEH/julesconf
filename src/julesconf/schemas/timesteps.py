@@ -12,7 +12,7 @@ from typing import Annotated, Literal
 from pydantic import Field, field_validator, model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas.constraints import PerElementDefault
+from julesconf.schemas.constraints import ListLen, PerElementDefault
 
 __all__ = ["JulesSpinup", "JulesTime", "TimestepsNamelist"]
 
@@ -67,11 +67,13 @@ class JulesSpinup(NamelistModel):
     """Switch controlling behaviour if the model does not pass the spin-up test."""
     nvars: int = Field(default=0, ge=0)
     """The number of variables to use to assess if the model has spun up."""
-    var: list[_SpinupVar] | None = None
+    var: Annotated[list[_SpinupVar] | None, ListLen("nvars")] = None
     """List of variables to be used to determine if the model has spun up."""
-    use_percent: Annotated[list[bool] | None, PerElementDefault(False, "nvars")] = None
+    use_percent: Annotated[
+        list[bool] | None, ListLen("nvars"), PerElementDefault(False, "nvars")
+    ] = None
     """Indicates whether the tolerance for each variable is expressed as a percentage."""
-    tolerance: list[float] | None = None
+    tolerance: Annotated[list[float] | None, ListLen("nvars")] = None
     """Tolerance for spin-up test for each variable."""
 
     @field_validator("spinup_start", "spinup_end")

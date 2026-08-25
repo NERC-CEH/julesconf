@@ -16,6 +16,7 @@ from pydantic import AfterValidator, BeforeValidator, Field
 __all__ = [
     "LIST_LEN_DIMS",
     "PER_ELEMENT_DIMS",
+    "SIBLING_DIMS",
     "Fraction",
     "ListLen",
     "NonNegFloat",
@@ -38,12 +39,18 @@ LIST_LEN_DIMS = frozenset({"npft", "nnpft", "nnvg", "ncpft", "ntype"})
 - `ntype` — all surface types, `npft + nnvg`
 """
 
-SIBLING_DIMS = frozenset({"nvars"})
+SIBLING_DIMS = frozenset({"nvars", "nirrtile", "nsmax", "sm_levels"})
 """Dimension names resolved from a sibling field on the same model.
 
 Unlike `LIST_LEN_DIMS`, which are global and read from `jules_surface_types`,
-these name a field in the *same* namelist block (e.g. `nvars` in
-`JULES_SOIL_PROPS`). Each block carries its own value.
+these name a field in the *same* namelist block. Each block carries its own
+value, so two blocks naming `nvars` are unrelated:
+
+- `nvars` — the number of variables a block provides, in each of the ~14
+  `nvars`/`var`/`use_file`/`const_val` blocks
+- `nirrtile` — number of irrigated tiles, in `JULES_IRRIG`
+- `nsmax` — number of snow layers, in `JULES_SNOW`
+- `sm_levels` — number of soil levels, in `JULES_SOIL`
 """
 
 PER_ELEMENT_DIMS = LIST_LEN_DIMS | SIBLING_DIMS
@@ -52,13 +59,34 @@ PER_ELEMENT_DIMS = LIST_LEN_DIMS | SIBLING_DIMS
 
 @dataclasses.dataclass(frozen=True)
 class ListLen:
-    """Metadata marking a list field as requiring a specific cross-namelist length.
+    """Metadata marking a list field as requiring a specific length.
+
+    Two kinds of dimension can be named, and they resolve differently:
+
+    - A member of `LIST_LEN_DIMS` is **cross-namelist**: it is resolved once,
+      globally, from `jules_surface_types`, and every field naming it is
+      checked against the same number.
+    - A member of `SIBLING_DIMS` is **namelist-local**: it names a field of the
+      *same* block (`nvars`), so each block is checked against its own value.
+      `JULES_SOIL_PROPS` and `JULES_TOP` both constrain `var` to `nvars`
+      elements, but their two `nvars` are unrelated.
+
+    A sibling dimension that is `None` or `0` skips the check: JULES reads
+    `nvars` members from the block and reads none at all when `nvars` is zero,
+    so the block is inactive and the list's length is not meaningful. This
+    matches `PerElementDefault`, which omits its member rather than writing an
+    empty assignment for a zero-length dimension.
+
+    A field the user left unset is likewise skipped rather than treated as
+    length zero, because most of these members are optional even when the block
+    is active — JULES defaults them element-wise, which is what
+    `PerElementDefault` reproduces on write. The stronger rule that `var`
+    specifically must be present when `nvars > 0` is a *presence* rule rather
+    than a length rule, and stays with the per-block validators that express it.
 
     Attributes:
         dim: The canonical dimension name, which must be a member of
-            `LIST_LEN_DIMS`. Resolved against `jules_surface_types` at validation
-            time in `julesconf.schemas.JulesNamelists`. This is the length
-            julesconf itself produces.
+            `PER_ELEMENT_DIMS`. This is the length julesconf itself produces.
         tolerates: Further dimension names accepted *on input*. Used where JULES
             declares an array longer than it reads: the TRIFFID parameters are
             declared `real(npft)` but only the leading `nnpft` values are used
@@ -73,10 +101,10 @@ class ListLen:
     def __post_init__(self) -> None:
         """Reject dimension names that no schema can resolve."""
         for dim in (self.dim, *self.tolerates):
-            if dim not in LIST_LEN_DIMS:
+            if dim not in PER_ELEMENT_DIMS:
                 raise ValueError(
                     f"Unknown ListLen dim {dim!r}; "
-                    f"expected one of {sorted(LIST_LEN_DIMS)}"
+                    f"expected one of {sorted(PER_ELEMENT_DIMS)}"
                 )
 
     def accepted_lengths(self, dims: dict[str, int]) -> set[int]:

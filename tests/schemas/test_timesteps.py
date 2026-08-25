@@ -3,6 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
+from julesconf.schemas import UnknownNamelistKeyWarning
 from julesconf.schemas.timesteps import JulesSpinup, JulesTime, TimestepsNamelist
 
 # ---------------------------------------------------------------------------
@@ -49,7 +50,8 @@ def test_jules_time_defaults():
 
 def test_jules_time_extra_fields_ignored():
     data = {**VALID_JULES_TIME, "unknown_field": 99}
-    JulesTime.model_validate(data)
+    with pytest.warns(UnknownNamelistKeyWarning, match="unknown_field"):
+        JulesTime.model_validate(data)
 
 
 @pytest.mark.parametrize("timestep_len", [0, -1, -3600])

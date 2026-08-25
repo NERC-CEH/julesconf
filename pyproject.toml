@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "julesconf"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python-based configuration management for the JULES land surface model."
 authors = [
     { name = "jmarshrossney", email = "17361029+jmarshrossney@users.noreply.github.com" }
@@ -20,6 +20,7 @@ dependencies = [
     "numpy>=2.4.4",
     "pydantic>=2.13.4",
     "tomli-w>=1.0",
+    "typer>=0.20",
     "xarray>=2026.4.0",
 ]
 keywords = ["configuration", "config"]
@@ -30,6 +31,9 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
 ]
+
+[project.scripts]
+julesconf = "julesconf.cli:app"
 
 
 [dependency-groups]
@@ -63,7 +67,10 @@ test = [
 [tool.pyright]
 venvPath = "."
 venv = ".venv"
-include = ["src/", "tests/"]
+include = ["src/", "tests/", "scripts/"]
+# Dev scripts are standalone modules, not a package; tests import them by
+# putting scripts/ on sys.path, so pyright needs the same search path.
+extraPaths = ["scripts"]
 
 [tool.ruff]
 line-length = 88

@@ -18,8 +18,20 @@ pivots the parallel per-surface-type arrays — spread across `pft_params.nml`,
 `[[pft]]` / `[[crop_pft]]` / `[[nvg]]` tables, so each surface type is one
 object and a length mismatch is not even expressible.
 
+There is a command-line interface too, so a validation check needs no Python:
+
+```
+julesconf validate run/namelists --strict
+julesconf convert rose2toml rose-app.conf -o config.toml
+```
+
+It exits `0` on success, `1` on an invalid config and `2` on a usage error, and
+reports each failure as `file.nml  NAMELIST_BLOCK  member` rather than as a
+pydantic traceback.
+
 See the [documentation](https://nerc-ceh.github.io/julesconf) for the
-configuration guide, the grouped form, and the full API reference.
+configuration guide, the grouped form, the command line, and the full API
+reference.
 
 ## Quick start
 

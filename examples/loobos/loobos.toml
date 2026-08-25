@@ -595,11 +595,9 @@ wght_alb = [
 
 [jules_rivers.jules_rivers]
 l_rivers = false
+l_riv_overbank = false
 lake_water_conserve_method = 1
 trip_globe_shape = 2
-
-[jules_rivers.jules_overbank]
-l_riv_overbank = false
 
 [jules_snow.jules_snow]
 nsmax = 0
@@ -813,7 +811,7 @@ nprofiles = 1
 dump_period = 1
 dump_period_unit = "Y"
 
-[output.jules_output_profile]
+[[output.jules_output_profile]]
 profile_name = "test"
 file_period = 0
 output_spinup = false

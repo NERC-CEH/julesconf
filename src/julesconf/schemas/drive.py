@@ -5,14 +5,15 @@ Reference: JULES user guide v7.9,
 """
 
 from datetime import datetime
+from enum import IntEnum
 from typing import Annotated
 
 from pydantic import Field, field_validator, model_validator
 
 from julesconf.schemas._base import NamelistModel
-from julesconf.schemas.constraints import PerElementDefault
+from julesconf.schemas.constraints import ListLen, PerElementDefault, name_or_value
 
-__all__ = ["DriveNamelist", "JulesDrive"]
+__all__ = ["DriveNamelist", "JulesDrive", "PrecipDisaggMethod"]
 
 _DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -25,6 +26,15 @@ def _validate_datetime(v: str) -> str:
             f"Expected datetime format 'yyyy-mm-dd hh:mm:ss', got '{v}'"
         ) from err
     return v
+
+
+class PrecipDisaggMethod(IntEnum):
+    """Disaggregation method for precipitation (`precip_disagg_method`)."""
+
+    no_disaggregation = 1
+    imogen = 2
+    imogen_no_upper_limit = 3
+    random_wet_dry = 4
 
 
 class JulesDrive(NamelistModel):
@@ -45,13 +55,15 @@ class JulesDrive(NamelistModel):
 
     nvars: int = Field(default=0, ge=0)
     """Number of forcing variables that will be provided."""
-    var: list[str] | None = None
+    var: Annotated[list[str] | None, ListLen("nvars")] = None
     """List of forcing variable names as recognised by JULES."""
-    var_name: Annotated[list[str] | None, PerElementDefault("", "nvars")] = None
+    var_name: Annotated[
+        list[str] | None, ListLen("nvars"), PerElementDefault("", "nvars")
+    ] = None
     """Name of variable in file for each JULES variable specified."""
-    tpl_name: list[str] | None = None
+    tpl_name: Annotated[list[str] | None, ListLen("nvars")] = None
     """String to substitute into file names for variable name templating."""
-    interp: list[str] | None = None
+    interp: Annotated[list[str] | None, ListLen("nvars")] = None
     """How each variable is to be interpolated in time."""
 
     # Meteorological parameters
@@ -87,8 +99,10 @@ class JulesDrive(NamelistModel):
     """Duration of convective snowfall event in seconds for disaggregator."""
     dur_ls_snow: float | None = None
     """Duration of large-scale snowfall event in seconds for disaggregator."""
-    precip_disagg_method: int | None = Field(default=None, ge=1, le=4)
-    """Switch controlling the disaggregation method for precipitation."""
+    precip_disagg_method: (
+        Annotated[PrecipDisaggMethod, name_or_value(PrecipDisaggMethod)] | None
+    ) = None
+    """Switch controlling the disaggregation method for precipitation: `no_disaggregation` (1), `imogen` (2), `imogen_no_upper_limit` (3), `random_wet_dry` (4)."""
 
     # Perturbations
     l_perturb_driving: bool = False

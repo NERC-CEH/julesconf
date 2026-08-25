@@ -32,7 +32,7 @@ for each:
 from julesconf.schemas import JulesNamelists
 
 config = JulesNamelists.from_namelists("run/namelists")  # read what JULES consumes
-config.to_toml("config.toml")                            # write the readable form
+config.to_toml("config.toml")  # write the readable form
 ```
 
 Any read pairs with any write, so all four combinations are valid — including the
@@ -49,8 +49,8 @@ declare which you wrote.
 removes the parallel-array editing burden. Pass `grouped=False` for the flat form:
 
 ```python
-config.to_toml("config.toml")                 # grouped [[pft]] / [[nvg]] / ...
-config.to_toml("flat.toml", grouped=False)    # one table per namelist block
+config.to_toml("config.toml")  # grouped [[pft]] / [[nvg]] / ...
+config.to_toml("flat.toml", grouped=False)  # one table per namelist block
 ```
 
 ## Flat versus grouped TOML
