@@ -26,7 +26,7 @@ pip install julesconf
 ```python
 from julesconf.schemas import JulesNamelists, JULES_VERSION
 
-print(JULES_VERSION)   # the JULES user-guide version the schemas are pinned to
+print(JULES_VERSION)  # the JULES user-guide version the schemas are pinned to
 ```
 
 `JULES_VERSION` tells you which JULES release the schemas track — see

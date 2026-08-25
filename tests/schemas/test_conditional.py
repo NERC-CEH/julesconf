@@ -576,6 +576,16 @@ def test_minimal_config_still_validates():
         (JulesSoil, {"dzdeep": 1.0}, "dzdeep"),
         (JulesIrrig, {"irr_crop": 2}, "irr_crop"),
         (JulesIrrig, {"l_irrig_dmd": True, "nirrtile": 2}, "nirrtile"),
+        (
+            JulesIrrig,
+            {
+                "l_irrig_dmd": True,
+                "frac_irrig_all_tiles": True,
+                "nirrtile": 1,
+                "irrigtiles": [1],
+            },
+            "irrigtiles",
+        ),
         (JulesSnow, {"snowliqcap": 0.9}, "snowliqcap"),
         (JulesSurface, {"i_aggregate_opt": 1}, "i_aggregate_opt"),
         (JulesSurface, {"orog_drag_param": 0.3}, "orog_drag_param"),
@@ -627,6 +637,15 @@ def test_trigger_warns_about_an_inactive_member(model_cls, kwargs, member):
         (JulesHydrology, {"l_hydrology": True, "l_pdm": True, "b_pdm": 1.0}),
         (JulesSoil, {"l_bedrock": True, "dzdeep": 1.0}),
         (JulesIrrig, {"l_irrig_dmd": True, "irr_crop": 2}),
+        (
+            JulesIrrig,
+            {
+                "l_irrig_dmd": True,
+                "frac_irrig_all_tiles": False,
+                "nirrtile": 1,
+                "irrigtiles": [1],
+            },
+        ),
         (JulesSnow, {"nsmax": 3, "dzsnow": [0.1, 0.2, 0.2], "snowliqcap": 0.9}),
         (JulesRivers, {"l_rivers": True, "i_river_vn": 2, "cland": 0.4}),
         (JulesSurface, {"formdrag": 2, "fd_hill_option": 2, "orog_drag_param": 0.3}),
@@ -701,6 +720,58 @@ def test_cross_namelist_trigger_warns():
         if issubclass(record.category, InactiveNamelistKeyWarning)
     ]
     assert any("'ch4_substrate'" in message for message in messages), messages
+
+
+def test_snow_canopy_members_are_read_by_one_canopy_model_only():
+    """`can_model` lives in `jules_vegetation`, the members it gates in `jules_snow`."""
+    messages = inactive_config(
+        jules_snow={"jules_snow": {"cansnowpft": [True] * 5}},
+    )
+    assert any("'cansnowpft'" in message for message in messages), messages
+
+
+def test_snow_canopy_members_are_silent_under_radiative_snow():
+    assert (
+        inactive_config(
+            jules_vegetation={"jules_vegetation": {"can_model": "radiative_snow"}},
+            jules_snow={"jules_snow": {"cansnowpft": [True] * 5}},
+        )
+        == []
+    )
+
+
+def deposition_species(dry_dep_model: str | None = None) -> list[str]:
+    """Inactive-member messages for one species carrying `rsurf_std_io`.
+
+    `inactive_config` cannot build this: `jules_deposition_species` is a
+    repeated group, so its value is a list of blocks rather than a dict.
+    """
+    data = minimal_valid()
+    deposition = {"l_deposition": True, "ndry_dep_species": 1}
+    if dry_dep_model is not None:
+        deposition["dry_dep_model"] = dry_dep_model
+    data["jules_deposition"] = {
+        "jules_deposition": deposition,
+        "jules_deposition_species": [{"rsurf_std_io": [1.0] * 9}],
+    }
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        JulesNamelists.model_validate(data)
+    return [
+        str(record.message)
+        for record in caught
+        if issubclass(record.category, InactiveNamelistKeyWarning)
+    ]
+
+
+def test_species_arrays_are_read_by_the_flexible_scheme_only():
+    """Every `JULES_DEPOSITION_SPECIES` member but the name needs `flexible_ukca`."""
+    messages = deposition_species()
+    assert any("'rsurf_std_io'" in message for message in messages), messages
+
+
+def test_species_arrays_are_silent_under_the_flexible_scheme():
+    assert deposition_species("flexible_ukca") == []
 
 
 # --------------------------------------------------------------------------

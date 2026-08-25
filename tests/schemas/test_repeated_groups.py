@@ -39,14 +39,27 @@ def with_profiles(*profiles: dict) -> dict:
     return data
 
 
-def with_species(*species: dict, count: int | None = None) -> dict:
-    """A minimal config whose `jules_deposition.nml` holds the given species."""
+def with_species(
+    *species: dict, count: int | None = None, flexible: bool = False
+) -> dict:
+    """A minimal config whose `jules_deposition.nml` holds the given species.
+
+    Args:
+        species: One dict per `jules_deposition_species` group.
+        count: `ndry_dep_species`, defaulting to the number of groups.
+        flexible: Select `flexible_ukca`, the scheme that reads the
+            per-species arrays. Set it whenever a group carries
+            `rsurf_std_io`, or the member is inactive and warns.
+    """
     data = minimal_valid()
+    deposition = {
+        "l_deposition": True,
+        "ndry_dep_species": len(species) if count is None else count,
+    }
+    if flexible:
+        deposition["dry_dep_model"] = "flexible_ukca"
     data["jules_deposition"] = {
-        "jules_deposition": {
-            "l_deposition": True,
-            "ndry_dep_species": len(species) if count is None else count,
-        },
+        "jules_deposition": deposition,
         "jules_deposition_species": list(species),
     }
     return data
@@ -330,6 +343,7 @@ class TestPerElementDims:
             with_species(
                 {"dep_species_name_io": "O3", "rsurf_std_io": [1.0] * 9},
                 {"dep_species_name_io": "NO2", "rsurf_std_io": [2.0] * 9},
+                flexible=True,
             )
         )
 
@@ -341,6 +355,7 @@ class TestPerElementDims:
                 with_species(
                     {"rsurf_std_io": [1.0] * 9},
                     {"rsurf_std_io": [2.0] * 8},
+                    flexible=True,
                 )
             )
 
@@ -361,6 +376,7 @@ class TestRoundTrip:
         config["jules_deposition"] = with_species(
             {"dep_species_name_io": "O3", "rsurf_std_io": [1.0] * 9},
             {"dep_species_name_io": "NO2", "rsurf_std_io": [2.0] * 9},
+            flexible=True,
         )["jules_deposition"]
         return JulesNamelists.model_validate(config)
 

@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "julesconf"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python-based configuration management for the JULES land surface model."
 authors = [
     { name = "jmarshrossney", email = "17361029+jmarshrossney@users.noreply.github.com" }

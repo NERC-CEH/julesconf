@@ -184,6 +184,12 @@ from julesconf.schemas.science_fixes import CtileOrogFix, JulesTempFixes
         (JulesSurface, "anthrop_heat_option", AnthropHeatOption, [1, "flanner"]),
     ],
 )
+@pytest.mark.filterwarnings(
+    # Each case sets one member and nothing else, so the option that switches
+    # it on is left at its default and several members land inactive. That is
+    # a property of the one-field config, not of the coercion under test.
+    "ignore::julesconf.schemas.InactiveNamelistKeyWarning"
+)
 def test_enum_field_accepts_int_and_name(model_cls, field_name, enum_cls, valid_values):
     for val in valid_values:
         data = {field_name: val}

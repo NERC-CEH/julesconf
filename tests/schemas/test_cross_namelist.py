@@ -51,10 +51,17 @@ def test_correct_lengths_validate():
             "t_bse_io": [273.15],
         }
     }
+    # `cansnowpft` and `rsurf_std_io` are each read by one option only; the
+    # gates go in so the lengths are checked without an inactive-key warning.
+    data["jules_vegetation"]["jules_vegetation"]["can_model"] = "radiative_snow"
     data["jules_snow"] = {"jules_snow": {"cansnowpft": [True, False, True]}}
     # A repeated group: always a list, and its count member must agree.
     data["jules_deposition"] = {
-        "jules_deposition": {"ndry_dep_species": 1},
+        "jules_deposition": {
+            "l_deposition": True,
+            "dry_dep_model": "flexible_ukca",
+            "ndry_dep_species": 1,
+        },
         "jules_deposition_species": [{"rsurf_std_io": [1.0] * 5}],
     }
     JulesNamelists.model_validate(data)
@@ -110,6 +117,7 @@ def test_crop_cfrac_s_io_wrong_npft():
 
 def test_snow_npft_wrong():
     data = _minimal_valid()
+    data["jules_vegetation"]["jules_vegetation"]["can_model"] = "radiative_snow"
     data["jules_snow"] = {"jules_snow": {"cansnowpft": [True] * 4}}
     with pytest.raises(ValidationError, match=r"jules_snow\.jules_snow\.cansnowpft"):
         JulesNamelists.model_validate(data)
@@ -118,7 +126,11 @@ def test_snow_npft_wrong():
 def test_deposition_ntype_wrong():
     data = _minimal_valid()
     data["jules_deposition"] = {
-        "jules_deposition": {"ndry_dep_species": 1},
+        "jules_deposition": {
+            "l_deposition": True,
+            "dry_dep_model": "flexible_ukca",
+            "ndry_dep_species": 1,
+        },
         "jules_deposition_species": [{"rsurf_std_io": [1.0] * 8}],
     }
     with pytest.raises(

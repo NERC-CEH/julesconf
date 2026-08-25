@@ -94,7 +94,15 @@ def test_zero_sibling_skips_the_check():
 def test_unset_sibling_skips_the_check():
     """`nirrtile` is optional; with no value there is nothing to check against."""
     data = minimal_valid()
-    data["jules_irrig"] = {"jules_irrig": {"irrigtiles": [1, 2, 3]}}
+    data["jules_irrig"] = {
+        # `irrigtiles` is only read with irrigation on and not all tiles
+        # irrigated; both gates go in so the config is self-consistent.
+        "jules_irrig": {
+            "l_irrig_dmd": True,
+            "frac_irrig_all_tiles": False,
+            "irrigtiles": [1, 2, 3],
+        }
+    }
     JulesNamelists.model_validate(data)
 
 

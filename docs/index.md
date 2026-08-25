@@ -11,8 +11,8 @@ single readable TOML file you can configure a run from instead.
 ```python
 from julesconf.schemas import JulesNamelists
 
-config = JulesNamelists.from_toml("config.toml")   # or from_namelists(dir)
-config.to_namelists("run/namelists")               # write what JULES consumes
+config = JulesNamelists.from_toml("config.toml")  # or from_namelists(dir)
+config.to_namelists("run/namelists")  # write what JULES consumes
 ```
 
 Or from a shell, with no Python at all:

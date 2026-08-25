@@ -504,6 +504,8 @@ def test_per_element_default_still_expands_under_the_grouped_form():
 
 def test_explicit_per_element_values_from_entries_are_preserved():
     data = minimal_grouped(n_pft=2, n_nvg=2)
+    # `cansnowpft` is only read by the canopy model that carries snow.
+    data["jules_vegetation"]["jules_vegetation"]["can_model"] = "radiative_snow"
     for entry in data["pft"]:
         entry["cansnowpft"] = True
 

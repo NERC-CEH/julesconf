@@ -33,6 +33,7 @@ from julesconf.rose import (
 from julesconf.schemas import (
     InactiveNamelistKeyWarning,
     JulesNamelists,
+    PostponedNamelistWarning,
     RepeatedNamelistGroupWarning,
     UnknownNamelistKeyWarning,
 )
@@ -552,6 +553,7 @@ class TestCorpus:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UnknownNamelistKeyWarning)
             warnings.simplefilter("ignore", InactiveNamelistKeyWarning)
+            warnings.simplefilter("ignore", PostponedNamelistWarning)
             JulesNamelists.model_validate(parsed)
 
     def test_unknown_members_are_the_known_set(self, app_name, parsed):
