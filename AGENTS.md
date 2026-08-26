@@ -14,6 +14,7 @@ uv sync --group dev --locked && just
 - Don't propose replacing the pydantic schemas with a generated JSON Schema per JULES version. Settled: `rose-meta` has no `default=` key anywhere, so defaults exist only in the upgrade macros and a generated schema can't produce a complete config. JSON Schema also can't do sibling dims, derived defaults, cross-namelist validators or the three warning severities. The single-version pin is caused by import-time global state, not by pydantic.
 - CLI is a thin shell: no validation/path logic in `cli.py`. `markup=False` on rich output.
 - `warn_inactive` compares value to schema default, not `model_fields_set`.
+- `validate_assignment` is off on `NamelistModel`, so attribute assignment is unchecked (`config.timesteps.jules_time.timestep_len = 0` sticks). Editing then writing skips validation entirely; re-validate `to_namelist_dict()` first. Don't turn it on — the cross-namelist validators would then run on every attribute touched.
 - Tests: must `chdir` into `tmp_path`. Loobos has no crops/TRIFFID — use synthetic fixtures for those.
 - Docs: `zensical` (mkdocs-material), NOT sphinx — no `:class:`, `.. note::`, double-backtick, etc.
 

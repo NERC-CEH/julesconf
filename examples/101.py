@@ -1,13 +1,13 @@
 import marimo
 
 __generated_with = "0.23.5"
-app = marimo.App(app_title="Editing namelists directly")
+app = marimo.App(app_title="Worked example: the Loobos configuration")
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # Editing namelists directly
+    # Worked example: the Loobos configuration
     """)
     return
 
@@ -15,16 +15,11 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    This notebook works at julesconf's lower **container** layer: reading a JULES
-    configuration directory into plain Python data, editing it, and writing it back.
-    It is the layer that also carries the **input data** (driving data, initial
-    conditions, tile fractions) alongside the namelists.
+    This notebook works at julesconf's container layer: reading a JULES configuration directory into plain Python data, editing it, and writing it back.
+    It is the layer that also carries the input data — driving data, initial conditions, tile fractions — alongside the namelists.
 
-    This is a first-class namelist workflow, not a legacy one. If you mainly want to
-    edit parameters or convert between namelists and TOML, the typed
-    [`JulesNamelists`](../concepts/containers.md) model in
-    [Get started](../tutorials/get-started.md) is the gentler route; come here when
-    you need the raw directory data, especially input data.
+    This is a first-class namelist workflow, not a legacy one.
+    If you mainly want to edit parameters or convert between namelists and TOML, the typed [`JulesNamelists`](namelists.md) model is the gentler route; come here when you need the raw directory data, especially the input data.
 
     We will:
 
@@ -335,12 +330,10 @@ def _(mo):
 
     From here:
 
-    - [Authoring a config in TOML](../tutorials/authoring-toml.md) — the terser form
-      recommended for new projects.
-    - [The containers](../concepts/containers.md) — how this layer relates to the
-      typed `JulesNamelists` model.
-    - [Containers & handlers reference](../api/config.md) — `JulesConfig`,
-      `InputFilesConfig`, and the ASCII/NetCDF handlers in detail.
+    - [Data files](data-files.md) — how this layer relates to the typed `JulesNamelists` model.
+    - [Working with TOML](toml.md) — the terser single-file form.
+    - [Generating configs](generating-configs.md) — the same idea, many runs at a time.
+    - [Containers and handlers](../reference/api/config.md) — `JulesConfig`, `InputFilesConfig`, and the ASCII/NetCDF handlers in detail.
     """)
     return
 

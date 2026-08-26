@@ -20,7 +20,7 @@ import pytest
 
 import julesconf.schemas as schemas_pkg
 
-DOCS = Path(__file__).parent.parent / "docs" / "api" / "schemas"
+DOCS = Path(__file__).parent.parent / "docs" / "reference"
 SRC = Path(__file__).parent.parent / "src" / "julesconf" / "schemas"
 
 
@@ -48,7 +48,7 @@ def test_every_enum_is_documented():
     """`enums.md` is the discovery surface for what an option accepts."""
     documented, defined = _documented("enums.md"), _defined(IntEnum)
     assert defined - documented == set(), (
-        "enums missing from docs/api/schemas/enums.md — a user cannot discover"
+        "enums missing from docs/reference/enums.md — a user cannot discover"
         " the member names of an option that is not listed there"
     )
 
@@ -56,7 +56,7 @@ def test_every_enum_is_documented():
 def test_enums_page_has_no_stale_entries():
     documented, defined = _documented("enums.md"), _defined(IntEnum)
     assert documented - defined == set(), (
-        "docs/api/schemas/enums.md names enums that no longer exist; the page"
+        "docs/reference/enums.md names enums that no longer exist; the page"
         " will fail to build or silently render nothing"
     )
 
@@ -81,5 +81,5 @@ def test_every_warning_is_documented(name):
     """
     assert hasattr(schemas_pkg, name), f"{name} is not exported from julesconf.schemas"
     assert name in _documented("warnings.md"), (
-        f"{name} is missing from docs/api/schemas/warnings.md"
+        f"{name} is missing from docs/reference/warnings.md"
     )

@@ -1,21 +1,18 @@
 # Option values (enums)
 
-Many JULES options are choices from a fixed set — a soil hydraulic conductivity
-method, a stomatal conductance model, and so on. julesconf models each as an enum,
-which is how you discover what values an option will accept.
+Many JULES options are choices from a fixed set — a soil hydraulic conductivity method, a stomatal conductance model, and so on.
+julesconf models each as an enum, which is how you discover what values an option will accept.
 
 ## Names and values
 
-Each enum member has an **integer value** (what the Fortran namelist uses) and a
-**name** (readable text). On input, the field accepts either — `name_or_value()`
-(see [field constraints](constraints.md)) coerces a string name or its integer to
-the member. On output the format decides:
+Each enum member has an **integer value** (what the Fortran namelist uses) and a **name** (readable text).
+On input, the field accepts either — `name_or_value()` (see [field constraints](api/constraints.md)) coerces a string name or its integer to the member.
+On output the format decides:
 
 - **TOML** writes the **name**: `soilhc_method = "johansen"`.
 - **Namelists** write the plain **integer**: `soilhc_method = 1`.
 
-So in a [TOML config](../../concepts/file-forms.md) you write the name, and this
-page is the list of names each field accepts.
+So in a [TOML config](../guide/toml.md#the-two-forms) you write the name, and this page is the list of names each field accepts.
 
 ## Driving data — `drive.nml`
 
